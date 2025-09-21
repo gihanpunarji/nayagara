@@ -9,6 +9,7 @@ import FlashSale from "./components/sections/FlashSale";
 import ProductGrid from "./components/sections/ProductGrid";
 import ServicesSection from "./components/sections/ServicesSection";
 import Newsletter from "./components/sections/Newsletter";
+import api from "./api/axios";
 
 const HomePage = () => {
   // State management
@@ -20,9 +21,8 @@ const HomePage = () => {
   // Server connection check
   const checkServerConnection = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/health`);
-      const data = await response.json();
-      setServerStatus(`Connected: ${data.message}`);
+      const res = api.get("/health");
+      setServerStatus("Connected:");
     } catch (error) {
       setServerStatus("Server not connected");
     }

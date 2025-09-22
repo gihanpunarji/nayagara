@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, ShoppingCart, User, Heart, ChevronDown, Phone, Globe, MapPin } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 const Header = ({ 
   searchQuery, 
@@ -25,8 +26,8 @@ const Header = ({
             <span className="text-xs sm:text-sm">Get 50% OFF your first order!</span>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <a href="#" className="hidden md:block hover:text-primary-200 transition-colors">Sell on Nayagara</a>
-            <a href="#" className="hidden sm:block hover:text-primary-200 transition-colors">Help</a>
+            <Link to="/sell" className="hidden md:block hover:text-primary-200 transition-colors">Sell on Nayagara</Link>
+            <Link to="/help" className="hidden sm:block hover:text-primary-200 transition-colors">Help</Link>
             <div className="flex items-center space-x-2 sm:space-x-4">
               <span className={`text-xs px-2 py-1 rounded ${
                 serverStatus.includes('Connected') ? 'bg-success' : 'bg-error'
@@ -48,11 +49,11 @@ const Header = ({
           {/* Top Header */}
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
+            <Link to="/" className="flex items-center space-x-2 sm:space-x-3">
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center shadow-green">
-                <img 
-                  src="/logo.png" 
-                  alt="Nayagara.lk" 
+                <img
+                  src="/logo.png"
+                  alt="Nayagara.lk"
                   className="w-8 h-8 sm:w-10 sm:h-10 object-contain"
                 />
               </div>
@@ -62,7 +63,7 @@ const Header = ({
                 </h1>
                 <p className="hidden sm:block text-xs text-gray-500">Sri Lanka's #1 Online Shopping</p>
               </div>
-            </div>
+            </Link>
 
             {/* Search Bar */}
             <div className="flex-1 max-w-3xl mx-4 sm:mx-8">
@@ -125,28 +126,28 @@ const Header = ({
 
             {/* Right Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <button className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
+              <Link to="/account/wishlist" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
                 <Heart className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-error text-white text-xs rounded-full flex items-center justify-center">5</span>
-              </button>
-              
-              <button className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
+              </Link>
+
+              <Link to="/cart" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
-              </button>
-              
-              <div className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors cursor-pointer">
+              </Link>
+
+              <Link to="/account" className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors">
                 <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 <div className="text-left">
                   <p className="text-xs text-gray-500">Hello</p>
-                  <a href='/login' className="text-sm font-medium text-gray-800">Sign In</a>
+                  <Link to="/login" className="text-sm font-medium text-gray-800">Sign In</Link>
                 </div>
-              </div>
-              
-              <button className="px-3 py-2 sm:px-6 sm:py-3 bg-gradient-secondary text-white rounded-lg hover:shadow-green transition-all duration-300 font-bold text-sm">
+              </Link>
+
+              <Link to="/sell" className="px-3 py-2 sm:px-6 sm:py-3 bg-gradient-secondary text-white rounded-lg hover:shadow-green transition-all duration-300 font-bold text-sm">
                 <span className="hidden sm:inline">SELL NOW</span>
                 <span className="sm:hidden">SELL</span>
-              </button>
+              </Link>
             </div>
           </div>
 

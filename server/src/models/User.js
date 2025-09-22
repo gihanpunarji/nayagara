@@ -42,7 +42,7 @@ class User {
     return rows[0];
   }
 
-  static async create({ mobile, email, password, firstName, lastName }) {
+  static async create({ mobile, email, password, firstName, lastName, role }) {
     const connection = getConnection();
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -50,7 +50,7 @@ class User {
       result,
     ] = await connection.execute(
       "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [email, hashedPassword, firstName, lastName, mobile, null, 'customer', 'active', 0, 0, null, null, new Date(), new Date()]
+      [email, hashedPassword, firstName, lastName, mobile, null, role, 'active', 0, 0, null, null, new Date(), new Date()]
     );
 
     console.log(result);

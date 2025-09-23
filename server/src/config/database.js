@@ -1,17 +1,17 @@
 const mysql = require("mysql2/promise");
 
 const dbConfig = {
-  host: process.env.DB_HOST || "localhost",
-  user: process.env.DB_USER || "root",
-  password: process.env.DB_PASSWORD || "Shks5670",
-  database: process.env.DB_NAME || "nayagara_db",
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
 };
 
 let connection;
 
 const connectDB = async () => {
   try {
-    connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createPool(dbConfig);
     console.log("MySQL connected successfully");
 
     await connection.query(

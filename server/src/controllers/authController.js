@@ -1,12 +1,11 @@
 const e = require("express");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { validateUserInputs, validateSellerInputs } = require("../utils/inputValidation");
+const { createAddressForSeller } = require("../models/Address");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
-
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-const validEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
@@ -23,69 +22,36 @@ const register = async (req, res, role = "customer") => {
       lastName,
     } = req.body;
 
-    if (!mobile) {
-      return res.json({
+    const errorMessage = validateUserInputs({
+      email,
+      mobile,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+    });
+    if (errorMessage) {
+      return res.status(400).json({
         success: false,
-        message: "Mobile number is required",
-      });
-    } else if (!email) {
-      return res.json({
-        success: false,
-        message: "Email is required",
-      });
-    } else if (validEmailRegex.test(email) === false) {
-      return res.json({
-        success: false,
-        message: "Please enter a valid email address",
-      });
-    } else if (!password) {
-      return res.json({
-        success: false,
-        message: "Password is required",
-      });
-    } else if (!firstName) {
-      return res.json({
-        success: false,
-        message: "First name is required",
-      });
-    } else if (!lastName) {
-      return res.json({
-        success: false,
-        message: "Last name is required",
+        message: errorMessage,
       });
     }
 
-    if (password !== confirmPassword) {
+    const existingUser2 = await User.findByMobile(mobile);
+    if (existingUser2) {
       return res.status(400).json({
         success: false,
-        message: "Passwords do not match",
+        message: "User already exists with this mobile",
       });
     }
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters long",
-      });
-    }
-
-    if (strongPasswordRegex.test(password) === false) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
-      });
-    }
-
 
     const existingUser = await User.findByEmailOrMobile(email);
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists with this email or mobile",
+        message: "User already exists with this email",
       });
     }
-
-    
 
     const user = await User.create({
       mobile,
@@ -93,17 +59,15 @@ const register = async (req, res, role = "customer") => {
       password,
       firstName,
       lastName,
-      role
+      role,
     });
     const token = generateToken(user.id);
-
-    console.log(user);
 
     const { password: _, ...userWithoutPassword } = user;
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: "Registration Successful",
       user: userWithoutPassword,
       token,
     });
@@ -119,95 +83,77 @@ const register = async (req, res, role = "customer") => {
 const sellerRegister = async (req, res, role = "seller") => {
   try {
     const {
-      mobile,
       email,
       password,
       confirmPassword,
       firstName,
       lastName,
+      nic,
+      address1,
+      address2,
+      city,
+      postalCode
     } = req.body;
 
-    if (!mobile) {
-      return res.json({
-        success: false,
-        message: "Mobile number is required",
-      });
-    } else if (!email) {
-      return res.json({
-        success: false,
-        message: "Email is required",
-      });
-    } else if (validEmailRegex.test(email) === false) {
-      return res.json({
-        success: false,
-        message: "Please enter a valid email address",
-      });
-    } else if (!password) {
-      return res.json({
-        success: false,
-        message: "Password is required",
-      });
-    } else if (!firstName) {
-      return res.json({
-        success: false,
-        message: "First name is required",
-      });
-    } else if (!lastName) {
-      return res.json({
-        success: false,
-        message: "Last name is required",
-      });
-    }
-
-    if (password !== confirmPassword) {
+    const errorMessage = validateSellerInputs({
+      email,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      nic,
+      address1,
+      address2,
+      city,
+      // district,
+      // province,
+      // country,
+      postalCode
+    });
+    console.log(errorMessage);
+    if (errorMessage) {
       return res.status(400).json({
         success: false,
-        message: "Passwords do not match",
-      });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters long",
+        message: errorMessage,
       });
     }
 
-    if (strongPasswordRegex.test(password) === false) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
-      });
-    }
-
-
-    const existingUser = await User.findByEmailOrMobile(email);
+    const existingUser = await User.findByEmailandRoleAndNIC(email, role, nic);
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists with this email or mobile",
+        message:
+          "Seller with the same email or NIC already exists",
       });
     }
 
-    
-
-    const user = await User.create({
-      mobile,
+    const user = await User.createSeller({
       email,
       password,
       firstName,
       lastName,
-      role
+      role,
+      nic
     });
     const token = generateToken(user.id);
-
-    console.log(user);
+    const userId = user.user_id;
+    
+    createAddressForSeller({
+      userId,
+      addressType : "seller_business",
+      line1 : address1,
+      line2 : address2,
+      postalCode,
+      cityId : city,
+      isDefault: true,
+      isActive: true
+    })
 
     const { password: _, ...userWithoutPassword } = user;
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: "Registration Successful",
       user: userWithoutPassword,
       token,
     });
@@ -275,4 +221,7 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { register, login };
+const sellerLogin = async (req, res) => {
+}
+
+module.exports = { register, login, sellerRegister, sellerLogin };

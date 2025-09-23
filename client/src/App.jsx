@@ -14,10 +14,10 @@ import ProductGrid from "./components/sections/ProductGrid";
 import ServicesSection from "./components/sections/ServicesSection";
 import Newsletter from "./components/sections/Newsletter";
 import MobileHome from "./components/pages/MobileHome";
-import CustomerLogin from "./components/ui/CustomerLogin";
-import CustomerRegistration from "./components/ui/CustomerRegistration";
-import ShoppingCart from "./components/pages/ShoppingCart";
-import ProductDetails from "./components/pages/ProductDetails";
+// import CustomerLogin from "./components/ui/CustomerLogin";
+// import CustomerRegistration from "./components/ui/CustomerRegistration";
+// import ShoppingCart from "./components/pages/ShoppingCart";
+// import ProductDetails from "./components/pages/ProductDetails";
 
 import api from "./api/axios";
 

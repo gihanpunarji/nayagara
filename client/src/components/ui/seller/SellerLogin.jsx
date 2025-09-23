@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2 } from 'lucide-react';
-import api from "../../api/axios";
+import api from "../../../api/axios";
 
-function CustomerLogin() {
+
+function SellerLogin() {
   const [emailOrMobile, setEmailOrMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -18,14 +19,9 @@ function CustomerLogin() {
     setError("");
 
     try {
-      setLoading(true);
-      const res = await api.post("/auth/login", { emailOrMobile, password });
-      if(res.data.success) {
-        // localStorage.setItem("token", res.data.token);
-        // navigate("/");
-        console.log(res.data.message);
-        
-      }
+      const res = await api.post("/auth/seller-login", { emailOrMobile, password });
+    //   localStorage.setItem("token", res.data.token);
+    //   navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please check your credentials.");
     } finally {
@@ -62,7 +58,7 @@ function CustomerLogin() {
               <h1 className="text-2xl font-heading font-bold text-primary-700">Nayagara.lk</h1>
             </div>
             <h2 className="text-xl font-bold text-gray-800 mb-2">Welcome Back!</h2>
-            <p className="text-gray-600">Sign in to your account to continue shopping</p>
+            <p className="text-gray-600">Sign in to your seller account to continue selling</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -190,4 +186,4 @@ function CustomerLogin() {
   );
 }
 
-export default CustomerLogin;
+export default SellerLogin;

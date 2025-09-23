@@ -58,7 +58,7 @@ function SellerRegistration() {
   const handleOtpVerify = async (e) => {
     e.preventDefault();
     await api.post("/auth/verify-otp", { mobile, email, verificationCode });
-    navigate("/");
+    navigate("/seller-login");
   };
 
   const handleAccountContinue = (e) => {
@@ -102,6 +102,8 @@ function SellerRegistration() {
         setSuccess(
           "Registration successful! Please verify your mobile number."
         );
+        const token = res.data.token;
+        localStorage.setItem("token", token);
         setStep(3);
       } else {
         setError(res.data.message || "An error occurred during registration");
@@ -540,7 +542,7 @@ function SellerRegistration() {
           <p>
             Already have an account?{" "}
             <a
-              href="#"
+              href="/seller-login"
               className="text-primary-600 hover:text-primary-700 font-medium"
             >
               Sign in here

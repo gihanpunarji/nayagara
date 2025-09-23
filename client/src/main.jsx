@@ -15,6 +15,7 @@ import Checkout from './components/pages/Checkout.jsx'
 import ShopPage from './components/pages/ShopPage.jsx'
 import PageWrapper from './components/layout/PageWrapper.jsx'
 import SellerRegistration from './components/ui/seller/SellerRegistration.jsx'
+import SellerLogin from './components/ui/seller/SellerLogin.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -26,6 +27,7 @@ createRoot(document.getElementById('root')).render(
         <Route path='/forgot-password' element={<ForgotPassword />} />
         <Route path='/reset-password' element={<ResetPassword />} />
         <Route path='/sell' element={<SellerRegistration />} />
+        <Route path="/seller-login" element={<SellerLogin />} />
         <Route path='/cart' element={
           <PageWrapper>
             <ShoppingCart />

@@ -31,6 +31,17 @@ class User {
     return rows[0];
   }
 
+  static async checkRole(email, role) {
+    const connection = getConnection();
+    const [
+      rows,
+    ] = await connection.execute(
+      "SELECT * FROM users WHERE user_email = ? OR user_type = ?",
+      [email, role]
+    );    
+    return rows[0];
+  }
+
   static async findByEmailOrMobile(identifier) {
     const connection = getConnection();
     const [
@@ -139,5 +150,13 @@ class User {
     return result.mobile_verification_code;
   }
 
+  static async comparePassword(plainPassword, hashedPassword) {
+    return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+
 }
+
+
+
 module.exports = User;

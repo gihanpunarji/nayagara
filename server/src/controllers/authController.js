@@ -166,7 +166,71 @@ const sellerRegister = async (req, res, role = "seller") => {
   }
 };
 
-const login = async (req, res) => {
+const login = async (req, res, role = "customer") => {
+  try {
+    const { emailOrMobile, password } = req.body;
+    console.log(emailOrMobile, password);
+
+    if (!emailOrMobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    } else if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
+
+    const user = await User.findByEmailOrMobile(emailOrMobile);
+    console.log(user);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const checkRole = await User.checkRole(emailOrMobile, role);
+    if (!checkRole) {
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized as a seller",
+      });
+    }
+
+    const isPasswordValid = await User.comparePassword(
+      password,
+      user.user_password
+    );
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = generateToken(user.id);
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: userWithoutPassword,
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const sellerLogin = async (req, res, role = "seller") => {
   try {
     const { emailOrMobile, password } = req.body;
 
@@ -179,6 +243,14 @@ const login = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Password is required",
+      });
+    }
+
+    const checkRole = await User.checkRole(emailOrMobile, role);
+    if (!checkRole) {
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized as a seller",
       });
     }
 
@@ -219,9 +291,6 @@ const login = async (req, res) => {
       message: "Internal server error",
     });
   }
-};
-
-const sellerLogin = async (req, res) => {
 }
 
 module.exports = { register, login, sellerRegister, sellerLogin };

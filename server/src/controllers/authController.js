@@ -1,7 +1,10 @@
 const e = require("express");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
-const { validateUserInputs, validateSellerInputs } = require("../utils/inputValidation");
+const {
+  validateUserInputs,
+  validateSellerInputs,
+} = require("../utils/inputValidation");
 const { createAddressForSeller } = require("../models/Address");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
@@ -92,7 +95,7 @@ const sellerRegister = async (req, res, role = "seller") => {
       address1,
       address2,
       city,
-      postalCode
+      postalCode,
     } = req.body;
 
     const errorMessage = validateSellerInputs({
@@ -108,7 +111,7 @@ const sellerRegister = async (req, res, role = "seller") => {
       // district,
       // province,
       // country,
-      postalCode
+      postalCode,
     });
     console.log(errorMessage);
     if (errorMessage) {
@@ -122,8 +125,7 @@ const sellerRegister = async (req, res, role = "seller") => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message:
-          "Seller with the same email or NIC already exists",
+        message: "Seller with the same email or NIC already exists",
       });
     }
 
@@ -133,21 +135,21 @@ const sellerRegister = async (req, res, role = "seller") => {
       firstName,
       lastName,
       role,
-      nic
+      nic,
     });
     const token = generateToken(user.id);
     const userId = user.user_id;
-    
+
     createAddressForSeller({
       userId,
-      addressType : "seller_business",
-      line1 : address1,
-      line2 : address2,
+      addressType: "seller_business",
+      line1: address1,
+      line2: address2,
       postalCode,
-      cityId : city,
+      cityId: city,
       isDefault: true,
-      isActive: true
-    })
+      isActive: true,
+    });
 
     const { password: _, ...userWithoutPassword } = user;
 
@@ -169,7 +171,6 @@ const sellerRegister = async (req, res, role = "seller") => {
 const login = async (req, res, role = "customer") => {
   try {
     const { emailOrMobile, password } = req.body;
-    console.log(emailOrMobile, password);
 
     if (!emailOrMobile) {
       return res.status(400).json({
@@ -184,7 +185,6 @@ const login = async (req, res, role = "customer") => {
     }
 
     const user = await User.findByEmailOrMobile(emailOrMobile);
-    console.log(user);
 
     if (!user) {
       return res.status(401).json({
@@ -197,7 +197,7 @@ const login = async (req, res, role = "customer") => {
     if (!checkRole) {
       return res.status(401).json({
         success: false,
-        message: "You are not authorized as a seller",
+        message: "Invalid credentials",
       });
     }
 
@@ -234,49 +234,35 @@ const sellerLogin = async (req, res, role = "seller") => {
   try {
     const { emailOrMobile, password } = req.body;
 
-    if (!emailOrMobile) {
+    if (!emailOrMobile || !password) {
       return res.status(400).json({
         success: false,
-        message: "Email is required",
-      });
-    } else if (!password) {
-      return res.status(400).json({
-        success: false,
-        message: "Password is required",
-      });
-    }
-
-    const checkRole = await User.checkRole(emailOrMobile, role);
-    if (!checkRole) {
-      return res.status(401).json({
-        success: false,
-        message: "You are not authorized as a seller",
+        message: "Email/mobile and password are required",
       });
     }
 
     const user = await User.findByEmailOrMobile(emailOrMobile);
-    console.log(user);
-
     if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
-    const isPasswordValid = await User.comparePassword(
-      password,
-      user.user_password
-    );
+    const isPasswordValid = await User.comparePassword(password, user.user_password);
     if (!isPasswordValid) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid credentials",
-      });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
+    }
+
+    const isMobileVerified = await User.isMobileVerified(emailOrMobile);
+    if (!isMobileVerified) {
+      return res.status(403).json({ success: false, message: "mnv" });
+    }
+
+    const checkRole = await User.checkRole(emailOrMobile, role);
+    if (!checkRole) {
+      return res.status(403).json({ success: false, message: "Unauthorized role" });
     }
 
     const token = generateToken(user.id);
-    const { password: _, ...userWithoutPassword } = user;
+    const { user_password, ...userWithoutPassword } = user;
 
     res.json({
       success: true,
@@ -286,11 +272,8 @@ const sellerLogin = async (req, res, role = "seller") => {
     });
   } catch (error) {
     console.error("Login error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
-}
+};
 
 module.exports = { register, login, sellerRegister, sellerLogin };

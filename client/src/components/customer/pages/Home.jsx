@@ -92,10 +92,11 @@ const App = () => {
   // Server connection check
   const checkServerConnection = async () => {
     try {
-      const res = api.get("/health");
+      const res = await api.get("/health");
       setServerStatus("Connected");
     } catch (error) {
       setServerStatus("Server not connected");
+      // Silently handle the error without console logs
     }
   };
 

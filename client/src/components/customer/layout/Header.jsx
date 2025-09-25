@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, User, Heart, ChevronDown, Phone, Globe, MapPin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Header = ({
   searchQuery,
@@ -13,6 +13,43 @@ const Header = ({
   quickLinks,
   serverStatus
 }) => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    const userData = localStorage.getItem('user');
+    const userRole = localStorage.getItem('user_role');
+
+    if (token && userData && userRole === 'customer') {
+      try {
+        const parsedUser = JSON.parse(userData);
+        setUser(parsedUser);
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        handleLogout();
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('user_role');
+    setUser(null);
+    setIsAuthenticated(false);
+    navigate('/');
+  };
+
+  const handleAccountClick = () => {
+    if (isAuthenticated) {
+      navigate('/account');
+    } else {
+      navigate('/login');
+    }
+  };
 
   return (
     <>
@@ -93,13 +130,20 @@ const Header = ({
                 <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
               </Link>
 
-              <Link to="/account" className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors">
+              <div
+                onClick={handleAccountClick}
+                className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors cursor-pointer"
+              >
                 <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 <div className="text-left">
-                  <p className="text-xs text-gray-500">Hello</p>
-                  <Link to="/login" className="text-sm font-medium text-gray-800">Sign In</Link>
+                  <p className="text-xs text-gray-500">
+                    {isAuthenticated ? 'Hello' : 'Hello'}
+                  </p>
+                  <div className="text-sm font-medium text-gray-800">
+                    {isAuthenticated ? user?.firstName || user?.first_name || 'User' : 'Sign In / Register'}
+                  </div>
                 </div>
-              </Link>
+              </div>
             </div>
           </div>
 

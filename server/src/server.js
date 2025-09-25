@@ -1,8 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { connectDB } = require('./config/database');
-const authRoutes = require('./routes/authRoutes');
+const { connectDB } = require('./modules/shared/config/database');
+
+const customerAuthRoutes = require('./modules/customer/routes/customerAuthRoutes');
+const sellerAuthRoutes = require('./modules/seller/routes/sellerAuthRoutes');
+const adminAuthRoutes = require('./modules/admin/routes/adminAuthRoutes');
+const commonRoutes = require('./modules/shared/routes/commonRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -14,7 +18,10 @@ app.use(cors({
 
 app.use(express.json());
 
-app.use('/api/auth', authRoutes);
+app.use('/api/customer/auth', customerAuthRoutes);
+app.use('/api/seller/auth', sellerAuthRoutes);
+app.use('/api/admin/auth', adminAuthRoutes);
+app.use('/api/common', commonRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running successfully!' });

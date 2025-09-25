@@ -140,7 +140,7 @@ const Header = ({
                 <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 <div className="text-left">
                   <p className="text-xs text-gray-500">Hello</p>
-                  <Link to="/login" className="text-sm font-medium text-gray-800">Sign In</Link>
+                  
                 </div>
               </Link>
 

@@ -1,18 +1,17 @@
 const e = require("express");
 const User = require("../models/User");
 const jwt = require("jsonwebtoken");
+const { validateUserInputs, validateSellerInputs } = require("../utils/inputValidation");
+const { createAddressForSeller } = require("../models/Address");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
-
-const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-const validEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
-const register = async (req, res) => {
+const register = async (req, res, role = "customer") => {
   try {
     const {
       mobile,
@@ -23,56 +22,26 @@ const register = async (req, res) => {
       lastName,
     } = req.body;
 
-    if (!mobile) {
-      return res.json({
+    const errorMessage = validateUserInputs({
+      email,
+      mobile,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+    });
+    if (errorMessage) {
+      return res.status(400).json({
         success: false,
-        message: "Mobile number is required",
-      });
-    } else if (!email) {
-      return res.json({
-        success: false,
-        message: "Email is required",
-      });
-    } else if (validEmailRegex.test(email) === false) {
-      return res.json({
-        success: false,
-        message: "Please enter a valid email address",
-      });
-    } else if (!password) {
-      return res.json({
-        success: false,
-        message: "Password is required",
-      });
-    } else if (!firstName) {
-      return res.json({
-        success: false,
-        message: "First name is required",
-      });
-    } else if (!lastName) {
-      return res.json({
-        success: false,
-        message: "Last name is required",
+        message: errorMessage,
       });
     }
 
-    if (password !== confirmPassword) {
+    const existingUser2 = await User.findByMobile(mobile);
+    if (existingUser2) {
       return res.status(400).json({
         success: false,
-        message: "Passwords do not match",
-      });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Password must be at least 6 characters long",
-      });
-    }
-
-    if (strongPasswordRegex.test(password) === false) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character",
+        message: "User already exists with this mobile",
       });
     }
 
@@ -80,7 +49,7 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "User already exists with this email or mobile",
+        message: "User already exists with this email",
       });
     }
 
@@ -90,16 +59,15 @@ const register = async (req, res) => {
       password,
       firstName,
       lastName,
+      role,
     });
     const token = generateToken(user.id);
-
-    console.log(user);
 
     const { password: _, ...userWithoutPassword } = user;
 
     res.status(201).json({
       success: true,
-      message: "User registered successfully",
+      message: "Registration Successful",
       user: userWithoutPassword,
       token,
     });
@@ -112,7 +80,157 @@ const register = async (req, res) => {
   }
 };
 
-const login = async (req, res) => {
+const sellerRegister = async (req, res, role = "seller") => {
+  try {
+    const {
+      email,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      nic,
+      address1,
+      address2,
+      city,
+      postalCode
+    } = req.body;
+
+    const errorMessage = validateSellerInputs({
+      email,
+      password,
+      confirmPassword,
+      firstName,
+      lastName,
+      nic,
+      address1,
+      address2,
+      city,
+      // district,
+      // province,
+      // country,
+      postalCode
+    });
+    console.log(errorMessage);
+    if (errorMessage) {
+      return res.status(400).json({
+        success: false,
+        message: errorMessage,
+      });
+    }
+
+    const existingUser = await User.findByEmailandRoleAndNIC(email, role, nic);
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Seller with the same email or NIC already exists",
+      });
+    }
+
+    const user = await User.createSeller({
+      email,
+      password,
+      firstName,
+      lastName,
+      role,
+      nic
+    });
+    const token = generateToken(user.id);
+    const userId = user.user_id;
+    
+    createAddressForSeller({
+      userId,
+      addressType : "seller_business",
+      line1 : address1,
+      line2 : address2,
+      postalCode,
+      cityId : city,
+      isDefault: true,
+      isActive: true
+    })
+
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.status(201).json({
+      success: true,
+      message: "Registration Successful",
+      user: userWithoutPassword,
+      token,
+    });
+  } catch (error) {
+    console.error("Registration error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const login = async (req, res, role = "customer") => {
+  try {
+    const { emailOrMobile, password } = req.body;
+    console.log(emailOrMobile, password);
+
+    if (!emailOrMobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    } else if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
+
+    const user = await User.findByEmailOrMobile(emailOrMobile);
+    console.log(user);
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const checkRole = await User.checkRole(emailOrMobile, role);
+    if (!checkRole) {
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized as a seller",
+      });
+    }
+
+    const isPasswordValid = await User.comparePassword(
+      password,
+      user.user_password
+    );
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const token = generateToken(user.id);
+    const { password: _, ...userWithoutPassword } = user;
+
+    res.json({
+      success: true,
+      message: "Login successful",
+      user: userWithoutPassword,
+      token,
+    });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const sellerLogin = async (req, res, role = "seller") => {
   try {
     const { emailOrMobile, password } = req.body;
 
@@ -125,6 +243,14 @@ const login = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Password is required",
+      });
+    }
+
+    const checkRole = await User.checkRole(emailOrMobile, role);
+    if (!checkRole) {
+      return res.status(401).json({
+        success: false,
+        message: "You are not authorized as a seller",
       });
     }
 
@@ -165,6 +291,6 @@ const login = async (req, res) => {
       message: "Internal server error",
     });
   }
-};
+}
 
-module.exports = { register, login };
+module.exports = { register, login, sellerRegister, sellerLogin };

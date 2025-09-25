@@ -1,8 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import {
+  Eye,
+  EyeOff,
+  Mail,
+  Phone,
+  Lock,
+  ArrowLeft,
+  Loader2,
+} from "lucide-react";
 import api from "../../../api/axios";
-
 
 function SellerLogin() {
   const [emailOrMobile, setEmailOrMobile] = useState("");
@@ -19,11 +26,26 @@ function SellerLogin() {
     setError("");
 
     try {
-      const res = await api.post("/auth/seller-login", { emailOrMobile, password });
-    //   localStorage.setItem("token", res.data.token);
-    //   navigate("/");
+      const res = await api.post("/auth/seller-login", {
+        emailOrMobile,
+        password,
+      });
+
+      if (res.data.success) {
+        localStorage.setItem("token", res.data.token);
+        localStorage.setItem("user", JSON.stringify(res.data.user));
+        navigate("/");
+        // navigate("/seller/account");
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
+      const msg = err.response?.data?.message;
+
+      if (msg === "mnv") {
+        navigate("/seller/verify-mobile", { state: { emailOrMobile } });
+        return;
+      }
+
+      setError(msg || "Login failed. Please check your credentials.");
     } finally {
       setLoading(false);
     }
@@ -32,15 +54,20 @@ function SellerLogin() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-secondary-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 opacity-30">
-        <div className="w-full h-full bg-primary-50 bg-opacity-50" style={{
-          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent('<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="#22c55e" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>')}")`,
-          backgroundRepeat: 'repeat'
-        }}></div>
+        <div
+          className="w-full h-full bg-primary-50 bg-opacity-50"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(
+              '<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="#22c55e" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>'
+            )}")`,
+            backgroundRepeat: "repeat",
+          }}
+        ></div>
       </div>
 
       <div className="w-full max-w-md relative">
         <button
-          onClick={() => navigate('/')}
+          onClick={() => navigate("/")}
           className="mb-6 flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -55,10 +82,16 @@ function SellerLogin() {
                 alt="Nayagara.lk"
                 className="w-10 h-10 object-contain"
               />
-              <h1 className="text-2xl font-heading font-bold text-primary-700">Nayagara.lk</h1>
+              <h1 className="text-2xl font-heading font-bold text-primary-700">
+                Nayagara.lk
+              </h1>
             </div>
-            <h2 className="text-xl font-bold text-gray-800 mb-2">Welcome Back!</h2>
-            <p className="text-gray-600">Sign in to your seller account to continue selling</p>
+            <h2 className="text-xl font-bold text-gray-800 mb-2">
+              Welcome Back!
+            </h2>
+            <p className="text-gray-600">
+              Sign in to your seller account to continue selling
+            </p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -68,7 +101,7 @@ function SellerLogin() {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  {emailOrMobile.includes('@') ? (
+                  {emailOrMobile.includes("@") ? (
                     <Mail className="h-5 w-5 text-gray-400" />
                   ) : (
                     <Phone className="h-5 w-5 text-gray-400" />
@@ -154,9 +187,9 @@ function SellerLogin() {
 
           <div className="text-center">
             <p className="text-gray-600">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
-                to="/register"
+                to="/sell"
                 className="text-primary-600 hover:text-primary-700 font-bold"
               >
                 Create Account
@@ -165,7 +198,9 @@ function SellerLogin() {
           </div>
 
           <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600 mb-2">Want to sell on Nayagara?</p>
+            <p className="text-sm text-gray-600 mb-2">
+              Want to sell on Nayagara?
+            </p>
             <Link
               to="/seller/register"
               className="text-sm text-secondary-600 hover:text-secondary-700 font-bold"
@@ -176,10 +211,14 @@ function SellerLogin() {
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500">
-          By signing in, you agree to our{' '}
-          <Link to="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
-          {' '}and{' '}
-          <Link to="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
+          By signing in, you agree to our{" "}
+          <Link to="/terms" className="text-primary-600 hover:underline">
+            Terms of Service
+          </Link>{" "}
+          and{" "}
+          <Link to="/privacy" className="text-primary-600 hover:underline">
+            Privacy Policy
+          </Link>
         </div>
       </div>
     </div>

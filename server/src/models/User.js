@@ -12,34 +12,36 @@ class User {
     return rows[0];
   }
 
-  static async findByMobile(mobile) {
+  static async findById(id) {
     const connection = getConnection();
     const [
       rows,
-    ] = await connection.execute("SELECT * FROM users WHERE user_mobile = ?", [
-      mobile,
-    ]);
+    ] = await connection.execute("SELECT * FROM users WHERE user_id = ?", [id]);
     return rows[0];
   }
 
-  static async findById(id) {
-    const connection = getConnection();
-    const [rows] = await connection.execute(
-      "SELECT * FROM users WHERE user_id = ?",
-      [id]
-    );
-    return rows[0];
-  }
-
-  static async checkRole(email, role) {
+  static async checkRole(emailOrMobile, role) {
     const connection = getConnection();
     const [
       rows,
     ] = await connection.execute(
-      "SELECT * FROM users WHERE user_email = ? OR user_type = ?",
-      [email, role]
-    );    
+      "SELECT * FROM users WHERE (user_email = ? OR user_mobile = ?) AND user_type = ?",
+      [emailOrMobile, emailOrMobile, role]
+    );
     return rows[0];
+  }
+
+  static async isMobileVerified(identifier) {
+    const connection = getConnection();
+    const [
+      result,
+    ] = await connection.execute(
+      "SELECT mobile_verified FROM users WHERE user_email = ? OR user_mobile = ?",
+      [identifier, identifier]
+    );
+
+    if (result.length === 0) return false;
+    return result[0].mobile_verified === 1;
   }
 
   static async findByEmailOrMobile(identifier) {
@@ -49,7 +51,7 @@ class User {
     ] = await connection.execute(
       "SELECT * FROM users WHERE user_email = ? OR user_mobile = ?",
       [identifier, identifier]
-    );    
+    );
     return rows[0];
   }
 
@@ -60,28 +62,25 @@ class User {
     ] = await connection.execute(
       "SELECT * FROM users WHERE (user_email = ? OR nic = ?) AND user_type = ?",
       [email, nic, role]
-    );    
+    );
     return rows[0];
   }
   static async findByMobile(mobile) {
     const connection = getConnection();
     const [
       rows,
-    ] = await connection.execute(
-      "SELECT * FROM users WHERE user_mobile = ?",
-      [mobile]
-    );    
+    ] = await connection.execute("SELECT * FROM users WHERE user_mobile = ?", [
+      mobile,
+    ]);
     return rows[0];
   }
 
   static async findByNIC(identifier) {
     const connection = getConnection();
-    const [
-      rows,
-    ] = await connection.execute(
+    const [rows] = await connection.execute(
       "SELECT * FROM users WHERE nic = ?",
       [identifier]
-    );    
+    );
     return rows[0];
   }
 
@@ -93,13 +92,36 @@ class User {
       result,
     ] = await connection.execute(
       "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [email, hashedPassword, firstName, lastName, mobile, null, role, 'active', 0, 0, null, new Date(), new Date(), new Date(), null]
+      [
+        email,
+        hashedPassword,
+        firstName,
+        lastName,
+        mobile,
+        null,
+        role,
+        "active",
+        0,
+        0,
+        null,
+        new Date(),
+        new Date(),
+        new Date(),
+        null,
+      ]
     );
 
     return this.findById(result.insertId);
   }
 
-  static async createSeller({ email, password, firstName, lastName, role, nic }) {
+  static async createSeller({
+    email,
+    password,
+    firstName,
+    lastName,
+    role,
+    nic,
+  }) {
     const connection = getConnection();
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -107,16 +129,34 @@ class User {
       result,
     ] = await connection.execute(
       "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [email, hashedPassword, firstName, lastName, null, nic, role, 'pending_verification', 0, 0, null, new Date(), new Date(), new Date(), null]
+      [
+        email,
+        hashedPassword,
+        firstName,
+        lastName,
+        null,
+        nic,
+        role,
+        "pending_verification",
+        0,
+        0,
+        null,
+        new Date(),
+        new Date(),
+        new Date(),
+        null,
+      ]
     );
 
     return this.findById(result.insertId);
   }
 
-  static async verifyOtp({mobile, email, verificationCode}) {
+  static async verifyOtp({ mobile, email, verificationCode }) {
     const connection = getConnection();
-    
-    const [result] = await connection.execute(
+
+    const [
+      result,
+    ] = await connection.execute(
       "SELECT * FROM users WHERE user_email = ? AND user_mobile = ? AND mobile_verification_code = ?",
       [email, mobile, verificationCode]
     );
@@ -125,7 +165,9 @@ class User {
       throw new Error("Invalid verification details");
     }
 
-    const [updateResult] = await connection.execute(
+    const [
+      updateResult,
+    ] = await connection.execute(
       "UPDATE users SET mobile_verified = ?, mobile_verification_code = ? WHERE user_email = ? AND user_mobile = ?",
       [1, null, email, mobile]
     );
@@ -133,7 +175,6 @@ class User {
 
     return updateResult;
   }
-
 
   static async updateSellerMobile({ mobile, email, verificationCode }) {
     const connection = getConnection();
@@ -153,10 +194,6 @@ class User {
   static async comparePassword(plainPassword, hashedPassword) {
     return bcrypt.compare(plainPassword, hashedPassword);
   }
-
-
 }
-
-
 
 module.exports = User;

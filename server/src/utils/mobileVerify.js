@@ -3,6 +3,7 @@ const User = require("../models/User");
 const validMobileRegex = /^94[1-9][0-9]{8}$/;
 
 const mobile = async (req, res) => {
+  console.log("Mobile verification request received");
   try {
     const { mobile, email } = req.body;
     if (!mobile) {

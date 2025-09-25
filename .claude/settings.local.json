@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "mcp__ide__getDiagnostics",
-      "WebFetch(domain:deezevenclothing.com)"
+      "WebFetch(domain:deezevenclothing.com)",
+      "Bash(npm run dev:*)",
+      "Bash(find:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []

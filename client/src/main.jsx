@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Route, Routes } from 'react-router-dom'
 import './index.css'
 
-// Customer Components - New organized structure
+// Customer Components
 import Home from './components/customer/pages/Home.jsx'
 import CustomerLogin from './components/customer/auth/Login.jsx'
 import CustomerRegister from './components/customer/auth/Register.jsx'
@@ -18,10 +18,11 @@ import ShopPage from './components/customer/pages/ShopPage.jsx'
 import AdvancedSearch from './components/customer/pages/AdvancedSearch.jsx'
 import PageWrapper from './components/customer/layout/PageWrapper.jsx'
 
-// Seller Components - Keep dev branch seller components
-import SellerRegistration from './components/ui/seller/SellerRegistration.jsx'
-import SellerLogin from './components/ui/seller/SellerLogin.jsx'
-import SellerMobileVerify from './components/ui/seller/SellerMobileVerify.jsx'
+// Seller Components
+import SellerLogin from './components/seller/auth/Login.jsx'
+import SellerRegister from './components/seller/auth/Register.jsx'
+import SellerMobileVerify from './components/seller/auth/MobileVerify.jsx'
+import SellerDashboard from './components/seller/pages/Dashboard.jsx'
 
 // Admin Components
 import AdminLogin from './components/admin/auth/Login.jsx'
@@ -45,10 +46,11 @@ createRoot(document.getElementById('root')).render(
         <Route path='/reset-password' element={<ResetPassword />} />
 
         {/* Seller Routes */}
-        <Route path='/sell' element={<SellerRegistration />} />
+        <Route path='/sell' element={<SellerRegister />} />
         <Route path="/seller-login" element={<SellerLogin />} />
+        <Route path='/seller/register' element={<SellerRegister />} />
         <Route path='/seller/verify-mobile' element={<SellerMobileVerify />} />
-        <Route path='/seller/register' element={<SellerRegistration />} />
+        <Route path='/seller/dashboard' element={<SellerDashboard />} />
         <Route path='/cart' element={
           <PageWrapper>
             <ShoppingCart />
@@ -84,10 +86,6 @@ createRoot(document.getElementById('root')).render(
             <Checkout />
           </PageWrapper>
         } />
-
-        {/* Seller Routes */}
-        <Route path='/seller/login' element={<SellerLogin />} />
-        <Route path='/seller/dashboard' element={<SellerDashboard />} />
 
         {/* Admin Routes */}
         <Route path='/admin/login' element={<AdminLogin />} />

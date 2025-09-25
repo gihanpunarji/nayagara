@@ -20,9 +20,7 @@ import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
 
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
-import SellerRegister from "./components/seller/auth/SellerRegistration.jsx";
 import SellerMobileVerify from "./components/seller/auth/SellerMobileVerify.jsx";
-import SellerDashboard from "./components/seller/pages/Dashboard.jsx";
 
 // Admin Components
 import AdminLogin from "./components/admin/auth/Login.jsx";
@@ -34,6 +32,7 @@ import ServerError from './components/shared/error/ServerError.jsx'
 import NetworkError from './components/shared/error/NetworkError.jsx'
 import AccessDenied from './components/shared/error/AccessDenied.jsx'
 import Dashboard from './components/seller/pages/Dashboard.jsx'
+import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

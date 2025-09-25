@@ -6,6 +6,10 @@ const {
   validateSellerInputs,
 } = require("../utils/inputValidation");
 const { createAddressForSeller } = require("../models/Address");
+const crypto = require("crypto");
+const nodeMailer = require("nodemailer");
+const bcrypt = require("bcrypt");
+const { getConnection } = require("../config/database");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
@@ -243,12 +247,19 @@ const sellerLogin = async (req, res, role = "seller") => {
 
     const user = await User.findByEmailOrMobile(emailOrMobile);
     if (!user) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
-    const isPasswordValid = await User.comparePassword(password, user.user_password);
+    const isPasswordValid = await User.comparePassword(
+      password,
+      user.user_password
+    );
     if (!isPasswordValid) {
-      return res.status(401).json({ success: false, message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ success: false, message: "Invalid credentials" });
     }
 
     const isMobileVerified = await User.isMobileVerified(emailOrMobile);
@@ -258,7 +269,9 @@ const sellerLogin = async (req, res, role = "seller") => {
 
     const checkRole = await User.checkRole(emailOrMobile, role);
     if (!checkRole) {
-      return res.status(403).json({ success: false, message: "Unauthorized role" });
+      return res
+        .status(403)
+        .json({ success: false, message: "Unauthorized role" });
     }
 
     const token = generateToken(user.id);
@@ -276,4 +289,572 @@ const sellerLogin = async (req, res, role = "seller") => {
   }
 };
 
-module.exports = { register, login, sellerRegister, sellerLogin };
+const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
+
+    const user = await User.findByEmail(email);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetTokenExpires = Date.now() + 15 * 60 * 1000; // 15 minutes;
+
+    const updateResult = await User.updateToken(
+      resetToken,
+      resetTokenExpires,
+      email
+    );
+    if (updateResult.affectedRows === 0) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update token",
+      });
+    }
+    const resetLink = `${process.env.FRONT_END_API}/reset-password?token=${resetToken}&email=${encodeURIComponent(
+      email
+    )}`;
+    console.log("Password reset link:", resetLink);
+
+    const transporter = nodeMailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"Support" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Password Reset Request",
+      html: `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Your Nayagara Password</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333333;
+            background-color: #f8fffe;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            box-shadow: 0 10px 25px rgba(34, 197, 94, 0.1);
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            padding: 40px 30px;
+            text-align: center;
+            color: white;
+        }
+        
+        .logo {
+            width: 60px;
+            height: 60px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .logo-text {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .content {
+            padding: 40px 30px;
+        }
+        
+        .icon-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .lock-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #fef3c7, #fed7aa);
+            border: 3px solid #f59e0b;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        
+        .lock-icon::before {
+            content: "🔒";
+            font-size: 32px;
+        }
+        
+        .greeting {
+            font-size: 18px;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 20px;
+        }
+        
+        .message {
+            font-size: 16px;
+            color: #4b5563;
+            margin-bottom: 25px;
+            line-height: 1.7;
+        }
+        
+        .reset-button-container {
+            text-align: center;
+            margin: 35px 0;
+            padding: 30px;
+            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+            border-radius: 16px;
+            border: 2px solid #bbf7d0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .reset-button-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #22c55e, #16a34a, #10b981);
+        }
+        
+        .reset-button-label {
+            font-size: 14px;
+            font-weight: 600;
+            color: #059669;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+        
+        .reset-button {
+            display: inline-block;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            text-decoration: none;
+            padding: 18px 40px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 8px 20px rgba(34, 197, 94, 0.3);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+        
+        .reset-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 25px rgba(34, 197, 94, 0.4);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .expiry-notice {
+            background-color: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 20px;
+            margin: 30px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .expiry-notice .icon {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            background-color: #f59e0b;
+            border-radius: 50%;
+            text-align: center;
+            color: white;
+            font-weight: bold;
+            font-size: 14px;
+            line-height: 24px;
+            margin-right: 12px;
+            vertical-align: middle;
+        }
+        
+        .expiry-notice .icon::before {
+            content: "⏰";
+            font-size: 12px;
+        }
+        
+        .expiry-notice p {
+            display: inline-block;
+            margin: 0;
+            font-size: 15px;
+            color: #92400e;
+            font-weight: 600;
+            vertical-align: middle;
+            line-height: 1.5;
+        }
+        
+        .security-tips {
+            background-color: #f8fafc;
+            border-radius: 12px;
+            padding: 25px;
+            margin: 30px 0;
+        }
+        
+        .security-tips h3 {
+            color: #1e293b;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+        
+        .security-tips h3::before {
+            content: "🛡️";
+            margin-right: 10px;
+            font-size: 20px;
+        }
+        
+        .security-tips ul {
+            padding-left: 20px;
+            color: #475569;
+            font-size: 15px;
+        }
+        
+        .security-tips li {
+            margin-bottom: 8px;
+        }
+        
+        .no-request-section {
+            text-align: center;
+            margin: 35px 0;
+            padding: 25px;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border-radius: 12px;
+            border: 2px solid #fecaca;
+        }
+        
+        .no-request-section h3 {
+            color: #991b1b;
+            font-size: 16px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .no-request-section p {
+            color: #7f1d1d;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .support-link {
+            display: inline-block;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .support-link:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 15px rgba(220, 38, 38, 0.3);
+        }
+        
+        .footer {
+            background-color: #1f2937;
+            color: #d1d5db;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            margin-bottom: 20px;
+        }
+        
+        .footer h4 {
+            color: #f9fafb;
+            font-size: 18px;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .footer p {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+        
+        .social-links {
+            margin: 20px 0;
+        }
+        
+        .social-links a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background-color: #374151;
+            color: #d1d5db;
+            text-decoration: none;
+            border-radius: 50%;
+            margin: 0 8px;
+            line-height: 40px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .social-links a:hover {
+            background-color: #22c55e;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .copyright {
+            font-size: 12px;
+            color: #9ca3af;
+            border-top: 1px solid #374151;
+            padding-top: 20px;
+        }
+        
+        .divider {
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22c55e, transparent);
+            margin: 30px 0;
+            border-radius: 1px;
+        }
+        
+        /* Alternative link styling for email clients that don't support buttons */
+        .fallback-link {
+            color: #22c55e;
+            font-weight: 600;
+            text-decoration: underline;
+            word-break: break-all;
+            font-size: 14px;
+            margin-top: 15px;
+            display: block;
+            padding: 15px;
+            background-color: #f9fafb;
+            border-radius: 8px;
+            border: 1px solid #e5e7eb;
+        }
+        
+        /* Mobile Responsive */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                margin: 0;
+                border-radius: 0;
+            }
+            
+            .header, .content, .footer {
+                padding: 30px 20px;
+            }
+            
+            .reset-button {
+                padding: 16px 30px;
+                font-size: 14px;
+            }
+            
+            .header h1 {
+                font-size: 24px;
+            }
+            
+            .lock-icon {
+                width: 60px;
+                height: 60px;
+            }
+            
+            .lock-icon::before {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <span class="logo-text">N</span>
+            </div>
+            <h1>Password Reset Request</h1>
+            <p>Secure your Nayagara account</p>
+        </div>
+        
+        <!-- Content -->
+        <div class="content">
+            <!-- Lock Icon -->
+            <div class="icon-section">
+                <div class="lock-icon"></div>
+            </div>
+            
+            <div class="greeting">Hello there!</div>
+            
+            <div class="message">
+                We received a request to reset the password for your <strong>Nayagara</strong> account. If you made this request, click the button below to create a new password.
+            </div>
+            
+            <!-- Reset Button -->
+            <div class="reset-button-container">
+                <div class="reset-button-label">Reset Your Password</div>
+                <a href="${resetLink}" class="reset-button">Reset Password</a>
+                
+                <!-- Fallback link for email clients that don't support buttons -->
+                <div class="fallback-link">
+                    If the button doesn't work, copy and paste this link into your browser:<br>
+                    ${resetLink}
+                </div>
+            </div>
+            
+            <!-- Expiry Notice -->
+            <div class="expiry-notice">
+                <span class="icon"></span>
+                <p><strong>Important:</strong> This password reset link will expire in 15 minutes for your security.</p>
+            </div>
+            
+            <div class="divider"></div>
+            
+            <!-- Security Tips -->
+            <div class="security-tips">
+                <h3>Security Tips</h3>
+                <ul>
+                    <li>Create a strong password with at least 8 characters</li>
+                    <li>Use a combination of letters, numbers, and special characters</li>
+                    <li>Don't reuse passwords from other accounts</li>
+                    <li>Consider using a password manager</li>
+                </ul>
+            </div>
+            
+            <!-- No Request Section -->
+            <div class="no-request-section">
+                <h3>Didn't Request This?</h3>
+                <p>If you didn't request a password reset, please ignore this email or contact our support team immediately.</p>
+                <a href="mailto:support@nayagara.com" class="support-link">Contact Support</a>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-content">
+                <h4>Nayagara</h4>
+                <p>Your trusted online marketplace</p>
+                <p>📧 support@nayagara.com</p>
+                <p>📞 +94 11 234 5678</p>
+            </div>
+            
+            <div class="social-links">
+                <a href="#">f</a>
+                <a href="#">t</a>
+                <a href="#">i</a>
+                <a href="#">y</a>
+            </div>
+            
+            <div class="copyright">
+                <p>&copy; 2024 Nayagara. All rights reserved.</p>
+                <p>This email was sent because a password reset was requested for your account.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>`,
+    });
+    res.status(200).json({
+      success: true,
+      message: "Password reset link sent to your email",
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const { urlToken, password } = req.body;
+    console.log("token " + urlToken, "Password "+password);
+    
+
+    if (!urlToken || !password) {
+      return res.status(400).json({ success: false, message: "Token and new password are required" });
+    }
+
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      "SELECT user_email, reset_token_expires FROM users WHERE reset_token = ?",
+      [urlToken]
+    );
+
+    if (rows.length === 0) {
+      return res.status(400).json({ success: false, message: "Invalid urlToken" });
+    }
+
+    const user = rows[0];
+
+    if (user.reset_token_expire < Date.now()) {
+      return res.status(400).json({ success: false, message: "Token has expired" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await connection.execute(
+      "UPDATE users SET user_password = ?, reset_token = NULL, reset_token_expires = NULL WHERE user_email = ?",
+      [hashedPassword, user.user_email]
+    );
+
+    res.json({ success: true, message: "Password reset successful" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  sellerRegister,
+  sellerLogin,
+  forgotPassword,
+  resetPassword
+};

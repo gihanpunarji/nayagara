@@ -1,7 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Star, Heart, ShoppingCart, MapPin, Truck, Grid, List, Filter } from 'lucide-react';
 
 const ProductGrid = () => {
+  const [displayedProducts, setDisplayedProducts] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const observerRef = useRef();
+
   const featuredProducts = [
     { 
       id: 1, 
@@ -80,6 +85,54 @@ const ProductGrid = () => {
     }
   ];
 
+  // Load initial products
+  useEffect(() => {
+    setDisplayedProducts(featuredProducts.slice(0, 3));
+  }, []);
+
+  // Load more products function
+  const loadMoreProducts = () => {
+    if (loading || !hasMore) return;
+
+    setLoading(true);
+
+    // Simulate API call delay
+    setTimeout(() => {
+      const currentLength = displayedProducts.length;
+      const nextProducts = featuredProducts.slice(currentLength, currentLength + 3);
+
+      if (nextProducts.length === 0) {
+        setHasMore(false);
+      } else {
+        setDisplayedProducts(prev => [...prev, ...nextProducts]);
+      }
+
+      setLoading(false);
+    }, 1000);
+  };
+
+  // Intersection Observer for infinite scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          loadMoreProducts();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (observerRef.current) {
+      observer.observe(observerRef.current);
+    }
+
+    return () => {
+      if (observerRef.current) {
+        observer.unobserve(observerRef.current);
+      }
+    };
+  }, [displayedProducts, hasMore, loading]);
+
   const getBadgeColor = (badge) => {
     switch (badge) {
       case 'Best Seller': return 'bg-accent-orange';
@@ -110,10 +163,10 @@ const ProductGrid = () => {
 
       {/* Desktop Grid */}
       <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {featuredProducts.map((product) => (
+        {displayedProducts.map((product) => (
           <div
             key={product.id}
-            className="group border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-green-lg transition-all duration-300 cursor-pointer bg-white animate-slide-up"
+            className="group border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 transition-all duration-500 cursor-pointer bg-white animate-slide-up transform-gpu"
           >
             <div className="relative overflow-hidden">
               <img
@@ -136,17 +189,12 @@ const ProductGrid = () => {
                 )}
               </div>
 
-              {/* Heart Icon */}
-              <button className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors opacity-0 group-hover:opacity-100">
+              {/* Heart Icon - Commented out as wishlist functionality is not used */}
+              {/* <button className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors opacity-0 group-hover:opacity-100">
                 <Heart className="w-4 h-4 text-gray-600 hover:text-error" />
-              </button>
+              </button> */}
 
-              {/* Quick View */}
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <button className="w-full bg-white text-gray-800 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors">
-                  Quick View
-                </button>
-              </div>
+              {/* Quick View - Removed as requested */}
             </div>
 
             <div className="p-4">
@@ -200,10 +248,10 @@ const ProductGrid = () => {
       {/* Mobile Horizontal Scroll */}
       <div className="md:hidden">
         <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4">
-          {featuredProducts.map((product) => (
+          {displayedProducts.map((product) => (
             <div
               key={product.id}
-              className="group border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-green-lg transition-all duration-300 cursor-pointer bg-white animate-slide-up flex-shrink-0 w-64"
+              className="group border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 transition-all duration-500 cursor-pointer bg-white animate-slide-up flex-shrink-0 w-64 transform-gpu"
             >
               <div className="relative overflow-hidden">
                 <img
@@ -226,17 +274,12 @@ const ProductGrid = () => {
                   )}
                 </div>
 
-                {/* Heart Icon */}
-                <button className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors opacity-0 group-hover:opacity-100">
+                {/* Heart Icon - Commented out as wishlist functionality is not used */}
+                {/* <button className="absolute top-3 right-3 w-8 h-8 bg-white/80 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors opacity-0 group-hover:opacity-100">
                   <Heart className="w-4 h-4 text-gray-600 hover:text-error" />
-                </button>
+                </button> */}
 
-                {/* Quick View */}
-                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <button className="w-full bg-white text-gray-800 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors">
-                    Quick View
-                  </button>
-                </div>
+                {/* Quick View - Removed as requested */}
               </div>
 
               <div className="p-4">
@@ -288,11 +331,17 @@ const ProductGrid = () => {
         </div>
       </div>
 
-      {/* Load More */}
-      <div className="text-center mt-8">
-        <button className="px-8 py-3 border-2 border-primary-500 text-primary-600 rounded-xl hover:bg-primary-500 hover:text-white transition-all duration-300 font-bold shadow-green">
-          Load More Products
-        </button>
+      {/* Infinite Scroll Trigger */}
+      <div ref={observerRef} className="flex justify-center items-center py-8">
+        {loading && (
+          <div className="flex items-center space-x-2 text-primary-600">
+            <div className="animate-spin rounded-full h-6 w-6 border-2 border-primary-600 border-t-transparent"></div>
+            <span>Loading more products...</span>
+          </div>
+        )}
+        {!hasMore && displayedProducts.length > 0 && (
+          <p className="text-gray-500">No more products to load</p>
+        )}
       </div>
     </div>
   );

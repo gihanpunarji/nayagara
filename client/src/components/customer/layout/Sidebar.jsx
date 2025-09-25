@@ -1,8 +1,60 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
 
 const Sidebar = ({ mainCategories }) => {
   const [hoveredCategory, setHoveredCategory] = useState(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+  const categoryRefs = useRef([]);
+  const dropdownRef = useRef(null);
+  const hoverTimeoutRef = useRef(null);
+
+  const handleMouseEnter = (idx) => {
+    // Clear any existing timeout
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+
+    setHoveredCategory(idx);
+
+    if (categoryRefs.current[idx]) {
+      const rect = categoryRefs.current[idx].getBoundingClientRect();
+      const dropdownWidth = 320; // Width of dropdown (w-80 = 320px)
+      const dropdownHeight = 300; // Approximate height of dropdown
+
+      let top = rect.top + window.scrollY;
+      let left = rect.right + 16;
+
+      // Adjust if dropdown would go off-screen vertically
+      if (top + dropdownHeight > window.innerHeight + window.scrollY) {
+        top = window.innerHeight + window.scrollY - dropdownHeight - 20;
+      }
+
+      // Adjust if dropdown would go off-screen horizontally
+      if (left + dropdownWidth > window.innerWidth) {
+        left = rect.left - dropdownWidth - 16; // Position to the left instead
+      }
+
+      setDropdownPosition({ top, left });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    // Add a slight delay before hiding to allow moving to dropdown
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCategory(null);
+    }, 200);
+  };
+
+  const handleDropdownEnter = () => {
+    // Clear the timeout when entering dropdown
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+  };
+
+  const handleDropdownLeave = () => {
+    setHoveredCategory(null);
+  };
 
   return (
     <>
@@ -15,8 +67,9 @@ const Sidebar = ({ mainCategories }) => {
               <div
                 key={idx}
                 className="relative"
-                onMouseEnter={() => setHoveredCategory(idx)}
-                onMouseLeave={() => setHoveredCategory(null)}
+                ref={el => categoryRefs.current[idx] = el}
+                onMouseEnter={() => handleMouseEnter(idx)}
+                onMouseLeave={handleMouseLeave}
               >
                 <div className="flex items-center justify-between p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors">
                   <div className="flex items-center space-x-3">
@@ -31,17 +84,18 @@ const Sidebar = ({ mainCategories }) => {
         </div>
       </div>
 
-      {/* Category Dropdown - Fixed Positioning */}
+      {/* Category Dropdown - Dynamic Positioning */}
       {hoveredCategory !== null && (
         <div
           className="fixed w-80 bg-white border border-gray-200 rounded-lg shadow-2xl p-6"
           style={{
-            top: '200px',
-            left: '280px',
+            top: `${dropdownPosition.top}px`,
+            left: `${dropdownPosition.left}px`,
             zIndex: 9999999
           }}
-          onMouseEnter={() => setHoveredCategory(hoveredCategory)}
-          onMouseLeave={() => setHoveredCategory(null)}
+          ref={dropdownRef}
+          onMouseEnter={handleDropdownEnter}
+          onMouseLeave={handleDropdownLeave}
         >
           <h4 className="font-bold text-gray-800 mb-4 text-lg">{mainCategories[hoveredCategory].name}</h4>
           <div className="grid grid-cols-2 gap-3 mb-4">

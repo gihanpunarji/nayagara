@@ -145,6 +145,7 @@ function CustomerLogin() {
             <div className="flex justify-end">
               <Link
                 to="/forgot-password"
+                state={{ from: "login" }}
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
                 Forgot Password?

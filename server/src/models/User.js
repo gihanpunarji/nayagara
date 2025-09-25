@@ -6,7 +6,7 @@ class User {
     const connection = getConnection();
     const [
       rows,
-    ] = await connection.execute("SELECT * FROM users WHERE email = ?", [
+    ] = await connection.execute("SELECT * FROM users WHERE user_email = ?", [
       email,
     ]);
     return rows[0];
@@ -43,6 +43,7 @@ class User {
     if (result.length === 0) return false;
     return result[0].mobile_verified === 1;
   }
+  
 
   static async findByEmailOrMobile(identifier) {
     const connection = getConnection();
@@ -91,7 +92,7 @@ class User {
     const [
       result,
     ] = await connection.execute(
-      "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code, reset_token, reset_token_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         email,
         hashedPassword,
@@ -108,6 +109,8 @@ class User {
         new Date(),
         new Date(),
         null,
+        null,
+        null
       ]
     );
 
@@ -128,7 +131,7 @@ class User {
     const [
       result,
     ] = await connection.execute(
-      "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code, reset_token, reset_token_expires) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         email,
         hashedPassword,
@@ -145,6 +148,8 @@ class User {
         new Date(),
         new Date(),
         null,
+        null,
+        null
       ]
     );
 
@@ -193,6 +198,17 @@ class User {
 
   static async comparePassword(plainPassword, hashedPassword) {
     return bcrypt.compare(plainPassword, hashedPassword);
+  }
+
+  static async updateToken(resetToken, resetTokenExpires, email) {
+    const connection = getConnection();
+    const [
+      result,
+    ] = await connection.execute(
+      "UPDATE users SET reset_token = ?, reset_token_expires = ? WHERE user_email = ?",
+      [resetToken, resetTokenExpires, email]
+    );
+    return result;
   }
 }
 

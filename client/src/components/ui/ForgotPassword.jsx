@@ -1,6 +1,14 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { Mail, ArrowLeft, Loader2, CheckCircle, AlertCircle, Shield, Clock } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
+import {
+  Mail,
+  ArrowLeft,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
+  Shield,
+  Clock,
+} from "lucide-react";
 import api from "../../api/axios";
 
 function ForgotPassword() {
@@ -11,9 +19,14 @@ function ForgotPassword() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [canResend, setCanResend] = useState(false);
 
+  const location = useLocation();
   const navigate = useNavigate();
 
-  React.useEffect(() => {
+  if (location.state?.from !== "login") {
+    return <Navigate to="/" replace />;
+  }
+
+  useEffect(() => {
     if (step === "sent" && timeLeft > 0) {
       const timer = setTimeout(() => setTimeLeft(timeLeft - 1), 1000);
       return () => clearTimeout(timer);
@@ -25,7 +38,7 @@ function ForgotPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!email || !email.includes('@')) {
+    if (!email || !email.includes("@")) {
       setError("Please enter a valid email address");
       return;
     }
@@ -39,7 +52,10 @@ function ForgotPassword() {
       setTimeLeft(60);
       setCanResend(false);
     } catch (err) {
-      setError(err.response?.data?.message || "Failed to send reset email. Please try again.");
+      setError(
+        err.response?.data?.message ||
+          "Failed to send reset email. Please try again."
+      );
       setStep("error");
     } finally {
       setLoading(false);
@@ -68,21 +84,35 @@ function ForgotPassword() {
     <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 flex items-center justify-center p-4 relative overflow-hidden">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-20 left-20 w-2 h-2 bg-primary-300 rounded-full animate-bounce-gentle opacity-60"></div>
-        <div className="absolute top-40 right-32 w-1.5 h-1.5 bg-secondary-400 rounded-full animate-bounce-gentle opacity-40" style={{ animationDelay: '0.5s' }}></div>
-        <div className="absolute bottom-32 left-40 w-3 h-3 bg-primary-200 rounded-full animate-bounce-gentle opacity-50" style={{ animationDelay: '1s' }}></div>
-        <div className="absolute bottom-20 right-20 w-2.5 h-2.5 bg-secondary-300 rounded-full animate-bounce-gentle opacity-30" style={{ animationDelay: '1.5s' }}></div>
+        <div
+          className="absolute top-40 right-32 w-1.5 h-1.5 bg-secondary-400 rounded-full animate-bounce-gentle opacity-40"
+          style={{ animationDelay: "0.5s" }}
+        ></div>
+        <div
+          className="absolute bottom-32 left-40 w-3 h-3 bg-primary-200 rounded-full animate-bounce-gentle opacity-50"
+          style={{ animationDelay: "1s" }}
+        ></div>
+        <div
+          className="absolute bottom-20 right-20 w-2.5 h-2.5 bg-secondary-300 rounded-full animate-bounce-gentle opacity-30"
+          style={{ animationDelay: "1.5s" }}
+        ></div>
 
         <div className="absolute -top-40 -left-40 w-80 h-80 bg-gradient-to-r from-primary-300 to-secondary-300 rounded-full opacity-20 blur-3xl"></div>
         <div className="absolute -bottom-40 -right-40 w-96 h-96 bg-gradient-to-r from-secondary-200 to-primary-200 rounded-full opacity-15 blur-3xl"></div>
 
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: `url("data:image/svg+xml,${encodeURIComponent('<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#22c55e" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(#grid)"/></svg>')}")`,
-        }}></div>
+        <div
+          className="absolute inset-0 opacity-5"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,${encodeURIComponent(
+              '<svg width="100" height="100" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M 20 0 L 0 0 0 20" fill="none" stroke="#22c55e" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(#grid)"/></svg>'
+            )}")`,
+          }}
+        ></div>
       </div>
 
       <div className="w-full max-w-md relative z-10">
         <button
-          onClick={() => navigate('/login')}
+          onClick={() => navigate("/login")}
           className="mb-6 flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-all duration-300 group"
         >
           <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform duration-300" />
@@ -110,9 +140,12 @@ function ForgotPassword() {
                   <div className="w-16 h-16 bg-gradient-primary rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-green">
                     <Shield className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Forgot Password?</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    Forgot Password?
+                  </h2>
                   <p className="text-gray-600 leading-relaxed">
-                    No worries! Enter your email address and we'll send you a secure link to reset your password.
+                    No worries! Enter your email address and we'll send you a
+                    secure link to reset your password.
                   </p>
                 </>
               )}
@@ -122,9 +155,14 @@ function ForgotPassword() {
                   <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg animate-pulse">
                     <Mail className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Check Your Email</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    Check Your Email
+                  </h2>
                   <p className="text-gray-600 leading-relaxed">
-                    We've sent a password reset link to <span className="font-semibold text-primary-600">{email}</span>
+                    We've sent a password reset link to{" "}
+                    <span className="font-semibold text-primary-600">
+                      {email}
+                    </span>
                   </p>
                 </>
               )}
@@ -134,9 +172,12 @@ function ForgotPassword() {
                   <div className="w-16 h-16 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
                     <AlertCircle className="w-8 h-8 text-white" />
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">Something Went Wrong</h2>
+                  <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    Something Went Wrong
+                  </h2>
                   <p className="text-gray-600 leading-relaxed">
-                    We encountered an issue sending the reset email. Please try again.
+                    We encountered an issue sending the reset email. Please try
+                    again.
                   </p>
                 </>
               )}
@@ -207,7 +248,9 @@ function ForgotPassword() {
                 </div>
 
                 <div className="text-center">
-                  <p className="text-gray-600 mb-4">Didn't receive the email?</p>
+                  <p className="text-gray-600 mb-4">
+                    Didn't receive the email?
+                  </p>
 
                   {!canResend ? (
                     <div className="flex items-center justify-center space-x-2 text-gray-500">
@@ -279,12 +322,13 @@ function ForgotPassword() {
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500 space-y-2">
+          <p>This link will expire in 15 minutes for security reasons</p>
           <p>
-            This link will expire in 15 minutes for security reasons
-          </p>
-          <p>
-            Need help? Contact{' '}
-            <a href="mailto:support@nayagara.lk" className="text-primary-600 hover:underline font-medium">
+            Need help? Contact{" "}
+            <a
+              href="mailto:support@nayagara.lk"
+              className="text-primary-600 hover:underline font-medium"
+            >
               support@nayagara.lk
             </a>
           </p>

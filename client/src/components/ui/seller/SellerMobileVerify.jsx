@@ -8,7 +8,7 @@ import {
   Clock,
 } from "lucide-react";
 import api from "../../../api/axios";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 
 function SellerMobileVerify() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -22,7 +22,10 @@ function SellerMobileVerify() {
   const location = useLocation();
   const navigate = useNavigate();
   const { emailOrMobile } = location.state || {};
-  console.log("Email or Mobile from state:", emailOrMobile);
+
+  if (!location.state?.from || location.state.from !== "seller-login") {
+    return <Navigate to="/" replace />;
+  }
 
   useEffect(() => {
     let interval = null;
@@ -45,9 +48,8 @@ function SellerMobileVerify() {
     try {
       const res = await api.post("/auth/send-otp", {
         mobile: phoneNumber,
-        email : emailOrMobile,
+        email: emailOrMobile,
       });
-      console.log(res.data);
 
       if (res.data.success) {
         setStep(2);
@@ -81,7 +83,6 @@ function SellerMobileVerify() {
         setSuccess("Mobile number verified successfully!");
         // Handle successful verification here
         setTimeout(() => {
-          console.log("Redirecting to seller registration...");
           navigate("/"); // if you want redirect
         }, 2000);
       } else {
@@ -160,9 +161,11 @@ function SellerMobileVerify() {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="flex items-center justify-center space-x-2 mb-4">
-              <div className="w-10 h-10 bg-secondary-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-lg">N</span>
-              </div>
+              <img
+                src="/logo.png"
+                alt="Nayagara.lk"
+                className="w-10 h-10 object-contain"
+              />
               <h1 className="text-2xl font-bold text-secondary-700">
                 Nayagara.lk
               </h1>

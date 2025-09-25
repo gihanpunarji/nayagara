@@ -41,7 +41,7 @@ function SellerLogin() {
       const msg = err.response?.data?.message;
 
       if (msg === "mnv") {
-        navigate("/seller/verify-mobile", { state: { emailOrMobile } });
+        navigate("/seller/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
         return;
       }
 
@@ -151,6 +151,7 @@ function SellerLogin() {
             <div className="flex justify-end">
               <Link
                 to="/forgot-password"
+                state={{ from: "login" }}
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
                 Forgot Password?
@@ -202,7 +203,7 @@ function SellerLogin() {
               Want to sell on Nayagara?
             </p>
             <Link
-              to="/seller/register"
+              to="/sell"
               className="text-sm text-secondary-600 hover:text-secondary-700 font-bold"
             >
               Start Selling →

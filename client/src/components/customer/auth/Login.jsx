@@ -20,6 +20,8 @@ function CustomerLogin() {
     try {
       const res = await api.post("/auth/login", { emailOrMobile, password });
       localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+      localStorage.setItem("user_role", "customer");
       navigate("/");
     } catch (err) {
       setError(err.response?.data?.message || "Login failed. Please check your credentials.");

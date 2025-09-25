@@ -4,7 +4,9 @@
       "mcp__ide__getDiagnostics",
       "WebFetch(domain:deezevenclothing.com)",
       "Bash(npm run dev:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []

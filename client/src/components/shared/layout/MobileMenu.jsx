@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   X,
   User,
@@ -11,19 +11,44 @@ import {
   LogOut,
   Store,
   Gift,
-  Shield
+  Shield,
+  Filter,
+  Info,
+  Building,
+  Zap,
+  TrendingUp,
+  Star
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import AdvancedFilters from '../../customer/layout/AdvancedFilters';
 
 const MobileMenu = ({ isOpen, onClose, user = null }) => {
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
+  // Sample categories for filter
+  const mainCategories = [
+    { name: 'Electronics' }, { name: 'Vehicles' }, { name: 'Fashion' },
+    { name: 'Home & Living' }, { name: 'Beauty & Health' }, { name: 'Sports' },
+    { name: 'Books & Media' }, { name: 'Services' }
+  ];
+
   const menuItems = [
+    {
+      category: 'Quick Access',
+      items: [
+        { label: 'Advanced Filters', icon: Filter, action: 'openFilters', highlight: true },
+        { label: 'Flash Sale', icon: Zap, path: '/flash-sale', color: 'text-red-600' },
+        { label: 'New Arrivals', icon: TrendingUp, path: '/new-arrivals', color: 'text-blue-600' },
+        { label: 'Top Rated', icon: Star, path: '/top-rated', color: 'text-yellow-600' },
+        { label: 'Daily Deals', icon: Gift, path: '/deals', color: 'text-green-600' },
+      ]
+    },
     {
       category: 'Account',
       items: user ? [
         { label: 'My Profile', icon: User, path: '/account/profile' },
         { label: 'My Orders', icon: Clock, path: '/account/orders' },
         { label: 'My Wallet', icon: CreditCard, path: '/account/wallet' },
-        { label: 'Wishlist', icon: Heart, path: '/account/wishlist' },
         { label: 'Notifications', icon: Bell, path: '/account/notifications' },
       ] : [
         { label: 'Sign In', icon: User, path: '/login' },
@@ -31,23 +56,20 @@ const MobileMenu = ({ isOpen, onClose, user = null }) => {
       ]
     },
     {
-      category: 'Shopping',
+      category: 'Company',
       items: [
-        { label: 'Daily Deals', icon: Gift, path: '/deals' },
-        { label: 'New Arrivals', icon: Store, path: '/new-arrivals' },
-        { label: 'Best Sellers', icon: Store, path: '/best-sellers' },
-        { label: 'Categories', icon: Store, path: '/categories' },
-      ]
-    },
-    {
-      category: 'Support',
-      items: [
-        { label: 'Help Center', icon: HelpCircle, path: '/help' },
+        { label: 'About Us', icon: Info, path: '/about-us' },
+        { label: 'Our Business', icon: Building, path: '/our-business' },
         { label: 'Buyer Protection', icon: Shield, path: '/buyer-protection' },
-        { label: 'Settings', icon: Settings, path: '/settings' },
+        { label: 'Help Center', icon: HelpCircle, path: '/help' },
       ]
     }
   ];
+
+  const handleFiltersApply = (filters) => {
+    console.log('Applied filters:', filters);
+    setShowAdvancedFilters(false);
+  };
 
   if (user) {
     menuItems[0].items.push({ label: 'Sign Out', icon: LogOut, action: 'logout' });
@@ -70,34 +92,36 @@ const MobileMenu = ({ isOpen, onClose, user = null }) => {
         }`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-gradient-primary text-white">
+        <div className="flex items-center justify-between p-6 border-b border-gray-100 bg-gradient-to-r from-primary-500 to-secondary-500 text-white">
           <div className="flex items-center space-x-3">
-            <img
-              src="/logo.png"
-              alt="Nayagara.lk"
-              className="w-8 h-8 object-contain"
-            />
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+              <Store className="w-5 h-5 text-white" />
+            </div>
             <div>
-              <h3 className="font-heading font-bold">Menu</h3>
-              {user && <p className="text-xs text-primary-100">Welcome, {user.name}</p>}
+              <h3 className="font-bold text-lg">Nayagara</h3>
+              {user ? (
+                <p className="text-xs text-white/80">Welcome, {user.name}!</p>
+              ) : (
+                <p className="text-xs text-white/80">Explore & Shop</p>
+              )}
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Menu Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto bg-gray-50">
           {menuItems.map((category, categoryIndex) => (
             <div key={categoryIndex} className="py-4">
-              <h4 className="px-4 text-sm font-bold text-gray-500 uppercase tracking-wide mb-2">
+              <h4 className="px-6 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
                 {category.category}
               </h4>
-              <div className="space-y-1">
+              <div className="mx-4 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
                 {category.items.map((item, itemIndex) => {
                   const IconComponent = item.icon;
 
@@ -109,10 +133,35 @@ const MobileMenu = ({ isOpen, onClose, user = null }) => {
                           // Handle logout
                           onClose();
                         }}
-                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-error hover:text-white transition-colors group"
+                        className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 transition-colors group border-t border-gray-100 first:border-t-0"
                       >
-                        <IconComponent className="w-5 h-5 text-error group-hover:text-white" />
-                        <span className="font-medium text-error group-hover:text-white">{item.label}</span>
+                        <IconComponent className="w-4 h-4 text-red-600" />
+                        <span className="font-medium text-red-600">{item.label}</span>
+                      </button>
+                    );
+                  }
+
+                  if (item.action === 'openFilters') {
+                    return (
+                      <button
+                        key={itemIndex}
+                        onClick={() => {
+                          setShowAdvancedFilters(true);
+                          onClose();
+                        }}
+                        className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors group border-t border-gray-100 first:border-t-0 ${
+                          item.highlight ? 'bg-primary-50 hover:bg-primary-100' : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        <IconComponent className={`w-4 h-4 ${item.highlight ? 'text-primary-600' : 'text-gray-500 group-hover:text-primary-600'}`} />
+                        <span className={`font-medium ${item.highlight ? 'text-primary-600' : 'text-gray-700 group-hover:text-primary-600'}`}>
+                          {item.label}
+                        </span>
+                        {item.highlight && (
+                          <span className="ml-auto bg-primary-600 text-white text-xs px-2 py-1 rounded-full">
+                            New
+                          </span>
+                        )}
                       </button>
                     );
                   }
@@ -122,9 +171,9 @@ const MobileMenu = ({ isOpen, onClose, user = null }) => {
                       key={itemIndex}
                       to={item.path}
                       onClick={onClose}
-                      className="flex items-center space-x-3 px-4 py-3 hover:bg-primary-50 hover:text-primary-600 transition-colors group"
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
                     >
-                      <IconComponent className="w-5 h-5 text-gray-500 group-hover:text-primary-600" />
+                      <IconComponent className={`w-4 h-4 ${item.color || 'text-gray-500 group-hover:text-primary-600'}`} />
                       <span className="font-medium text-gray-700 group-hover:text-primary-600">{item.label}</span>
                     </Link>
                   );
@@ -135,17 +184,29 @@ const MobileMenu = ({ isOpen, onClose, user = null }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-gray-200 p-4">
+        <div className="border-t border-gray-100 p-4 bg-white">
           <Link
-            to="/sell"
+            to="/seller/register"
             onClick={onClose}
-            className="w-full bg-gradient-secondary text-white py-3 px-4 rounded-lg font-bold text-center hover:shadow-green transition-all duration-300 flex items-center justify-center space-x-2"
+            className="w-full bg-gradient-to-r from-green-500 to-teal-600 text-white py-3 px-4 rounded-lg font-medium text-center hover:shadow-lg transition-all duration-300 flex items-center justify-center space-x-2"
           >
-            <Store className="w-5 h-5" />
-            <span>Start Selling</span>
+            <Store className="w-4 h-4" />
+            <span>Start Selling on Nayagara</span>
           </Link>
+          <div className="mt-2 text-center">
+            <p className="text-xs text-gray-500">Join 10,000+ sellers nationwide</p>
+          </div>
         </div>
       </div>
+
+      {/* Advanced Filters Modal */}
+      <AdvancedFilters
+        isOpen={showAdvancedFilters}
+        onClose={() => setShowAdvancedFilters(false)}
+        onFiltersApply={handleFiltersApply}
+        selectedCategory="All Categories"
+        mainCategories={mainCategories}
+      />
     </>
   );
 };

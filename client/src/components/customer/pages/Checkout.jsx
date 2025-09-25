@@ -8,10 +8,100 @@ import { useNavigate } from 'react-router-dom';
 const Checkout = () => {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedAddress, setSelectedAddress] = useState(null);
-  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState('card');
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
+  const [sameAsBilling, setSameAsBilling] = useState(false);
+
+  // Location data (in future, this will come from database)
+  const locationData = {
+    provinces: [
+      {
+        id: 'western',
+        name: 'Western Province',
+        districts: [
+          {
+            id: 'colombo',
+            name: 'Colombo',
+            cities: ['Colombo 01', 'Colombo 02', 'Colombo 03', 'Colombo 04', 'Colombo 05', 'Colombo 06', 'Colombo 07', 'Colombo 08', 'Kelaniya', 'Maharagama', 'Nugegoda', 'Battaramulla', 'Mount Lavinia']
+          },
+          {
+            id: 'gampaha',
+            name: 'Gampaha',
+            cities: ['Gampaha', 'Negombo', 'Ja-Ela', 'Wattala', 'Minuwangoda', 'Kiribathgoda', 'Kadawatha']
+          },
+          {
+            id: 'kalutara',
+            name: 'Kalutara',
+            cities: ['Kalutara', 'Panadura', 'Horana', 'Beruwala', 'Aluthgama']
+          }
+        ]
+      },
+      {
+        id: 'central',
+        name: 'Central Province',
+        districts: [
+          {
+            id: 'kandy',
+            name: 'Kandy',
+            cities: ['Kandy', 'Peradeniya', 'Gampola', 'Nawalapitiya']
+          },
+          {
+            id: 'matale',
+            name: 'Matale',
+            cities: ['Matale', 'Dambulla', 'Sigiriya']
+          },
+          {
+            id: 'nuwara-eliya',
+            name: 'Nuwara Eliya',
+            cities: ['Nuwara Eliya', 'Hatton', 'Talawakelle']
+          }
+        ]
+      },
+      {
+        id: 'southern',
+        name: 'Southern Province',
+        districts: [
+          {
+            id: 'galle',
+            name: 'Galle',
+            cities: ['Galle', 'Hikkaduwa', 'Unawatuna', 'Bentota']
+          },
+          {
+            id: 'matara',
+            name: 'Matara',
+            cities: ['Matara', 'Weligama', 'Mirissa']
+          },
+          {
+            id: 'hambantota',
+            name: 'Hambantota',
+            cities: ['Hambantota', 'Tangalle', 'Tissamaharama']
+          }
+        ]
+      }
+    ]
+  };
+
+  // Address form states
+  const [billingAddress, setBillingAddress] = useState({
+    line1: '',
+    line2: '',
+    city: '',
+    district: '',
+    postalCode: '',
+    province: '',
+    country: 'Sri Lanka'
+  });
+
+  const [shippingAddress, setShippingAddress] = useState({
+    line1: '',
+    line2: '',
+    city: '',
+    district: '',
+    postalCode: '',
+    province: '',
+    country: 'Sri Lanka'
+  });
 
   // Mock data
   const cartItems = [
@@ -33,46 +123,13 @@ const Checkout = () => {
     }
   ];
 
-  const addresses = [
-    {
-      id: 1,
-      type: 'Home',
-      name: 'Kasun Perera',
-      address: '123 Galle Road, Colombo 03',
-      phone: '+94 77 123 4567',
-      isDefault: true
-    },
-    {
-      id: 2,
-      type: 'Office',
-      name: 'Kasun Perera',
-      address: '456 Business Center, Colombo 07',
-      phone: '+94 77 123 4567',
-      isDefault: false
-    }
-  ];
-
   const paymentMethods = [
     {
       id: 'card',
       name: 'Credit/Debit Card',
-      description: 'Visa, Mastercard, Amex',
+      description: 'Visa, Mastercard, Amex, Local Bank Cards',
       icon: CreditCard,
       processing_fee: 0
-    },
-    {
-      id: 'bank',
-      name: 'Bank Transfer',
-      description: 'Direct bank transfer',
-      icon: MapPin,
-      processing_fee: 0
-    },
-    {
-      id: 'wallet',
-      name: 'Digital Wallet',
-      description: 'PayPal, Google Pay',
-      icon: Shield,
-      processing_fee: 2
     }
   ];
 
@@ -86,10 +143,70 @@ const Checkout = () => {
   const total = subtotal + shippingCost + processingFee - discount;
 
   const steps = [
-    { id: 1, title: 'Shipping Address', completed: currentStep > 1 },
+    { id: 1, title: 'Addresses', completed: currentStep > 1 },
     { id: 2, title: 'Payment Method', completed: currentStep > 2 },
     { id: 3, title: 'Review Order', completed: false }
   ];
+
+  // Handle address form updates
+  const handleBillingAddressChange = (field, value) => {
+    let newBillingAddress = { ...billingAddress, [field]: value };
+
+    // Reset dependent fields when parent changes
+    if (field === 'province') {
+      newBillingAddress = { ...newBillingAddress, district: '', city: '' };
+    } else if (field === 'district') {
+      newBillingAddress = { ...newBillingAddress, city: '' };
+    }
+
+    setBillingAddress(newBillingAddress);
+
+    // If "same as billing" is checked, update shipping address too
+    if (sameAsBilling) {
+      setShippingAddress(newBillingAddress);
+    }
+  };
+
+  const handleShippingAddressChange = (field, value) => {
+    let newShippingAddress = { ...shippingAddress, [field]: value };
+
+    // Reset dependent fields when parent changes
+    if (field === 'province') {
+      newShippingAddress = { ...newShippingAddress, district: '', city: '' };
+    } else if (field === 'district') {
+      newShippingAddress = { ...newShippingAddress, city: '' };
+    }
+
+    setShippingAddress(newShippingAddress);
+  };
+
+  const handleSameAsBillingChange = (checked) => {
+    setSameAsBilling(checked);
+    if (checked) {
+      setShippingAddress({ ...billingAddress });
+    }
+  };
+
+  // Helper functions for cascading dropdowns
+  const getDistrictsForProvince = (provinceId) => {
+    const province = locationData.provinces.find(p => p.id === provinceId);
+    return province ? province.districts : [];
+  };
+
+  const getCitiesForDistrict = (provinceId, districtId) => {
+    const province = locationData.provinces.find(p => p.id === provinceId);
+    if (!province) return [];
+    const district = province.districts.find(d => d.id === districtId);
+    return district ? district.cities : [];
+  };
+
+  const isAddressValid = (address) => {
+    return address.line1 && address.city && address.district && address.postalCode && address.province;
+  };
+
+  const canProceedFromAddresses = () => {
+    return isAddressValid(billingAddress) && (sameAsBilling || isAddressValid(shippingAddress));
+  };
 
   const applyPromoCode = () => {
     const promoCodes = {
@@ -135,60 +252,208 @@ const Checkout = () => {
   );
 
   const AddressStep = () => (
-    <div className="bg-white rounded-xl border border-gray-200 p-6">
-      <h3 className="text-lg font-bold text-gray-900 mb-4">Select Delivery Address</h3>
+    <div className="space-y-6">
+      {/* Billing Address */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <h3 className="text-lg font-bold text-gray-900 mb-4">Billing Address</h3>
 
-      <div className="space-y-4 mb-6">
-        {addresses.map((address) => (
-          <div
-            key={address.id}
-            onClick={() => setSelectedAddress(address.id)}
-            className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-              selectedAddress === address.id
-                ? 'border-primary-500 bg-primary-50'
-                : 'border-gray-200 hover:border-primary-300'
-            }`}
-          >
-            <div className="flex items-start justify-between">
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-2">
-                  <span className="font-medium text-gray-900">{address.type}</span>
-                  {address.isDefault && (
-                    <span className="text-xs bg-primary-100 text-primary-600 px-2 py-1 rounded-full">
-                      Default
-                    </span>
-                  )}
-                </div>
-                <p className="font-medium text-gray-900">{address.name}</p>
-                <p className="text-gray-600">{address.address}</p>
-                <p className="text-gray-600">{address.phone}</p>
-              </div>
-              <div className="flex space-x-2">
-                <button className="p-2 text-gray-400 hover:text-primary-600 transition-colors">
-                  <Edit className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-400 hover:text-red-600 transition-colors">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
+            <input
+              type="text"
+              value={billingAddress.line1}
+              onChange={(e) => handleBillingAddressChange('line1', e.target.value)}
+              placeholder="House/Building number, Street name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
           </div>
-        ))}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+            <input
+              type="text"
+              value={billingAddress.line2}
+              onChange={(e) => handleBillingAddressChange('line2', e.target.value)}
+              placeholder="Apartment, suite, etc. (optional)"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+            <input
+              type="text"
+              value="Sri Lanka"
+              disabled
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Province *</label>
+            <select
+              value={billingAddress.province}
+              onChange={(e) => handleBillingAddressChange('province', e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            >
+              <option value="">Select Province</option>
+              {locationData.provinces.map((province) => (
+                <option key={province.id} value={province.id}>
+                  {province.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
+            <select
+              value={billingAddress.district}
+              onChange={(e) => handleBillingAddressChange('district', e.target.value)}
+              disabled={!billingAddress.province}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select District</option>
+              {getDistrictsForProvince(billingAddress.province).map((district) => (
+                <option key={district.id} value={district.id}>
+                  {district.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+            <select
+              value={billingAddress.city}
+              onChange={(e) => handleBillingAddressChange('city', e.target.value)}
+              disabled={!billingAddress.district}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select City</option>
+              {getCitiesForDistrict(billingAddress.province, billingAddress.district).map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+            <input
+              type="text"
+              value={billingAddress.postalCode}
+              onChange={(e) => handleBillingAddressChange('postalCode', e.target.value)}
+              placeholder="Enter postal code"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+            />
+          </div>
+        </div>
       </div>
 
-      <button className="flex items-center space-x-2 text-primary-600 font-medium hover:text-primary-700 transition-colors mb-6">
-        <Plus className="w-4 h-4" />
-        <span>Add New Address</span>
-      </button>
+      {/* Shipping Address */}
+      <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-bold text-gray-900">Shipping Address</h3>
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={sameAsBilling}
+              onChange={(e) => handleSameAsBillingChange(e.target.checked)}
+              className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+            />
+            <span className="text-sm font-medium text-gray-700">Same as billing address</span>
+          </label>
+        </div>
 
-      <div className="flex justify-end">
-        <button
-          onClick={() => setCurrentStep(2)}
-          disabled={!selectedAddress}
-          className="px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-        >
-          Continue to Payment
-        </button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
+            <input
+              type="text"
+              value={shippingAddress.line1}
+              onChange={(e) => handleShippingAddressChange('line1', e.target.value)}
+              placeholder="House/Building number, Street name"
+              disabled={sameAsBilling}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+            <input
+              type="text"
+              value={shippingAddress.line2}
+              onChange={(e) => handleShippingAddressChange('line2', e.target.value)}
+              placeholder="Apartment, suite, etc. (optional)"
+              disabled={sameAsBilling}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+            <input
+              type="text"
+              value="Sri Lanka"
+              disabled
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Province *</label>
+            <select
+              value={shippingAddress.province}
+              onChange={(e) => handleShippingAddressChange('province', e.target.value)}
+              disabled={sameAsBilling}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select Province</option>
+              {locationData.provinces.map((province) => (
+                <option key={province.id} value={province.id}>
+                  {province.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
+            <select
+              value={shippingAddress.district}
+              onChange={(e) => handleShippingAddressChange('district', e.target.value)}
+              disabled={sameAsBilling || !shippingAddress.province}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select District</option>
+              {getDistrictsForProvince(shippingAddress.province).map((district) => (
+                <option key={district.id} value={district.id}>
+                  {district.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+            <select
+              value={shippingAddress.city}
+              onChange={(e) => handleShippingAddressChange('city', e.target.value)}
+              disabled={sameAsBilling || !shippingAddress.district}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <option value="">Select City</option>
+              {getCitiesForDistrict(shippingAddress.province, shippingAddress.district).map((city) => (
+                <option key={city} value={city}>
+                  {city}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
+            <input
+              type="text"
+              value={shippingAddress.postalCode}
+              onChange={(e) => handleShippingAddressChange('postalCode', e.target.value)}
+              placeholder="Enter postal code"
+              disabled={sameAsBilling}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -257,8 +522,24 @@ const Checkout = () => {
   );
 
   const ReviewStep = () => {
-    const selectedAddr = addresses.find(addr => addr.id === selectedAddress);
     const selectedPay = paymentMethods.find(pay => pay.id === selectedPayment);
+
+    const formatAddress = (address) => {
+      // Get readable names from IDs
+      const province = locationData.provinces.find(p => p.id === address.province);
+      const district = province?.districts.find(d => d.id === address.district);
+
+      const parts = [
+        address.line1,
+        address.line2,
+        address.city,
+        district?.name,
+        province?.name,
+        address.postalCode,
+        address.country
+      ].filter(Boolean);
+      return parts.join(', ');
+    };
 
     return (
       <div className="space-y-6">
@@ -287,10 +568,10 @@ const Checkout = () => {
           </div>
         </div>
 
-        {/* Delivery Address */}
+        {/* Billing & Shipping Addresses */}
         <div className="bg-white rounded-xl border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Delivery Address</h3>
+            <h3 className="text-lg font-bold text-gray-900">Addresses</h3>
             <button
               onClick={() => setCurrentStep(1)}
               className="text-primary-600 font-medium hover:text-primary-700 transition-colors"
@@ -299,13 +580,28 @@ const Checkout = () => {
             </button>
           </div>
 
-          {selectedAddr && (
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="font-medium text-gray-900">{selectedAddr.name}</p>
-              <p className="text-gray-600">{selectedAddr.address}</p>
-              <p className="text-gray-600">{selectedAddr.phone}</p>
+          <div className="space-y-4">
+            {/* Billing Address */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">Billing Address</h4>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-700">{formatAddress(billingAddress)}</p>
+              </div>
             </div>
-          )}
+
+            {/* Shipping Address */}
+            <div>
+              <h4 className="font-semibold text-gray-900 mb-2">
+                Shipping Address
+                {sameAsBilling && (
+                  <span className="text-sm text-gray-500 font-normal"> (Same as billing)</span>
+                )}
+              </h4>
+              <div className="p-4 bg-gray-50 rounded-lg">
+                <p className="text-gray-700">{formatAddress(shippingAddress)}</p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Payment Method */}
@@ -435,6 +731,45 @@ const Checkout = () => {
                   </div>
                 </div>
               </div>
+
+              {/* Continue Button */}
+              {currentStep < 3 && (
+                <div className="mb-6">
+                  {currentStep === 1 && (
+                    <button
+                      onClick={() => setCurrentStep(2)}
+                      disabled={!canProceedFromAddresses()}
+                      className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Continue to Payment
+                    </button>
+                  )}
+                  {currentStep === 2 && (
+                    <button
+                      onClick={() => setCurrentStep(3)}
+                      disabled={!selectedPayment}
+                      className="w-full px-6 py-3 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Review Order
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Place Order Button for Final Step */}
+              {currentStep === 3 && (
+                <div className="mb-6">
+                  <button
+                    onClick={() => {
+                      // Handle order placement
+                      alert('Order placed successfully!');
+                    }}
+                    className="w-full px-6 py-3 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors"
+                  >
+                    Place Order
+                  </button>
+                </div>
+              )}
 
               {/* Security Notice */}
               <div className="bg-green-50 border border-green-200 rounded-lg p-4">

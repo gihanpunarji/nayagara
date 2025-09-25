@@ -47,6 +47,7 @@ const MobileMenu = ({ isOpen, onClose, user = null }) => {
       category: 'Account',
       items: user ? [
         { label: 'My Profile', icon: User, path: '/account/profile' },
+        { label: 'Messages', icon: MessageSquare, path: '/messages' },
         { label: 'My Orders', icon: Clock, path: '/account/orders' },
         { label: 'My Wallet', icon: CreditCard, path: '/account/wallet' },
         { label: 'Notifications', icon: Bell, path: '/account/notifications' },

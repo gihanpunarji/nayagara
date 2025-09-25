@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { Zap, Clock } from 'lucide-react';
 
 const FlashSale = () => {
@@ -73,15 +74,22 @@ const FlashSale = () => {
             </div>
           </div>
         </div>
-        <button className="bg-white text-primary-600 px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-bold hover:bg-primary-50 transition-colors shadow-green text-sm sm:text-base">
+        <Link
+          to="/flash-sale"
+          className="bg-white text-primary-600 px-4 py-2 sm:px-6 sm:py-3 rounded-lg font-bold hover:bg-primary-50 transition-colors shadow-green text-sm sm:text-base"
+        >
           View All Deals
-        </button>
+        </Link>
       </div>
 
       {/* Desktop Grid */}
       <div className="hidden sm:grid grid-cols-2 lg:grid-cols-4 gap-4">
         {flashDeals.map((deal, idx) => (
-          <div key={idx} className="bg-white rounded-xl p-4 text-gray-800 hover:shadow-green-lg transition-all duration-300 cursor-pointer animate-fade-in">
+          <Link
+            key={idx}
+            to={`/product/${deal.id}`}
+            className="bg-white rounded-xl p-4 text-gray-800 hover:shadow-green-lg transition-all duration-300 cursor-pointer animate-fade-in"
+          >
             <div className="relative mb-3">
               <img src={deal.image} alt={deal.name} className="w-full h-32 object-cover rounded-lg" />
               <div className="absolute top-2 left-2 bg-error text-white text-xs px-2 py-1 rounded-full font-bold">
@@ -100,7 +108,7 @@ const FlashSale = () => {
               ></div>
             </div>
             <p className="text-xs text-gray-600">{deal.sold} sold</p>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -108,7 +116,11 @@ const FlashSale = () => {
       <div className="sm:hidden">
         <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4">
           {flashDeals.map((deal, idx) => (
-            <div key={idx} className="bg-white rounded-xl p-4 text-gray-800 hover:shadow-green-lg transition-all duration-300 cursor-pointer animate-fade-in flex-shrink-0 w-56">
+            <Link
+              key={idx}
+              to={`/product/${deal.id}`}
+              className="bg-white rounded-xl p-4 text-gray-800 hover:shadow-green-lg transition-all duration-300 cursor-pointer animate-fade-in flex-shrink-0 w-56"
+            >
               <div className="relative mb-3">
                 <img src={deal.image} alt={deal.name} className="w-full h-32 object-cover rounded-lg" />
                 <div className="absolute top-2 left-2 bg-error text-white text-xs px-2 py-1 rounded-full font-bold">
@@ -127,7 +139,7 @@ const FlashSale = () => {
                 ></div>
               </div>
               <p className="text-xs text-gray-600">{deal.sold} sold</p>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

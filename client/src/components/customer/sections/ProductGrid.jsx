@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import { Star, Heart, ShoppingCart, MapPin, Truck, Grid, List, Filter } from 'lucide-react';
 
 const ProductGrid = () => {
@@ -164,8 +165,9 @@ const ProductGrid = () => {
       {/* Desktop Grid */}
       <div className="hidden md:grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {displayedProducts.map((product) => (
-          <div
+          <Link
             key={product.id}
+            to={`/product/${product.id}`}
             className="group border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 transition-all duration-500 cursor-pointer bg-white animate-slide-up transform-gpu"
           >
             <div className="relative overflow-hidden">
@@ -241,7 +243,7 @@ const ProductGrid = () => {
                 </button>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
@@ -249,8 +251,9 @@ const ProductGrid = () => {
       <div className="md:hidden">
         <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4">
           {displayedProducts.map((product) => (
-            <div
+            <Link
               key={product.id}
+              to={`/product/${product.id}`}
               className="group border border-gray-200 rounded-xl overflow-hidden hover:border-primary-300 hover:shadow-2xl hover:-translate-y-2 hover:scale-105 transition-all duration-500 cursor-pointer bg-white animate-slide-up flex-shrink-0 w-64 transform-gpu"
             >
               <div className="relative overflow-hidden">
@@ -326,7 +329,7 @@ const ProductGrid = () => {
                   </button>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       </div>

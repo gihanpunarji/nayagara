@@ -1,31 +1,38 @@
-# Nayagara Server
+# Nayagara Server Package
 
-Backend API server for the Nayagara application built with Node.js, Express, and MySQL.
+## Overview
+This package contains the backend API server for the Nayagara e-commerce platform. Built with **Node.js**, **Express**, and **MySQL**, it provides modular APIs organized by user roles.
 
-## Project Structure
+## 🏗️ **New Modular Architecture**
+
+The server is now organized by user roles for better maintainability and clear separation of concerns:
 
 ```
 server/
 ├── src/
-│   ├── config/          # Configuration files
-│   │   ├── database.js  # MySQL connection setup
-│   │   └── README.md
-│   ├── controllers/     # Business logic controllers
-│   │   ├── authController.js  # Authentication logic
-│   │   └── README.md
-│   ├── middleware/      # Express middleware
-│   │   ├── auth.js      # JWT authentication middleware
-│   │   └── README.md
-│   ├── models/          # Data models and database interactions
-│   │   ├── User.js      # User model
-│   │   └── README.md
-│   ├── routes/          # API route definitions
-│   │   ├── authRoutes.js  # Authentication routes
-│   │   └── README.md
-│   └── server.js        # Main server file
-├── .env                 # Environment variables
-├── package.json         # Dependencies and scripts
-└── README.md           # This file
+│   ├── modules/
+│   │   ├── customer/         # Customer-specific APIs
+│   │   │   ├── controllers/  # Customer business logic
+│   │   │   ├── routes/       # Customer API routes
+│   │   │   └── services/     # Customer services
+│   │   ├── seller/           # Seller-specific APIs
+│   │   │   ├── controllers/  # Seller business logic
+│   │   │   ├── routes/       # Seller API routes
+│   │   │   └── services/     # Seller services
+│   │   ├── admin/            # Admin-specific APIs
+│   │   │   ├── controllers/  # Admin business logic
+│   │   │   ├── routes/       # Admin API routes
+│   │   │   └── services/     # Admin services
+│   │   └── shared/           # Shared components
+│   │       ├── models/       # Database models
+│   │       ├── middleware/   # Express middleware
+│   │       ├── utils/        # Utility functions
+│   │       ├── config/       # Database & app config
+│   │       └── routes/       # Common API routes
+│   └── server.js            # Main server entry point
+├── .env                     # Environment variables
+├── package.json            # Dependencies and scripts
+└── README.md               # This file
 ```
 
 ## Quick Start
@@ -62,11 +69,81 @@ JWT_SECRET=your_secret_key
 JWT_EXPIRES_IN=24h
 ```
 
+## 🚀 **User Role Modules**
+
+### 🛒 **Customer Module**
+**Location:** `src/modules/customer/`
+
+**What's included:**
+- **Authentication:** Registration, login, password reset
+- **Profile Management:** Account settings, preferences
+- **Order Management:** Order placement, tracking, history
+- **Cart Operations:** Add, remove, update cart items
+
+**API Base Path:** `/api/customer/`
+
+**When to use:** Customer-facing functionality like user registration, shopping cart operations, order management, and customer authentication.
+
+### 🏪 **Seller Module**
+**Location:** `src/modules/seller/`
+
+**What's included:**
+- **Authentication:** Seller registration with business details, login
+- **Product Management:** CRUD operations for products
+- **Order Fulfillment:** Processing seller orders
+- **Business Analytics:** Sales reports, inventory tracking
+- **Mobile Verification:** Required for seller accounts
+
+**API Base Path:** `/api/seller/`
+
+**When to use:** Seller/vendor functionality like product management, order fulfillment, business analytics, and seller authentication with mobile verification.
+
+### 👨‍💼 **Admin Module**
+**Location:** `src/modules/admin/`
+
+**What's included:**
+- **User Management:** Manage customers and sellers
+- **System Configuration:** Platform settings
+- **Analytics & Reporting:** System-wide metrics
+- **Content Moderation:** Review and moderate content
+
+**API Base Path:** `/api/admin/`
+
+**When to use:** Administrative functionality like user management, system configuration, platform analytics, and administrative authentication.
+
+### 🔄 **Shared Module**
+**Location:** `src/modules/shared/`
+
+**What's included:**
+- **Models:** Database models (User, Address, etc.)
+- **Middleware:** Authentication, validation middleware
+- **Utils:** Input validation, mobile verification
+- **Config:** Database connection, app configuration
+- **Common Routes:** OTP sending/verification
+
+**API Base Path:** `/api/common/`
+
+**When to use:** Shared functionality used across multiple user roles like database models, common utilities, and cross-role services.
+
 ## API Endpoints
 
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
+### Customer APIs (`/api/customer/auth/`)
+- `POST /register` - Customer registration
+- `POST /login` - Customer login
+- `POST /forgot-password` - Password reset request
+- `POST /reset-password` - Reset password with token
+
+### Seller APIs (`/api/seller/auth/`)
+- `POST /register` - Seller registration (requires business details)
+- `POST /login` - Seller login (requires mobile verification)
+- `POST /forgot-password` - Seller password reset
+
+### Admin APIs (`/api/admin/auth/`)
+- `POST /login` - Admin login
+
+### Common APIs (`/api/common/`)
+- `POST /send-otp` - Send mobile OTP
+- `POST /verify-otp` - Verify mobile OTP
 
 ### Health Check
 - `GET /` - Server status
@@ -125,12 +202,20 @@ npm test       # Run tests (not configured yet)
 - **Config**: Database and application configuration
 
 ### Adding New Features
-1. Create model in `/src/models/` if needed
-2. Create controller in `/src/controllers/`
-3. Create routes in `/src/routes/`
-4. Add middleware if required
-5. Mount routes in `server.js`
-6. Update relevant README files
+1. **Identify the user role:** Determine if the feature belongs to customer, seller, admin, or shared
+2. **Create components in the appropriate module:**
+   - Add controller in `/src/modules/{role}/controllers/`
+   - Add route in `/src/modules/{role}/routes/`
+   - Add service in `/src/modules/{role}/services/` if needed
+3. **For shared functionality:** Use `/src/modules/shared/`
+4. **Update server.js:** Mount new routes if needed
+5. **Update README:** Document new endpoints and functionality
+
+### Module Guidelines
+- **Customer Module:** End-user shopping functionality
+- **Seller Module:** Business/vendor functionality (requires mobile verification)
+- **Admin Module:** Administrative and management functionality
+- **Shared Module:** Common functionality used across roles
 
 ## Error Handling
 All API responses follow this format:

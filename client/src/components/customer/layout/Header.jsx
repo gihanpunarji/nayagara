@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, User, Heart, ChevronDown, Phone, Globe, MapPin } from 'lucide-react';
+import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import AdvancedFilters from './AdvancedFilters';
 
 const Header = ({
   searchQuery,
@@ -16,6 +17,8 @@ const Header = ({
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({});
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -49,6 +52,42 @@ const Header = ({
     } else {
       navigate('/login');
     }
+  };
+
+  const handleOpenAdvancedFilters = () => {
+    setShowAdvancedFilters(true);
+  };
+
+  const handleCloseAdvancedFilters = () => {
+    setShowAdvancedFilters(false);
+  };
+
+  const handleFiltersApply = (filters) => {
+    setActiveFilters(filters);
+    // Here you can implement the actual filtering logic
+    console.log('Applied filters:', filters);
+  };
+
+  // Count active filters
+  const getActiveFilterCount = () => {
+    let count = 0;
+    if (activeFilters.category && activeFilters.category !== 'All Categories') count++;
+    if (activeFilters.district && activeFilters.district !== 'All Districts') count++;
+    if (activeFilters.priceMin) count++;
+    if (activeFilters.priceMax) count++;
+
+    // Count dynamic filters
+    Object.keys(activeFilters).forEach(key => {
+      if (!['category', 'district', 'priceMin', 'priceMax'].includes(key) && activeFilters[key]) {
+        if (Array.isArray(activeFilters[key])) {
+          if (activeFilters[key].length > 0) count++;
+        } else if (activeFilters[key] !== '' && activeFilters[key] !== 'All' && !activeFilters[key].startsWith('All ')) {
+          count++;
+        }
+      }
+    });
+
+    return count;
   };
 
   return (
@@ -102,9 +141,21 @@ const Header = ({
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white rounded-r-lg hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2">
+                <button className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2">
                   <Search className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden md:block font-medium">SEARCH</span>
+                </button>
+                <button
+                  onClick={handleOpenAdvancedFilters}
+                  className="h-10 sm:h-12 px-3 sm:px-4 bg-secondary-500 text-white rounded-r-lg hover:bg-secondary-600 transition-all duration-300 flex items-center space-x-1 sm:space-x-2 border-l border-secondary-600 relative"
+                >
+                  <Filter className="w-4 h-4 sm:w-5 sm:h-5" />
+                  <span className="hidden lg:block font-medium">FILTERS</span>
+                  {getActiveFilterCount() > 0 && (
+                    <span className="absolute -top-2 -right-2 w-5 h-5 bg-accent-orange text-white text-xs rounded-full flex items-center justify-center font-bold">
+                      {getActiveFilterCount()}
+                    </span>
+                  )}
                 </button>
               </div>
               
@@ -120,11 +171,6 @@ const Header = ({
 
             {/* Right Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <Link to="/account/wishlist" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
-                <Heart className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-error text-white text-xs rounded-full flex items-center justify-center">5</span>
-              </Link>
-
               <Link to="/cart" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
@@ -167,6 +213,14 @@ const Header = ({
         </div>
       </header>
 
+      {/* Advanced Filters Modal */}
+      <AdvancedFilters
+        isOpen={showAdvancedFilters}
+        onClose={handleCloseAdvancedFilters}
+        onFiltersApply={handleFiltersApply}
+        selectedCategory={selectedCategory}
+        mainCategories={mainCategories}
+      />
     </>
   );
 };

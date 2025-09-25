@@ -32,6 +32,7 @@ import NotFound from './components/shared/error/NotFound.jsx'
 import ServerError from './components/shared/error/ServerError.jsx'
 import NetworkError from './components/shared/error/NetworkError.jsx'
 import AccessDenied from './components/shared/error/AccessDenied.jsx'
+import Dashboard from './components/seller/pages/Dashboard.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -87,7 +88,7 @@ createRoot(document.getElementById('root')).render(
 
         {/* Seller Routes */}
         <Route path='/seller/login' element={<SellerLogin />} />
-        <Route path='/seller/dashboard' element={<SellerDashboard />} />
+        <Route path='/seller/dashboard' element={<Dashboard />} />
 
         {/* Admin Routes */}
         <Route path='/admin/login' element={<AdminLogin />} />

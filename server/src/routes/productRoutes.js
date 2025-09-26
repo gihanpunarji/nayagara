@@ -1,4 +1,5 @@
 const express = require("express");
+const { filterProducts } = require("../controllers/productController");
 
 const router = express.Router();
 

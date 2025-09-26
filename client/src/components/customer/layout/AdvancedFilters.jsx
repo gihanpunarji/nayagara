@@ -12,6 +12,9 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
     // Dynamic filters will be added based on category
   });
 
+  const [districts, setDistricts] = useState([]);
+
+
   // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -30,17 +33,14 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
   }, [isOpen, onClose]);
 
   useEffect(() => {
-    const res = api.get('/districts');
-    console.log(res.data);
+    async function fetchDistricts() {
+      const res = await api.get('/address/districts');
+        const districts = res.data.data.map(district => district.district_name);
+        setDistricts(districts);
+      }
+    fetchDistricts();
   }, [])
 
-  // Sri Lankan districts
-  const districts = [
-    'All Districts', 'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
-    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Kilinochchi', 'Mannar', 'Vavuniya',
-    'Mullaitivu', 'Batticaloa', 'Ampara', 'Trincomalee', 'Kurunegala', 'Puttalam',
-    'Anuradhapura', 'Polonnaruwa', 'Badulla', 'Moneragala', 'Ratnapura', 'Kegalle'
-  ];
 
   // Simplified dynamic filter configurations for each category
   const categoryFilters = {
@@ -197,7 +197,7 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
                 value={filters.district}
                 onChange={(e) => handleFilterChange('district', e.target.value)}
               >
-                {districts.slice(0, 10).map(district => (
+                {districts.map(district => (
                   <option key={district} value={district}>{district}</option>
                 ))}
               </select>

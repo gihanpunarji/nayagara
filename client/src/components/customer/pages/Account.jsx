@@ -5,7 +5,7 @@ import {
   Edit, Copy, X, Check, AlertCircle, Phone, Mail, Calendar,
   Download, MessageCircle, FileText, Headphones, Plus, Minus
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 const CustomerAccount = () => {
   const storedUsser = localStorage.getItem('user');

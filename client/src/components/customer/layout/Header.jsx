@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdvancedFilters from './AdvancedFilters';
+import { useAuth } from '../../../context/AuthContext';
 
 const Header = ({
   searchQuery,
@@ -15,34 +16,12 @@ const Header = ({
   serverStatus
 }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const { user, isAuthenticated, logout } = useAuth();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
 
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
-    const userRole = localStorage.getItem('user_role');
-
-    if (token && userData && userRole === 'customer') {
-      try {
-        const parsedUser = JSON.parse(userData);
-        setUser(parsedUser);
-        setIsAuthenticated(true);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        handleLogout();
-      }
-    }
-  }, []);
-
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    localStorage.removeItem('user_role');
-    setUser(null);
-    setIsAuthenticated(false);
+    logout();
     navigate('/');
   };
 

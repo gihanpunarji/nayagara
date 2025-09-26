@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Minus, Plus, Trash2, Heart, ArrowLeft, ShoppingBag,
+  Minus, Plus, Trash2, ArrowLeft, ShoppingBag,
   Truck, Shield, Clock, MapPin, AlertCircle, Tag, CreditCard
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -230,12 +230,6 @@ const ShoppingCart = () => {
                               className="p-1 text-gray-400 hover:text-error transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => moveToWishlist(item.id)}
-                              className="p-1 text-gray-400 hover:text-primary-600 transition-colors"
-                            >
-                              <Heart className="w-4 h-4" />
                             </button>
                           </div>
                         </div>

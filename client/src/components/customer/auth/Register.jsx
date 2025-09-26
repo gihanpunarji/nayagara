@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2, User, Check } from 'lucide-react';
-import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 function CustomerRegistration() {
   const [formData, setFormData] = useState({
@@ -15,10 +15,10 @@ function CustomerRegistration() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
 
   const navigate = useNavigate();
+  const { registerCustomer, loading } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -60,30 +60,21 @@ function CustomerRegistration() {
 
     if (!validateForm()) return;
 
-    setLoading(true);
     setError("");
 
-    try {
-      const res = await api.post("/auth/register", {
-        mobile: formData.mobile,
-        email: formData.email,
-        password: formData.password,
-        confirmPassword: formData.confirmPassword,
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-      });
+    const result = await registerCustomer({
+      mobile: formData.mobile,
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+    });
 
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem("user_role", "customer");
+    if (result.success) {
       navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.message || "Registration failed. Please try again.");
-      if(err.response?.status === 401) {
-        navigate('/login');
-      }
-    } finally {
-      setLoading(false);
+    } else {
+      setError(result.error);
     }
   };
 

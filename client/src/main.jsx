@@ -37,6 +37,16 @@ import ChatList from "./components/customer/pages/ChatList.jsx";
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
 import SellerMobileVerify from "./components/seller/auth/SellerMobileVerify.jsx";
+import SellerProducts from "./components/seller/pages/Products.jsx";
+import SellerAddProduct from "./components/seller/pages/AddProduct.jsx";
+import SellerEditProduct from "./components/seller/pages/EditProduct.jsx";
+import SellerOrders from "./components/seller/pages/Orders.jsx";
+import SellerPayments from "./components/seller/pages/Payments.jsx";
+import SellerCustomers from "./components/seller/pages/Customers.jsx";
+import SellerAnalytics from "./components/seller/pages/Analytics.jsx";
+import SellerSettings from "./components/seller/pages/Settings.jsx";
+import SellerHelp from "./components/seller/pages/Help.jsx";
+import SellerMessages from "./components/seller/pages/Messages.jsx";
 
 // Admin Components
 import AdminLogin from "./components/admin/auth/Login.jsx";
@@ -162,6 +172,16 @@ createRoot(document.getElementById("root")).render(
         {/* Seller Routes */}
         <Route path='/seller/login' element={<SellerLogin />} />
         <Route path='/seller/dashboard' element={<Dashboard />} />
+        <Route path='/seller/products' element={<SellerProducts />} />
+        <Route path='/seller/products/add' element={<SellerAddProduct />} />
+        <Route path='/seller/products/edit/:id' element={<SellerEditProduct />} />
+        <Route path='/seller/orders' element={<SellerOrders />} />
+        <Route path='/seller/customers' element={<SellerCustomers />} />
+        <Route path='/seller/payments' element={<SellerPayments />} />
+        <Route path='/seller/analytics' element={<SellerAnalytics />} />
+        <Route path='/seller/messages' element={<SellerMessages />} />
+        <Route path='/seller/settings' element={<SellerSettings />} />
+        <Route path='/seller/help' element={<SellerHelp />} />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />

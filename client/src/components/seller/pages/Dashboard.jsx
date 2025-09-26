@@ -4,6 +4,7 @@ import {
   Users, Star, AlertCircle, Plus, BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import SellerLayout from '../layout/SellerLayout';
 
 const Dashboard = () => {
   const [stats, setStats] = useState({
@@ -81,7 +82,7 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="p-4 sm:p-6 bg-gray-50 min-h-screen">
+    <SellerLayout>
       <div className="max-w-7xl mx-auto">
 
         {/* Dashboard Content - with overlay if not verified */}
@@ -238,7 +239,7 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+    </SellerLayout>
   );
 };
 

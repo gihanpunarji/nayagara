@@ -235,6 +235,8 @@ const login = async (req, res, role = "customer") => {
 };
 
 const sellerLogin = async (req, res, role = "seller") => {
+  console.log("Seller Login");
+  
   try {
     const { emailOrMobile, password } = req.body;
 
@@ -246,7 +248,10 @@ const sellerLogin = async (req, res, role = "seller") => {
     }
 
     const user = await User.findByEmailOrMobile(emailOrMobile);
+    console.log(user);
     if (!user) {
+      console.log("Invalid credentials 1");
+      
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
@@ -257,6 +262,8 @@ const sellerLogin = async (req, res, role = "seller") => {
       user.user_password
     );
     if (!isPasswordValid) {
+      console.log("Invalid credentials 2");
+      
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
@@ -713,9 +720,6 @@ const forgotPassword = async (req, res) => {
     <div class="email-container">
         <!-- Header -->
         <div class="header">
-            <div class="logo">
-                <span class="logo-text">N</span>
-            </div>
             <h1>Password Reset Request</h1>
             <p>Secure your Nayagara account</p>
         </div>
@@ -730,7 +734,7 @@ const forgotPassword = async (req, res) => {
             <div class="greeting">Hello there!</div>
             
             <div class="message">
-                We received a request to reset the password for your <strong>Nayagara</strong> account. If you made this request, click the button below to create a new password.
+                We received a request to reset the password for your <strong>Nayagara.lk</strong> account. If you made this request, click the button below to create a new password.
             </div>
             
             <!-- Reset Button -->
@@ -764,35 +768,10 @@ const forgotPassword = async (req, res) => {
                 </ul>
             </div>
             
-            <!-- No Request Section -->
-            <div class="no-request-section">
-                <h3>Didn't Request This?</h3>
-                <p>If you didn't request a password reset, please ignore this email or contact our support team immediately.</p>
-                <a href="mailto:support@nayagara.com" class="support-link">Contact Support</a>
-            </div>
+            
         </div>
         
-        <!-- Footer -->
-        <div class="footer">
-            <div class="footer-content">
-                <h4>Nayagara</h4>
-                <p>Your trusted online marketplace</p>
-                <p>📧 support@nayagara.com</p>
-                <p>📞 +94 11 234 5678</p>
-            </div>
-            
-            <div class="social-links">
-                <a href="#">f</a>
-                <a href="#">t</a>
-                <a href="#">i</a>
-                <a href="#">y</a>
-            </div>
-            
-            <div class="copyright">
-                <p>&copy; 2024 Nayagara. All rights reserved.</p>
-                <p>This email was sent because a password reset was requested for your account.</p>
-            </div>
-        </div>
+        
     </div>
 </body>
 </html>`,

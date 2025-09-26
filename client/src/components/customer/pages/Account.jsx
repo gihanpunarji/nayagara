@@ -4,11 +4,24 @@ import {
   LogOut, ChevronRight, Star, Truck, Clock, Gift, Shield, Eye,
   Download, MessageCircle, Bell, Edit, Copy, Share2
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 const CustomerAccount = () => {
+  const storedUsser = localStorage.getItem('user');
+  if(storedUsser == null) {
+    return <Navigate to={'/'} replace />
+  
+  }
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('user_role');
+    navigate('/login');
+  };
 
   // Mock user data
   const user = {
@@ -483,7 +496,7 @@ const CustomerAccount = () => {
 
                 {/* Logout */}
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={handleLogout}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg text-red-600 hover:bg-red-50 transition-colors mt-4"
                 >
                   <LogOut className="w-5 h-5" />

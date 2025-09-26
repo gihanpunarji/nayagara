@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Filter, X, ChevronDown, MapPin, DollarSign, Calendar, Cpu, Car, Home, Shirt, Heart, Book, Wrench } from 'lucide-react';
+import api from '../../../api/axios';
 
 const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, mainCategories }) => {
   const modalRef = useRef(null);
@@ -27,6 +28,11 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [isOpen, onClose]);
+
+  useEffect(() => {
+    const res = api.get('/districts');
+    console.log(res.data);
+  }, [])
 
   // Sri Lankan districts
   const districts = [

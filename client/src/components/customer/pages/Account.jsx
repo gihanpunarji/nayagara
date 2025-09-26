@@ -5,10 +5,15 @@ import {
   Edit, Copy, X, Check, AlertCircle, Phone, Mail, Calendar,
   Download, MessageCircle, FileText, Headphones, Plus, Minus
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 
 const CustomerAccount = () => {
+  const storedUsser = localStorage.getItem('user');
+  if(storedUsser == null) {
+    return <Navigate to={'/'} replace />
+  
+  }
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
@@ -18,18 +23,20 @@ const CustomerAccount = () => {
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
 
-  // Get user data from auth context (localStorage)
-  const userData = user || JSON.parse(localStorage.getItem('user') || '{}');
-  const walletBalance = 15750; // This would come from backend in real app
-
-  // Initialize phone number from user data
-  React.useEffect(() => {
-    if (userData.mobile || userData.phone) {
-      setPhoneNumber(userData.mobile || userData.phone || '');
-    }
-  }, [userData]);
+  // Mock user data
+  const user = {
+    name: 'Kasun Perera',
+    email: 'kasun.perera@gmail.com',
+    mobile: '+94 77 123 4567',
+    joinDate: 'January 2023',
+    profileImage: null,
+    verified: true,
+    walletBalance: 15750,
+    referralCode: 'KP2023',
+    totalReferrals: 12,
+    referralEarnings: 8500
+  };
 
   // Mock order data
   const orders = [
@@ -816,8 +823,8 @@ const CustomerAccount = () => {
                 })}
 
                 <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-red-600 hover:bg-red-50 transition-colors mt-6"
+                  onClick={() => navigate('/login')}
+                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg text-red-600 hover:bg-red-50 transition-colors mt-4"
                 >
                   <LogOut className="w-5 h-5" />
                   <span>Sign Out</span>

@@ -20,9 +20,8 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes);
-app.use('/api/address', addressRoutes);
-
+app.use('/api/products', productRoutes)
+app.use('/api/address', addressRoutes)
 
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running successfully!' });

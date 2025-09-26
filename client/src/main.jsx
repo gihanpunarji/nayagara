@@ -3,6 +3,12 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./index.css";
 
+// Auth Context and Route Protection
+import { AuthProvider } from "./context/AuthContext.jsx";
+import ProtectedRoute from "./components/shared/auth/ProtectedRoute.jsx";
+import AuthRoute from "./components/shared/auth/AuthRoute.jsx";
+import ErrorBoundary from "./components/shared/error/ErrorBoundary.jsx";
+
 // Customer Components
 import Home from "./components/customer/pages/Home.jsx";
 import CustomerLogin from "./components/customer/auth/Login.jsx";
@@ -17,6 +23,16 @@ import Checkout from "./components/customer/pages/Checkout.jsx";
 import ShopPage from "./components/customer/pages/ShopPage.jsx";
 import AdvancedSearch from "./components/customer/pages/AdvancedSearch.jsx";
 import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
+import ProductView from "./components/customer/pages/ProductView.jsx";
+import NewArrivals from "./components/customer/pages/NewArrivals.jsx";
+import FlashSale from "./components/customer/pages/FlashSale.jsx";
+import DailyDeals from "./components/customer/pages/DailyDeals.jsx";
+import TopRated from "./components/customer/pages/TopRated.jsx";
+import AboutUs from "./components/customer/pages/AboutUs.jsx";
+import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
+import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
+import ChatView from "./components/customer/pages/ChatView.jsx";
+import ChatList from "./components/customer/pages/ChatList.jsx";
 
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
@@ -36,12 +52,14 @@ import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx"
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <Routes>
         {/* Customer Routes */}
         <Route path="/" element={<Home />} />
-        <Route path="/login" element={<CustomerLogin />} />
-        <Route path="/register" element={<CustomerRegister />} />
+        <Route path="/login" element={<AuthRoute><CustomerLogin /></AuthRoute>} />
+        <Route path="/register" element={<AuthRoute><CustomerRegister /></AuthRoute>} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -56,8 +74,60 @@ createRoot(document.getElementById("root")).render(
         } />
         <Route path='/product/:id' element={
           <PageWrapper>
-            <ProductDetails />
+            <ProductView />
           </PageWrapper>
+        } />
+        <Route path='/new-arrivals' element={
+          <PageWrapper>
+            <NewArrivals />
+          </PageWrapper>
+        } />
+        <Route path='/flash-sale' element={
+          <PageWrapper>
+            <FlashSale />
+          </PageWrapper>
+        } />
+        <Route path='/daily-deals' element={
+          <PageWrapper>
+            <DailyDeals />
+          </PageWrapper>
+        } />
+        <Route path='/deals' element={
+          <PageWrapper>
+            <DailyDeals />
+          </PageWrapper>
+        } />
+        <Route path='/top-rated' element={
+          <PageWrapper>
+            <TopRated />
+          </PageWrapper>
+        } />
+        <Route path='/about-us' element={
+          <PageWrapper>
+            <AboutUs />
+          </PageWrapper>
+        } />
+        <Route path='/our-business' element={
+          <PageWrapper>
+            <OurBusiness />
+          </PageWrapper>
+        } />
+        <Route path='/buyer-protection' element={
+          <PageWrapper>
+            <BuyerProtection />
+          </PageWrapper>
+        } />
+        <Route path='/chat/:sellerId/:productId' element={
+          <ProtectedRoute>
+            <ChatView />
+          </ProtectedRoute>
+        } />
+        <Route path='/messages' element={
+          <ProtectedRoute>
+            <PageWrapper>
+              <ChatList />
+            </PageWrapper>
+          </ProtectedRoute>
         } />
         <Route path='/search' element={
           <PageWrapper>
@@ -75,14 +145,18 @@ createRoot(document.getElementById("root")).render(
           </PageWrapper>
         } />
         <Route path='/account' element={
-          <PageWrapper>
-            <CustomerAccount />
-          </PageWrapper>
+          <ProtectedRoute>
+            <PageWrapper>
+              <CustomerAccount />
+            </PageWrapper>
+          </ProtectedRoute>
         } />
         <Route path='/checkout' element={
-          <PageWrapper>
-            <Checkout />
-          </PageWrapper>
+          <ProtectedRoute>
+            <PageWrapper>
+              <Checkout />
+            </PageWrapper>
+          </ProtectedRoute>
         } />
 
         {/* Seller Routes */}
@@ -98,7 +172,9 @@ createRoot(document.getElementById("root")).render(
         <Route path="/error/network" element={<NetworkError />} />
         <Route path="/error/access-denied" element={<AccessDenied />} />
         <Route path="*" element={<NotFound />} />
-      </Routes>
-    </BrowserRouter>
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>
 );

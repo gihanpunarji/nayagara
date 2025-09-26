@@ -34,7 +34,7 @@ function SellerLogin() {
       if (res.data.success) {
         localStorage.setItem("token", res.data.token);
         localStorage.setItem("user", JSON.stringify(res.data.user));
-        navigate("/");
+        navigate("/seller/dashboard");
         // navigate("/seller/account");
       }
     } catch (err) {

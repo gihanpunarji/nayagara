@@ -1,32 +1,31 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2 } from 'lucide-react';
-import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 function CustomerLogin() {
   const [emailOrMobile, setEmailOrMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
+  const location = useLocation();
+  const { loginCustomer, loading } = useAuth();
+
+  const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setError("");
 
-    try {
-      const res = await api.post("/auth/login", { emailOrMobile, password });
-      localStorage.setItem("token", res.data.token);
-      localStorage.setItem("user", JSON.stringify(res.data.user));
-      localStorage.setItem("user_role", "customer");
-      navigate("/");
-    } catch (err) {
-      setError(err.response?.data?.message || "Login failed. Please check your credentials.");
-    } finally {
-      setLoading(false);
+    const result = await loginCustomer(emailOrMobile, password);
+
+    if (result.success) {
+      // Navigate to the page they were trying to visit, or home
+      navigate(from, { replace: true });
+    } else {
+      setError(result.error);
     }
   };
 

@@ -19,7 +19,7 @@ import {
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1); // 1: Login, 2: Email OTP, 3: Phone OTP, 4: TOTP
+  const [currentStep, setCurrentStep] = useState(1); // 1: Login, 2: Email OTP, 3: Phone OTP
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,8 +41,6 @@ const AdminLogin = () => {
   const [phoneOtpTimer, setPhoneOtpTimer] = useState(300);
   const [canResendPhone, setCanResendPhone] = useState(false);
 
-  // Step 4 - TOTP
-  const [totpCode, setTotpCode] = useState(["", "", "", "", "", ""]);
 
   // Security tracking
   const [attemptCount, setAttemptCount] = useState(0);
@@ -246,36 +244,7 @@ const AdminLogin = () => {
       await new Promise((resolve) => setTimeout(resolve, 1500));
 
       if (otpString === "654321") {
-        setCurrentStep(4);
-      } else {
-        setError("Invalid verification code. Please try again.");
-        setPhoneOtp(["", "", "", "", "", ""]);
-      }
-    } catch (err) {
-      setError("Verification failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTotpVerification = async (e) => {
-    e.preventDefault();
-    const totpString = totpCode.join("");
-
-    if (totpString.length !== 6) {
-      setError("Please enter the complete 6-digit authenticator code");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Mock TOTP verification
-      if (totpString === "789012") {
-        // Successful authentication
+        // Successful authentication - go directly to dashboard
         localStorage.setItem(
           "adminSession",
           JSON.stringify({
@@ -287,15 +256,16 @@ const AdminLogin = () => {
 
         navigate("/admin/dashboard");
       } else {
-        setError("Invalid authenticator code. Please try again.");
-        setTotpCode(["", "", "", "", "", ""]);
+        setError("Invalid verification code. Please try again.");
+        setPhoneOtp(["", "", "", "", "", ""]);
       }
     } catch (err) {
-      setError("Authentication failed. Please try again.");
+      setError("Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleResendOtp = async (type) => {
     if (type === "email" && canResendEmail) {
@@ -319,7 +289,7 @@ const AdminLogin = () => {
   const renderStepIndicator = () => (
     <div className="flex justify-center mb-8">
       <div className="flex items-center space-x-4">
-        {[1, 2, 3, 4].map((step) => (
+        {[1, 2, 3].map((step) => (
           <React.Fragment key={step}>
             <div
               className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
@@ -336,7 +306,7 @@ const AdminLogin = () => {
                 <span className="text-sm font-medium">{step}</span>
               )}
             </div>
-            {step < 4 && (
+            {step < 3 && (
               <div
                 className={`w-8 h-0.5 ${
                   step < currentStep ? "bg-green-500" : "bg-gray-300"
@@ -639,89 +609,6 @@ const AdminLogin = () => {
               </>
             ) : (
               <>
-                <span>Verify</span>
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-
-  const renderTotpVerification = () => (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Smartphone className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Authenticator Code
-        </h2>
-        <p className="text-gray-600">
-          Enter the 6-digit code from your
-          <br />
-          <span className="font-medium">Google Authenticator app</span>
-        </p>
-      </div>
-
-      <form onSubmit={handleTotpVerification} className="space-y-6">
-        <div className="flex justify-center space-x-3">
-          {totpCode.map((digit, index) => (
-            <input
-              key={index}
-              name={`otp-${index}`}
-              type="text"
-              maxLength="1"
-              value={digit}
-              onChange={(e) =>
-                handleOtpChange(index, e.target.value, setTotpCode, totpCode)
-              }
-              onKeyDown={(e) => handleKeyDown(e, index, setTotpCode, totpCode)}
-              className="w-12 h-12 text-center text-lg font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          ))}
-        </div>
-
-        {error && (
-          <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="text-sm">{error}</span>
-          </div>
-        )}
-
-        <div className="text-center">
-          <p className="text-sm text-gray-600">
-            Code refreshes every 30 seconds
-          </p>
-        </div>
-
-        <div className="flex space-x-3">
-          <button
-            type="button"
-            onClick={goBack}
-            className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all flex items-center justify-center space-x-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
-
-          <button
-            type="submit"
-            disabled={loading || totpCode.join("").length !== 6}
-            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center space-x-2 ${
-              loading || totpCode.join("").length !== 6
-                ? "bg-gray-400 cursor-not-allowed text-white"
-                : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-            }`}
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>Authenticating...</span>
-              </>
-            ) : (
-              <>
                 <span>Access Dashboard</span>
                 <ArrowRight className="w-5 h-5" />
               </>
@@ -741,7 +628,6 @@ const AdminLogin = () => {
           {currentStep === 1 && renderPrimaryLogin()}
           {currentStep === 2 && renderEmailOtp()}
           {currentStep === 3 && renderPhoneOtp()}
-          {currentStep === 4 && renderTotpVerification()}
         </div>
 
         <div className="mt-6 text-center">

@@ -37,10 +37,25 @@ import ChatList from "./components/customer/pages/ChatList.jsx";
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
 import SellerMobileVerify from "./components/seller/auth/SellerMobileVerify.jsx";
+import SellerProducts from "./components/seller/pages/Products.jsx";
+import SellerAddProduct from "./components/seller/pages/AddProduct.jsx";
+import SellerEditProduct from "./components/seller/pages/EditProduct.jsx";
+import SellerOrders from "./components/seller/pages/Orders.jsx";
+import SellerPayments from "./components/seller/pages/Payments.jsx";
+import SellerCustomers from "./components/seller/pages/Customers.jsx";
+import SellerAnalytics from "./components/seller/pages/Analytics.jsx";
+import SellerSettings from "./components/seller/pages/Settings.jsx";
+import SellerHelp from "./components/seller/pages/Help.jsx";
+import SellerMessages from "./components/seller/pages/Messages.jsx";
 
 // Admin Components
-import AdminLogin from "./components/admin/auth/Login.jsx";
+import AdminLogin from "./components/admin/auth/AdminLogin.jsx";
 import AdminDashboard from "./components/admin/pages/Dashboard.jsx";
+import AdminCustomers from "./components/admin/pages/Customers.jsx";
+import AdminSellers from "./components/admin/pages/Sellers.jsx";
+import AdminProducts from "./components/admin/pages/Products.jsx";
+import AdminOrders from "./components/admin/pages/Orders.jsx";
+import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
 
 // Shared Components
 import NotFound from './components/shared/error/NotFound.jsx'
@@ -162,10 +177,25 @@ createRoot(document.getElementById("root")).render(
         {/* Seller Routes */}
         <Route path='/seller/login' element={<SellerLogin />} />
         <Route path='/seller/dashboard' element={<Dashboard />} />
+        <Route path='/seller/products' element={<SellerProducts />} />
+        <Route path='/seller/products/add' element={<SellerAddProduct />} />
+        <Route path='/seller/products/edit/:id' element={<SellerEditProduct />} />
+        <Route path='/seller/orders' element={<SellerOrders />} />
+        <Route path='/seller/customers' element={<SellerCustomers />} />
+        <Route path='/seller/payments' element={<SellerPayments />} />
+        <Route path='/seller/analytics' element={<SellerAnalytics />} />
+        <Route path='/seller/messages' element={<SellerMessages />} />
+        <Route path='/seller/settings' element={<SellerSettings />} />
+        <Route path='/seller/help' element={<SellerHelp />} />
 
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/customers" element={<AdminCustomers />} />
+        <Route path="/admin/sellers" element={<AdminSellers />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
 
         {/* Error Routes */}
         <Route path="/error/server" element={<ServerError />} />

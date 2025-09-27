@@ -4,6 +4,7 @@ import api from '../../../api/axios';
 
 const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, mainCategories }) => {
   const modalRef = useRef(null);
+  
   const [filters, setFilters] = useState({
     category: 'All Categories',
     district: '',
@@ -13,7 +14,6 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
   });
 
   const [districts, setDistricts] = useState([]);
-
 
   // Click outside to close
   useEffect(() => {

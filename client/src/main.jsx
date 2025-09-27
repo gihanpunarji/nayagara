@@ -49,8 +49,13 @@ import SellerHelp from "./components/seller/pages/Help.jsx";
 import SellerMessages from "./components/seller/pages/Messages.jsx";
 
 // Admin Components
-import AdminLogin from "./components/admin/auth/Login.jsx";
+import AdminLogin from "./components/admin/auth/AdminLogin.jsx";
 import AdminDashboard from "./components/admin/pages/Dashboard.jsx";
+import AdminCustomers from "./components/admin/pages/Customers.jsx";
+import AdminSellers from "./components/admin/pages/Sellers.jsx";
+import AdminProducts from "./components/admin/pages/Products.jsx";
+import AdminOrders from "./components/admin/pages/Orders.jsx";
+import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
 
 // Shared Components
 import NotFound from './components/shared/error/NotFound.jsx'
@@ -186,6 +191,11 @@ createRoot(document.getElementById("root")).render(
         {/* Admin Routes */}
         <Route path="/admin/login" element={<AdminLogin />} />
         <Route path="/admin/dashboard" element={<AdminDashboard />} />
+        <Route path="/admin/customers" element={<AdminCustomers />} />
+        <Route path="/admin/sellers" element={<AdminSellers />} />
+        <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/orders" element={<AdminOrders />} />
+        <Route path="/admin/analytics" element={<AdminAnalytics />} />
 
         {/* Error Routes */}
         <Route path="/error/server" element={<ServerError />} />

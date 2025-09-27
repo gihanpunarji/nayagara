@@ -4,6 +4,51 @@ import { useNavigate } from "react-router-dom";
 
 import api from "../../../api/axios";
 
+// Sri Lankan location data
+const sriLankanLocations = {
+  "Western": {
+    "Colombo": ["Colombo 1", "Colombo 2", "Colombo 3", "Colombo 4", "Colombo 5", "Colombo 6", "Colombo 7", "Colombo 8", "Colombo 9", "Colombo 10", "Colombo 11", "Colombo 12", "Colombo 13", "Colombo 14", "Colombo 15"],
+    "Gampaha": ["Gampaha", "Negombo", "Katunayake", "Ja-Ela", "Wattala", "Kelaniya", "Peliyagoda", "Kadawatha", "Ragama", "Kiribathgoda", "Minuwangoda", "Divulapitiya", "Nittambuwa", "Veyangoda", "Mirigama"],
+    "Kalutara": ["Kalutara", "Panadura", "Horana", "Beruwala", "Aluthgama", "Matugama", "Bandaragama", "Ingiriya", "Bulathsinhala", "Palindanuwara", "Walallawita", "Agalawatta"]
+  },
+  "Central": {
+    "Kandy": ["Kandy", "Gampola", "Nawalapitiya", "Peradeniya", "Akurana", "Kadugannawa", "Katugastota", "Wattegama", "Harispattuwa", "Pathahewaheta", "Udunuwara", "Yatinuwara", "Kundasale", "Delthota"],
+    "Matale": ["Matale", "Dambulla", "Sigiriya", "Galewela", "Ukuwela", "Rattota", "Pallepola", "Naula", "Yatawatta", "Laggala-Pallegama"],
+    "Nuwara Eliya": ["Nuwara Eliya", "Hatton", "Talawakele", "Ginigathena", "Kotagala", "Maskeliya", "Bogawantalawa", "Kotmale", "Walapane", "Hangranketha", "Hanguranketha"]
+  },
+  "Southern": {
+    "Galle": ["Galle", "Hikkaduwa", "Ambalangoda", "Elpitiya", "Bentota", "Baddegama", "Imaduwa", "Yakkalamulla", "Gonapinuwala", "Wanduramba", "Udugama", "Neluwa", "Nagoda", "Bope-Poddala"],
+    "Matara": ["Matara", "Weligama", "Mirissa", "Dikwella", "Tangalle", "Hakmana", "Akuressa", "Malimbada", "Thihagoda", "Kotapola", "Pasgoda", "Pitabeddara", "Kirinda-Puhulwella", "Devinuwara"],
+    "Hambantota": ["Hambantota", "Tangalle", "Tissamaharama", "Ambalantota", "Beliatta", "Weeraketiya", "Kataragama", "Okewela", "Suriyawewa", "Thissamaharama", "Lunugamvehera"]
+  },
+  "Northern": {
+    "Jaffna": ["Jaffna", "Chavakachcheri", "Point Pedro", "Karainagar", "Velanai", "Tellippalai", "Kopay", "Nallur", "Sandilipay", "Delft"],
+    "Kilinochchi": ["Kilinochchi", "Pallai", "Paranthan", "Poonakary"],
+    "Mannar": ["Mannar", "Nanattan", "Musali", "Manthai West"]
+  },
+  "Eastern": {
+    "Trincomalee": ["Trincomalee", "Kinniya", "Kuchchaveli", "Muttur", "Kantale", "Thambalagamuwa", "Gomarankadawala", "Seruvila"],
+    "Batticaloa": ["Batticaloa", "Kaluwanchikudy", "Valachchenai", "Eravur", "Koralai Pattu", "Manmunai North", "Manmunai South & Eruvil Pattu", "Manmunai West", "Porativu Pattu"],
+    "Ampara": ["Ampara", "Akkaraipattu", "Kalmunai", "Sainthamaruthu", "Addalachchenai", "Thirukkovil", "Pottuvil", "Lahugala", "Sammanthurai", "Karaitivu", "Nainthalawa", "Padiyathalawa", "Damana", "Navithanveli", "Dehiattakandiya", "Mahaoya"]
+  },
+  "North Western": {
+    "Kurunegala": ["Kurunegala", "Kuliyapitiya", "Narammala", "Wariyapola", "Pannala", "Melsiripura", "Bingiriya", "Kobeigane", "Nikaweratiya", "Galgamuwa", "Kotawehera", "Polgahawela", "Bamunakotuwa", "Rideegama", "Ibbagamuwa", "Mawathagama", "Giriulla", "Anamaduwa", "Polpithigama", "Ambanpola", "Ehetuwewa", "Ganewatta", "Maspotha", "Rasnayakapura", "Udubaddawa", "Weerambugedara", "Giribawa", "Pannala", "Alawwa", "Dankotuwa"],
+    "Puttalam": ["Puttalam", "Chilaw", "Wennappuwa", "Nattandiya", "Dankotuwa", "Marawila", "Madampe", "Pallama", "Karukupone", "Kalpitiya", "Anamaduwa"]
+  },
+  "North Central": {
+    "Anuradhapura": ["Anuradhapura", "Kekirawa", "Thambuttegama", "Eppawala", "Medawachchiya", "Horowpothana", "Hingurakgoda", "Galenbindunuwewa", "Mihintale", "Nuwaragam Palatha Central", "Nuwaragam Palatha East", "Padaviya", "Palugaswewa", "Rajanganaya", "Rambewa", "Thirappane", "Wijayapura"],
+    "Polonnaruwa": ["Polonnaruwa", "Kaduruwela", "Medirigiriya", "Hingurakgoda", "Dimbulagala", "Lankapura", "Welikanda", "Thamankaduwa"]
+  },
+  "Uva": {
+    "Badulla": ["Badulla", "Bandarawela", "Haputale", "Welimada", "Mahiyanganaya", "Ridimaliyadda", "Haldummulla", "Passara", "Ella", "Uva-Paranagama", "Welimada", "Soranathota", "Kandaketiya", "Rideemaliyadda"],
+    "Monaragala": ["Monaragala", "Wellawaya", "Buttala", "Kataragama", "Medagama", "Sewanagala", "Madulla", "Bibile", "Madulla", "Thanamalvila", "Siyambalanduwa"]
+  },
+  "Sabaragamuwa": {
+    "Ratnapura": ["Ratnapura", "Embilipitiya", "Balangoda", "Rakwana", "Godakawela", "Pelmadulla", "Eheliyagoda", "Kuruwita", "Ayagama", "Kalawana", "Kolonna", "Nivithigala", "Weligepola", "Elapatha", "Nivitigala"],
+    "Kegalle": ["Kegalle", "Mawanella", "Warakapola", "Rambukkana", "Galigamuwa", "Aranayaka", "Bulathkohupitiya", "Yatiyantota", "Ruwanwella", "Deraniyagala", "Dehiowita"]
+  }
+};
+
 function SellerRegistration() {
   const [step, setStep] = useState(1);
 
@@ -23,11 +68,29 @@ function SellerRegistration() {
   const [city, setCity] = useState("");
   const [district, setDistrict] = useState("");
   const [province, setProvince] = useState("");
+  const [availableDistricts, setAvailableDistricts] = useState([]);
+  const [availableCities, setAvailableCities] = useState([]);
   const [postalCode, setPostalCode] = useState("");
   const [country, setCountry] = useState("Sri Lanka");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+
+  // Handle province change
+  const handleProvinceChange = (selectedProvince) => {
+    setProvince(selectedProvince);
+    setDistrict("");
+    setCity("");
+    setAvailableDistricts(selectedProvince ? Object.keys(sriLankanLocations[selectedProvince] || {}) : []);
+    setAvailableCities([]);
+  };
+
+  // Handle district change
+  const handleDistrictChange = (selectedDistrict) => {
+    setDistrict(selectedDistrict);
+    setCity("");
+    setAvailableCities(selectedDistrict && province ? sriLankanLocations[province][selectedDistrict] || [] : []);
+  };
 
   const steps = [
     { number: 1, title: "Account Details", icon: User },
@@ -93,9 +156,9 @@ function SellerRegistration() {
         address1,
         address2,
         city,
-        //   district,
-        //   province,
-        //   country,
+        district,
+        province,
+        country,
         postalCode,
       });
       if (res.data.success) {
@@ -365,61 +428,76 @@ function SellerRegistration() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
                   />
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      City <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your city"
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Postal Code <span className="text-error">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Enter postal code"
-                      value={postalCode}
-                      onChange={(e) => setPostalCode(e.target.value)}
-                      required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
-                    />
-                  </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Province <span className="text-error">*</span>
+                  </label>
+                  <select
+                    value={province}
+                    onChange={(e) => handleProvinceChange(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                  >
+                    <option value="">Select Province</option>
+                    {Object.keys(sriLankanLocations).map((provinceName) => (
+                      <option key={provinceName} value={provinceName}>
+                        {provinceName}
+                      </option>
+                    ))}
+                  </select>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       District <span className="text-error">*</span>
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your district"
+                    <select
                       value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
+                      onChange={(e) => handleDistrictChange(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
-                    />
+                      disabled={!province}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Select District</option>
+                      {availableDistricts.map((districtName) => (
+                        <option key={districtName} value={districtName}>
+                          {districtName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Province <span className="text-error">*</span>
+                      City <span className="text-error">*</span>
                     </label>
-                    <input
-                      type="text"
-                      placeholder="Enter your province"
-                      value={province}
-                      onChange={(e) => setProvince(e.target.value)}
+                    <select
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
                       required
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
-                    />
+                      disabled={!district}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Select City</option>
+                      {availableCities.map((cityName) => (
+                        <option key={cityName} value={cityName}>
+                          {cityName}
+                        </option>
+                      ))}
+                    </select>
                   </div>
+                </div>
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Postal Code <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter postal code"
+                    value={postalCode}
+                    onChange={(e) => setPostalCode(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                  />
                 </div>
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">

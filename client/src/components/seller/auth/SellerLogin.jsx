@@ -115,6 +115,9 @@ function SellerLogin() {
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Please follow this format for mobile eg: 94711234567
+                </p>
               </div>
             </div>
 
@@ -190,7 +193,7 @@ function SellerLogin() {
             <p className="text-gray-600">
               Don't have an account?{" "}
               <Link
-                to="/sell"
+                to="/seller/register"
                 className="text-primary-600 hover:text-primary-700 font-bold"
               >
                 Create Account
@@ -203,7 +206,7 @@ function SellerLogin() {
               Want to sell on Nayagara?
             </p>
             <Link
-              to="/sell"
+              to="/seller/register"
               className="text-sm text-secondary-600 hover:text-secondary-700 font-bold"
             >
               Start Selling →

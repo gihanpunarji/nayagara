@@ -149,7 +149,7 @@ const App = () => {
           image:
             categoryMeta[cat.slug]?.image || "https://via.placeholder.com/300",
         }));
-        console.log(mapped.name, map.icon, map.subcats, map.image);
+        // console.log(mapped.name, map.icon, map.subcats, map.image);
         setMainCategories(mapped);
       } catch (err) {
         console.error("Error fetching categories", err);

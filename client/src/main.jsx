@@ -79,7 +79,6 @@ createRoot(document.getElementById("root")).render(
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* Seller Routes */}
-        <Route path="/seller-login" element={<SellerLogin />} />
         <Route path='/seller/verify-mobile' element={<SellerMobileVerify />} />
         <Route path='/seller/register' element={<SellerRegistration />} />
         <Route path='/cart' element={

@@ -1,25 +1,36 @@
 const User = require("../models/User");
 
-const validMobileRegex = /^94[1-9][0-9]{8}$/;
+const validMobileRegex = /^947[0-9]{8}$/;
 
 const mobile = async (req, res) => {
   console.log("Mobile verification request received");
   try {
     const { mobile, email } = req.body;
-    if (!mobile) {
+    let newMobile;
+    if(mobile.startsWith("0")) {
+      newMobile = mobile.slice(1);
+      newMobile = "94" + newMobile;
+    } else {
+      newMobile = mobile;
+      newMobile = "94" + newMobile;
+    }
+
+    console.log(newMobile);
+    
+    if (!newMobile) {
       return res.status(400).json({
         success: false,
         message: "Mobile number is required",
       });
 
-    } else if (!validMobileRegex.test(mobile)) {
+    } else if (!validMobileRegex.test(newMobile)) {
       return res.status(400).json({
         success: false,
         message: "Please enter a valid mobile number",
       });
     }
     
-    const exsistingSeller = await User.findByMobile(mobile);
+    const exsistingSeller = await User.findByMobile(newMobile);
     if(exsistingSeller) {
       return res.status(400).json({
         success: false,
@@ -28,7 +39,6 @@ const mobile = async (req, res) => {
     }
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
-    console.log(verificationCode);
 
     fetch("https://app.text.lk/api/v3/sms/send", {
       method: "POST",
@@ -37,7 +47,7 @@ const mobile = async (req, res) => {
         Authorization: `Bearer ${process.env.TEXTLK_API_KEY}`,
       },
       body: JSON.stringify({
-        recipient: mobile,
+        recipient: newMobile,
         sender_id: process.env.TEXTLK_SENDER_ID,
         type: "plain",
         message: `Your Verification code for seller registration is ${verificationCode} , Do not share it with anyone.`,
@@ -55,8 +65,10 @@ const mobile = async (req, res) => {
       .catch((error) => {
         console.error("Error sending SMS:", error);
       });
+      console.log(newMobile, email, verificationCode);
+      
 
-    User.updateSellerMobile({ mobile, email, verificationCode });
+    User.updateSellerMobile({ newMobile, email, verificationCode });
 
     res.status(200).json({
       success: true,
@@ -74,14 +86,21 @@ const mobile = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { mobile, email, verificationCode } = req.body;
-    if (!mobile || !email || !verificationCode) {
+    const newMobile = mobile.substring(1);
+
+    if (!newMobile || !email || !verificationCode) {
       return res.status(400).json({
         success: false,
         message: "Mobile number, email and verification code are required",
       });
+    } else if (!validMobileRegex.test(newMobile)) {
+      return res.status(400).json({
+        success: false,
+        message: "Not a valid mobile number",
+      });
     }
 
-    const seller = await User.findByMobile(mobile);
+    const seller = await User.findByMobile(newMobile);
     if (!seller || seller.user_email !== email) {
       return res.status(400).json({
         success: false,
@@ -95,7 +114,7 @@ const verifyOtp = async (req, res) => {
       });
     }
     
-    await User.verifyOtp({mobile, email, verificationCode});
+    await User.verifyOtp({newMobile, email, verificationCode});
 
     res.status(200).json({
       success: true,

@@ -126,6 +126,7 @@ const sellerRegister = async (req, res, role = "seller") => {
     }
 
     const existingUser = await User.findByEmailandRoleAndNIC(email, role, nic);
+    console.log(existingUser);
     if (existingUser) {
       return res.status(400).json({
         success: false,

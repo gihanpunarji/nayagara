@@ -95,7 +95,7 @@ export const AuthProvider = ({ children }) => {
   const loginCustomer = useCallback(async (emailOrMobile, password) => {
     setLoading(true);
     try {
-      const response = await api.post('/customer/auth/login', { emailOrMobile, password });
+      const response = await api.post('/auth/login', { emailOrMobile, password });
       const { user: userData, token } = response.data;
 
       // Store auth data
@@ -125,7 +125,7 @@ export const AuthProvider = ({ children }) => {
   const registerCustomer = useCallback(async (userData) => {
     setLoading(true);
     try {
-      const response = await api.post('/customer/auth/register', userData);
+      const response = await api.post('/auth/register', userData);
       const { user: newUser, token } = response.data;
 
       // Store auth data

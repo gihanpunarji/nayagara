@@ -165,7 +165,7 @@ const App = () => {
     { name: "Daily Deals", href: "#" },
     { name: "New Arrivals", href: "#" },
     { name: "Best Sellers", href: "#" },
-    { name: "Nayagara Water", href: "https://nayagara.lk/" },
+   { name: "Nayagara Water", href: "/nayagara_water" },
   ];
 
   // Responsive Layout Component

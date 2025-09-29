@@ -180,9 +180,15 @@ const Header = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 sm:space-x-6 overflow-x-auto scrollbar-hide">
                 {quickLinks.map((link, idx) => (
-                  <a key={idx} href={link.href} target='_blank' className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
-                    {link.name}
-                  </a>
+                  link.href.startsWith('#') ? (
+                    <a key={idx} href={link.href} className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link key={idx} to={link.href} className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
+                      {link.name}
+                    </Link>
+                  )
                 ))}
               </div>
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">

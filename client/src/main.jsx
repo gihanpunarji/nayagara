@@ -33,6 +33,7 @@ import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
 import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
 import ChatList from "./components/customer/pages/ChatList.jsx";
+import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";

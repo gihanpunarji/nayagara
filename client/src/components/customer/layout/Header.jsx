@@ -25,7 +25,7 @@ const Header = ({
     navigate('/');
   };
 
-    console.log("Filters "+mainCategories);
+    // console.log("Filters "+mainCategories);
 
 
   const handleAccountClick = () => {
@@ -47,7 +47,7 @@ const Header = ({
   const handleFiltersApply = (filters) => {
     setActiveFilters(filters);
     // Here you can implement the actual filtering logic
-    console.log('Applied filters:', filters);
+    // console.log('Applied filters:', filters);
   };
 
   // Count active filters

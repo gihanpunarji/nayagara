@@ -9,7 +9,7 @@ const getAllCategories = async (req, res) => {
         message: "No categories found",
       });
     }
-    console.log(categories);
+    // console.log(categories);
     
 
     res.json({

@@ -13,10 +13,7 @@ const PageWrapper = ({ children }) => {
   const [serverStatus] = useState("Connected");
 
   const mainCategories = [
-    { name: "Electronics", icon: "📱", subcats: ["Mobile Phones", "Laptops", "TVs", "Cameras"] },
-    { name: "Vehicles", icon: "🚗", subcats: ["Cars", "Motorcycles", "Parts", "Accessories"] },
-    { name: "Fashion", icon: "👔", subcats: ["Men's Wear", "Women's Wear", "Shoes", "Accessories"] },
-    { name: "Home & Living", icon: "🏠", subcats: ["Furniture", "Appliances", "Decor", "Kitchen"] },
+    
   ];
 
   const quickLinks = [

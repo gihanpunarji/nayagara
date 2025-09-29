@@ -25,6 +25,9 @@ const Header = ({
     navigate('/');
   };
 
+    console.log("Filters "+mainCategories);
+
+
   const handleAccountClick = () => {
     if (isAuthenticated) {
       navigate('/account');

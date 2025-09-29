@@ -181,14 +181,14 @@ class User {
     return updateResult;
   }
 
-  static async updateSellerMobile({ mobile, email, verificationCode }) {
+  static async updateSellerMobile({ newMobile, email, verificationCode }) {
     const connection = getConnection();
 
     const [
       result,
     ] = await connection.execute(
       "UPDATE users SET user_mobile = ?, mobile_verification_code = ? WHERE user_email = ?",
-      [mobile, verificationCode, email]
+      [newMobile, verificationCode, email]
     );
 
     console.log(result);

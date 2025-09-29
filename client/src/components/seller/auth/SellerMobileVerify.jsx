@@ -196,21 +196,39 @@ function SellerMobileVerify() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mobile Number
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Phone className="h-5 w-5 text-gray-400" />
+                <div className="flex">
+                    {/* Country Code Dropdown */}
+                    <div className="relative">
+                      <select
+                        disabled
+                        className="h-full px-3 py-3 border border-gray-300 border-r-0 rounded-l-lg bg-gray-100 cursor-not-allowed focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 appearance-none pr-8"
+                      >
+                        <option value="+94">🇱🇰 +94</option>
+                      </select>
+                      {/* Custom dropdown arrow */}
+                      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg
+                          className="w-4 h-4 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          
+                        </svg>
+                      </div>
+                    </div>
+                    <input
+                      type="tel"
+                      placeholder="77 123 4567"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      required
+                      className="flex-1 px-4 py-3 border border-gray-300 border-l-0 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                    />
                   </div>
-                  <input
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    placeholder="Enter your mobile number"
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-secondary-500 focus:border-secondary-500 transition-colors"
-                  />
-                </div>
-                <p className="mt-2 text-sm text-gray-500">
-                  Format: 94771234567
-                </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter your mobile number without the country code
+                  </p>
               </div>
 
               {error && (

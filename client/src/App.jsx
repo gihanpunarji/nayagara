@@ -105,57 +105,60 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // Categories data
-  const mainCategories = [
-    {
-      name: "Electronics",
-      icon: "📱",
-      subcats: ["Mobile Phones", "Laptops", "TVs", "Cameras"],
-      image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Vehicles",
-      icon: "🚗",
-      subcats: ["Cars", "Motorcycles", "Parts", "Accessories"],
-      image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Fashion",
-      icon: "👔",
-      subcats: ["Men's Wear", "Women's Wear", "Shoes", "Accessories"],
-      image: "https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Home & Living",
-      icon: "🏠",
-      subcats: ["Furniture", "Appliances", "Decor", "Kitchen"],
-      image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Beauty & Health",
-      icon: "💄",
-      subcats: ["Skincare", "Makeup", "Supplements", "Fitness"],
-      image: "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Sports",
-      icon: "⚽",
-      subcats: ["Cricket", "Football", "Fitness", "Outdoor"],
-      image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Books & Media",
-      icon: "📚",
-      subcats: ["Educational", "Fiction", "Children", "Software"],
-      image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-    {
-      name: "Services",
-      icon: "🔧",
-      subcats: ["Home Services", "Professional", "Events", "Education"],
-      image: "https://images.unsplash.com/photo-1581578731548-c64695cc6952?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
-  ];
+  useEffect(() => {
+  const fetchCategories = async () => {
+    try {
+      const res = await api.get("/categories");
+      const mapped = res.data.map((cat) => ({
+        name: cat.name,
+        icon: categoryMeta[cat.slug]?.icon || "❓",
+        subcats: categoryMeta[cat.slug]?.subcats || [],
+        image: categoryMeta[cat.slug]?.image || "https://via.placeholder.com/300",
+      }));
+      console.log(mapped);
+      setMainCategories(mapped);
+    } catch (err) {
+      console.error("Error fetching categories", err);
+    }
+  };
+
+  fetchCategories();
+}, []);
+
+  const [mainCategories, setMainCategories] = useState([]);
+
+  const categoryMeta = {
+  electronics: {
+    icon: "📱",
+    subcats: ["Mobile Phones", "Laptops", "TVs", "Cameras"],
+    image:
+      "https://images.unsplash.com/photo-1498049794561-7780e7231661?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+  },
+  fashion: {
+    icon: "👔",
+    subcats: ["Men's Wear", "Women's Wear", "Shoes", "Accessories"],
+    image:
+      "https://images.unsplash.com/photo-1445205170230-053b83016050?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+  },
+  groceries: {
+    icon: "🛒",
+    subcats: ["Fruits", "Vegetables", "Snacks", "Beverages"],
+    image:
+      "https://images.unsplash.com/photo-1586201375761-83865001e17d?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+  },
+  furniture: {
+    icon: "🏠",
+    subcats: ["Living Room", "Bedroom", "Office", "Outdoor"],
+    image:
+      "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+  },
+  sports: {
+    icon: "⚽",
+    subcats: ["Cricket", "Football", "Fitness", "Outdoor"],
+    image:
+      "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
+  },
+};
 
   const quickLinks = [
     { name: "Daily Deals", href: "#" },

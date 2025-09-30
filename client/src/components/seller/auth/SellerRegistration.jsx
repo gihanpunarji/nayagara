@@ -1,53 +1,8 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Check, User, Home, Phone, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../../api/axios";
-
-// Sri Lankan location data
-const sriLankanLocations = {
-  "Western": {
-    "Colombo": ["Colombo 1", "Colombo 2", "Colombo 3", "Colombo 4", "Colombo 5", "Colombo 6", "Colombo 7", "Colombo 8", "Colombo 9", "Colombo 10", "Colombo 11", "Colombo 12", "Colombo 13", "Colombo 14", "Colombo 15"],
-    "Gampaha": ["Gampaha", "Negombo", "Katunayake", "Ja-Ela", "Wattala", "Kelaniya", "Peliyagoda", "Kadawatha", "Ragama", "Kiribathgoda", "Minuwangoda", "Divulapitiya", "Nittambuwa", "Veyangoda", "Mirigama"],
-    "Kalutara": ["Kalutara", "Panadura", "Horana", "Beruwala", "Aluthgama", "Matugama", "Bandaragama", "Ingiriya", "Bulathsinhala", "Palindanuwara", "Walallawita", "Agalawatta"]
-  },
-  "Central": {
-    "Kandy": ["Kandy", "Gampola", "Nawalapitiya", "Peradeniya", "Akurana", "Kadugannawa", "Katugastota", "Wattegama", "Harispattuwa", "Pathahewaheta", "Udunuwara", "Yatinuwara", "Kundasale", "Delthota"],
-    "Matale": ["Matale", "Dambulla", "Sigiriya", "Galewela", "Ukuwela", "Rattota", "Pallepola", "Naula", "Yatawatta", "Laggala-Pallegama"],
-    "Nuwara Eliya": ["Nuwara Eliya", "Hatton", "Talawakele", "Ginigathena", "Kotagala", "Maskeliya", "Bogawantalawa", "Kotmale", "Walapane", "Hangranketha", "Hanguranketha"]
-  },
-  "Southern": {
-    "Galle": ["Galle", "Hikkaduwa", "Ambalangoda", "Elpitiya", "Bentota", "Baddegama", "Imaduwa", "Yakkalamulla", "Gonapinuwala", "Wanduramba", "Udugama", "Neluwa", "Nagoda", "Bope-Poddala"],
-    "Matara": ["Matara", "Weligama", "Mirissa", "Dikwella", "Tangalle", "Hakmana", "Akuressa", "Malimbada", "Thihagoda", "Kotapola", "Pasgoda", "Pitabeddara", "Kirinda-Puhulwella", "Devinuwara"],
-    "Hambantota": ["Hambantota", "Tangalle", "Tissamaharama", "Ambalantota", "Beliatta", "Weeraketiya", "Kataragama", "Okewela", "Suriyawewa", "Thissamaharama", "Lunugamvehera"]
-  },
-  "Northern": {
-    "Jaffna": ["Jaffna", "Chavakachcheri", "Point Pedro", "Karainagar", "Velanai", "Tellippalai", "Kopay", "Nallur", "Sandilipay", "Delft"],
-    "Kilinochchi": ["Kilinochchi", "Pallai", "Paranthan", "Poonakary"],
-    "Mannar": ["Mannar", "Nanattan", "Musali", "Manthai West"]
-  },
-  "Eastern": {
-    "Trincomalee": ["Trincomalee", "Kinniya", "Kuchchaveli", "Muttur", "Kantale", "Thambalagamuwa", "Gomarankadawala", "Seruvila"],
-    "Batticaloa": ["Batticaloa", "Kaluwanchikudy", "Valachchenai", "Eravur", "Koralai Pattu", "Manmunai North", "Manmunai South & Eruvil Pattu", "Manmunai West", "Porativu Pattu"],
-    "Ampara": ["Ampara", "Akkaraipattu", "Kalmunai", "Sainthamaruthu", "Addalachchenai", "Thirukkovil", "Pottuvil", "Lahugala", "Sammanthurai", "Karaitivu", "Nainthalawa", "Padiyathalawa", "Damana", "Navithanveli", "Dehiattakandiya", "Mahaoya"]
-  },
-  "North Western": {
-    "Kurunegala": ["Kurunegala", "Kuliyapitiya", "Narammala", "Wariyapola", "Pannala", "Melsiripura", "Bingiriya", "Kobeigane", "Nikaweratiya", "Galgamuwa", "Kotawehera", "Polgahawela", "Bamunakotuwa", "Rideegama", "Ibbagamuwa", "Mawathagama", "Giriulla", "Anamaduwa", "Polpithigama", "Ambanpola", "Ehetuwewa", "Ganewatta", "Maspotha", "Rasnayakapura", "Udubaddawa", "Weerambugedara", "Giribawa", "Pannala", "Alawwa", "Dankotuwa"],
-    "Puttalam": ["Puttalam", "Chilaw", "Wennappuwa", "Nattandiya", "Dankotuwa", "Marawila", "Madampe", "Pallama", "Karukupone", "Kalpitiya", "Anamaduwa"]
-  },
-  "North Central": {
-    "Anuradhapura": ["Anuradhapura", "Kekirawa", "Thambuttegama", "Eppawala", "Medawachchiya", "Horowpothana", "Hingurakgoda", "Galenbindunuwewa", "Mihintale", "Nuwaragam Palatha Central", "Nuwaragam Palatha East", "Padaviya", "Palugaswewa", "Rajanganaya", "Rambewa", "Thirappane", "Wijayapura"],
-    "Polonnaruwa": ["Polonnaruwa", "Kaduruwela", "Medirigiriya", "Hingurakgoda", "Dimbulagala", "Lankapura", "Welikanda", "Thamankaduwa"]
-  },
-  "Uva": {
-    "Badulla": ["Badulla", "Bandarawela", "Haputale", "Welimada", "Mahiyanganaya", "Ridimaliyadda", "Haldummulla", "Passara", "Ella", "Uva-Paranagama", "Welimada", "Soranathota", "Kandaketiya", "Rideemaliyadda"],
-    "Monaragala": ["Monaragala", "Wellawaya", "Buttala", "Kataragama", "Medagama", "Sewanagala", "Madulla", "Bibile", "Madulla", "Thanamalvila", "Siyambalanduwa"]
-  },
-  "Sabaragamuwa": {
-    "Ratnapura": ["Ratnapura", "Embilipitiya", "Balangoda", "Rakwana", "Godakawela", "Pelmadulla", "Eheliyagoda", "Kuruwita", "Ayagama", "Kalawana", "Kolonna", "Nivithigala", "Weligepola", "Elapatha", "Nivitigala"],
-    "Kegalle": ["Kegalle", "Mawanella", "Warakapola", "Rambukkana", "Galigamuwa", "Aranayaka", "Bulathkohupitiya", "Yatiyantota", "Ruwanwella", "Deraniyagala", "Dehiowita"]
-  }
-};
 
 function SellerRegistration() {
   const [step, setStep] = useState(1);
@@ -76,20 +31,90 @@ function SellerRegistration() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
 
-  // Handle province change
-  const handleProvinceChange = (selectedProvince) => {
-    setProvince(selectedProvince);
-    setDistrict("");
-    setCity("");
-    setAvailableDistricts(selectedProvince ? Object.keys(sriLankanLocations[selectedProvince] || {}) : []);
-    setAvailableCities([]);
+  const [provinces, setProvinces] = useState([]);
+
+  const [selectedProvinceId, setSelectedProvinceId] = useState("");
+  const [selectedDistrictId, setSelectedDistrictId] = useState("");
+  const [cityId, setCityId] = useState("");
+
+  useEffect(() => {
+    async function fetchProvinces() {
+      try {
+        const res = await api.get("/address/provinces");
+        if (res.data.success) {
+          setProvinces(res.data.data); // This should include both id and name
+        }
+      } catch (error) {
+        console.error("Failed to fetch provinces:", error);
+      }
+    }
+    fetchProvinces();
+  }, []);
+
+  const handleProvinceChange = async (provinceName) => {
+    setProvince(provinceName);
+
+    const selectedProvince = provinces.find(
+      (p) => p.province_name === provinceName
+    );
+    if (selectedProvince) {
+      setSelectedProvinceId(selectedProvince.province_id);
+
+      setDistrict("");
+      setCity("");
+      setAvailableDistricts([]);
+      setAvailableCities([]);
+
+      try {
+        const res = await api.get(
+          `/address/districts/${selectedProvince.province_id}`
+        );
+        if (res.data.success) {
+          setAvailableDistricts(res.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch districts:", error);
+      }
+    }
   };
 
   // Handle district change
-  const handleDistrictChange = (selectedDistrict) => {
-    setDistrict(selectedDistrict);
-    setCity("");
-    setAvailableCities(selectedDistrict && province ? sriLankanLocations[province][selectedDistrict] || [] : []);
+  const handleDistrictChange = async (districtName) => {
+    setDistrict(districtName);
+
+    const selectedDistrict = availableDistricts.find(
+      (d) => d.district_name === districtName
+    );
+    if (selectedDistrict) {
+      setSelectedDistrictId(selectedDistrict.district_id);
+
+      setCity("");
+      setAvailableCities([]);
+
+      try {
+        const res = await api.get(
+          `/address/cities/${selectedDistrict.district_id}`
+        );
+        if (res.data.success) {
+          setAvailableCities(res.data.data);
+          console.log(res.data.data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch cities:", error);
+      }
+    }
+  };
+
+  const handleCityChange = (selectedCityName) => {
+    setCity(selectedCityName);
+    if (selectedCityName && availableCities.length > 0) {
+      const selectedCity = availableCities.find(
+        (c) => c.city_name === selectedCityName
+      );
+      setCityId(selectedCity ? selectedCity.city_id : "");
+    } else {
+      setCityId("");
+    }
   };
 
   const steps = [
@@ -142,6 +167,8 @@ function SellerRegistration() {
   };
 
   const handleAddressContinue = async (e) => {
+    console.log(cityId);
+
     e.preventDefault();
     try {
       setLoading(true);
@@ -155,7 +182,7 @@ function SellerRegistration() {
         nic,
         address1,
         address2,
-        city,
+        city: cityId,
         district,
         province,
         country,
@@ -280,10 +307,10 @@ function SellerRegistration() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-4">
             <img
-                src="/logo.png"
-                alt="Nayagara.lk"
-                className="w-10 h-10 object-contain"
-              />
+              src="/logo.png"
+              alt="Nayagara.lk"
+              className="w-10 h-10 object-contain"
+            />
           </div>
           <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
             Sell on Nayagara
@@ -439,9 +466,12 @@ function SellerRegistration() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
                   >
                     <option value="">Select Province</option>
-                    {Object.keys(sriLankanLocations).map((provinceName) => (
-                      <option key={provinceName} value={provinceName}>
-                        {provinceName}
+                    {provinces.map((province) => (
+                      <option
+                        key={province.province_id}
+                        value={province.province_name}
+                      >
+                        {province.province_name}
                       </option>
                     ))}
                   </select>
@@ -459,9 +489,12 @@ function SellerRegistration() {
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Select District</option>
-                      {availableDistricts.map((districtName) => (
-                        <option key={districtName} value={districtName}>
-                          {districtName}
+                      {availableDistricts.map((district) => (
+                        <option
+                          key={district.district_id}
+                          value={district.district_name}
+                        >
+                          {district.district_name}
                         </option>
                       ))}
                     </select>
@@ -472,15 +505,15 @@ function SellerRegistration() {
                     </label>
                     <select
                       value={city}
-                      onChange={(e) => setCity(e.target.value)}
+                      onChange={(e) => handleCityChange(e.target.value)}
                       required
                       disabled={!district}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white disabled:bg-gray-100 disabled:cursor-not-allowed"
                     >
                       <option value="">Select City</option>
-                      {availableCities.map((cityName) => (
-                        <option key={cityName} value={cityName}>
-                          {cityName}
+                      {availableCities.map((city) => (
+                        <option key={city.city_name} value={city.city_name}>
+                          {city.city_name}
                         </option>
                       ))}
                     </select>
@@ -543,15 +576,41 @@ function SellerRegistration() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mobile Number <span className="text-error">*</span>
                   </label>
-                  <input
-                    type="tel"
-                    placeholder="+94 77 123 4567"
-                    value={mobile}
-                    onChange={(e) => setMobile(e.target.value)}
-                    required
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
-                  />
+                  <div className="flex">
+                    {/* Country Code Dropdown */}
+                    <div className="relative">
+                      <select
+                        disabled
+                        className="h-full px-3 py-3 border border-gray-300 border-r-0 rounded-l-lg bg-gray-100 cursor-not-allowed focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 appearance-none pr-8"
+                      >
+                        <option value="+94">🇱🇰 +94</option>
+                      </select>
+                      {/* Custom dropdown arrow */}
+                      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
+                        <svg
+                          className="w-4 h-4 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          
+                        </svg>
+                      </div>
+                    </div>
+                    <input
+                      type="tel"
+                      placeholder="77 123 4567"
+                      value={mobile}
+                      onChange={(e) => setMobile(e.target.value)}
+                      required
+                      className="flex-1 px-4 py-3 border border-gray-300 border-l-0 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter your mobile number without the country code
+                  </p>
                 </div>
+                
                 <div className="flex gap-4 pt-4">
                   <Button
                     variant="secondary"

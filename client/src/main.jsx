@@ -33,6 +33,7 @@ import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
 import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
 import ChatList from "./components/customer/pages/ChatList.jsx";
+import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 
 // Advertisement Components
 import PostAd from "./components/customer/pages/PostAd.jsx";
@@ -64,182 +65,298 @@ import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
 import AdManagement from "./components/admin/pages/AdManagement.jsx";
 
 // Shared Components
-import NotFound from './components/shared/error/NotFound.jsx'
-import ServerError from './components/shared/error/ServerError.jsx'
-import NetworkError from './components/shared/error/NetworkError.jsx'
-import AccessDenied from './components/shared/error/AccessDenied.jsx'
-import Dashboard from './components/seller/pages/Dashboard.jsx'
+import NotFound from "./components/shared/error/NotFound.jsx";
+import ServerError from "./components/shared/error/ServerError.jsx";
+import NetworkError from "./components/shared/error/NetworkError.jsx";
+import AccessDenied from "./components/shared/error/AccessDenied.jsx";
+import Dashboard from "./components/seller/pages/Dashboard.jsx";
 import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx";
+import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
-        <AuthProvider>
-          <Routes>
-        {/* Customer Routes */}
-        <Route path="/" element={<Home />} />
-        <Route path="/login" element={<AuthRoute><CustomerLogin /></AuthRoute>} />
-        <Route path="/register" element={<AuthRoute><CustomerRegister /></AuthRoute>} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
+        <Routes>
+          {/* Admin Routes - WITHOUT AuthProvider */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route
+            path="/admin/dashboard"
+            element={
+              <AdminProtectedRoute>
+                <AdminDashboard />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/customers"
+            element={
+              <AdminProtectedRoute>
+                <AdminCustomers />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/sellers"
+            element={
+              <AdminProtectedRoute>
+                <AdminSellers />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/products"
+            element={
+              <AdminProtectedRoute>
+                <AdminProducts />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/orders"
+            element={
+              <AdminProtectedRoute>
+                <AdminOrders />
+              </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminProtectedRoute>
+                <AdminAnalytics />
+              </AdminProtectedRoute>
+            }
+          />
 
-        {/* Seller Routes */}
-        <Route path="/seller-login" element={<SellerLogin />} />
-        <Route path='/seller/verify-mobile' element={<SellerMobileVerify />} />
-        <Route path='/seller/register' element={<SellerRegistration />} />
-        <Route path='/cart' element={
-          <PageWrapper>
-            <ShoppingCart />
-          </PageWrapper>
-        } />
-        <Route path='/product/:id' element={
-          <PageWrapper>
-            <ProductView />
-          </PageWrapper>
-        } />
-        <Route path='/new-arrivals' element={
-          <PageWrapper>
-            <NewArrivals />
-          </PageWrapper>
-        } />
-        <Route path='/flash-sale' element={
-          <PageWrapper>
-            <FlashSale />
-          </PageWrapper>
-        } />
-        <Route path='/daily-deals' element={
-          <PageWrapper>
-            <DailyDeals />
-          </PageWrapper>
-        } />
-        <Route path='/deals' element={
-          <PageWrapper>
-            <DailyDeals />
-          </PageWrapper>
-        } />
-        <Route path='/top-rated' element={
-          <PageWrapper>
-            <TopRated />
-          </PageWrapper>
-        } />
-        <Route path='/about-us' element={
-          <PageWrapper>
-            <AboutUs />
-          </PageWrapper>
-        } />
-        <Route path='/our-business' element={
-          <PageWrapper>
-            <OurBusiness />
-          </PageWrapper>
-        } />
-        <Route path='/buyer-protection' element={
-          <PageWrapper>
-            <BuyerProtection />
-          </PageWrapper>
-        } />
-        <Route path='/chat/:sellerId/:productId' element={
-          <ProtectedRoute>
-            <ChatView />
-          </ProtectedRoute>
-        } />
-        <Route path='/messages' element={
-          <ProtectedRoute>
-            <PageWrapper>
-              <ChatList />
-            </PageWrapper>
-          </ProtectedRoute>
-        } />
-        <Route path='/search' element={
-          <PageWrapper>
-            <SearchPage />
-          </PageWrapper>
-        } />
-        <Route path='/shop' element={
-          <PageWrapper>
-            <ShopPage />
-          </PageWrapper>
-        } />
-        <Route path='/advanced-search' element={
-          <PageWrapper>
-            <AdvancedSearch />
-          </PageWrapper>
-        } />
-        <Route path='/account' element={
-          <ProtectedRoute>
-            <PageWrapper>
-              <CustomerAccount />
-            </PageWrapper>
-          </ProtectedRoute>
-        } />
-        <Route path='/checkout' element={
-          <ProtectedRoute>
-            <PageWrapper>
-              <Checkout />
-            </PageWrapper>
-          </ProtectedRoute>
-        } />
+          {/* All other routes WITH AuthProvider */}
+          <Route
+            path="/*"
+            element={
+              <AuthProvider>
+                <Routes>
+                  {/* Customer Routes */}
+                  <Route path="/" element={<Home />} />
+                  <Route
+                    path="/login"
+                    element={
+                      <AuthRoute>
+                        <CustomerLogin />
+                      </AuthRoute>
+                    }
+                  />
+                  <Route
+                    path="/register"
+                    element={
+                      <AuthRoute>
+                        <CustomerRegister />
+                      </AuthRoute>
+                    }
+                  />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password" element={<ResetPassword />} />
 
-        {/* Advertisement Routes */}
-        <Route path='/post-ad' element={
-          <ProtectedRoute>
-            <PageWrapper>
-              <PostAd />
-            </PageWrapper>
-          </ProtectedRoute>
-        } />
-        <Route path='/ad/:id' element={
-          <PageWrapper>
-            <AdDetails />
-          </PageWrapper>
-        } />
-        <Route path='/ads' element={
-          <PageWrapper>
-            <AdListings />
-          </PageWrapper>
-        } />
-        <Route path='/ads/vehicles' element={
-          <PageWrapper>
-            <AdListings />
-          </PageWrapper>
-        } />
-        <Route path='/ads/property' element={
-          <PageWrapper>
-            <AdListings />
-          </PageWrapper>
-        } />
+                  {/* Seller Routes */}
+                  <Route path="/seller-login" element={<SellerLogin />} />
+                  <Route
+                    path="/seller/verify-mobile"
+                    element={<SellerMobileVerify />}
+                  />
+                  <Route
+                    path="/seller/register"
+                    element={<SellerRegistration />}
+                  />
+                  <Route
+                    path="/cart"
+                    element={
+                      <PageWrapper>
+                        <ShoppingCart />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/product/:id"
+                    element={
+                      <PageWrapper>
+                        <ProductView />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/new-arrivals"
+                    element={
+                      <PageWrapper>
+                        <NewArrivals />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/flash-sale"
+                    element={
+                      <PageWrapper>
+                        <FlashSale />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/daily-deals"
+                    element={
+                      <PageWrapper>
+                        <DailyDeals />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/deals"
+                    element={
+                      <PageWrapper>
+                        <DailyDeals />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/top-rated"
+                    element={
+                      <PageWrapper>
+                        <TopRated />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/about-us"
+                    element={
+                      <PageWrapper>
+                        <AboutUs />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/our-business"
+                    element={
+                      <PageWrapper>
+                        <OurBusiness />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/buyer-protection"
+                    element={
+                      <PageWrapper>
+                        <BuyerProtection />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/chat/:sellerId/:productId"
+                    element={
+                      <ProtectedRoute>
+                        <ChatView />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/messages"
+                    element={
+                      <ProtectedRoute>
+                        <PageWrapper>
+                          <ChatList />
+                        </PageWrapper>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/search"
+                    element={
+                      <PageWrapper>
+                        <SearchPage />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/shop"
+                    element={
+                      <PageWrapper>
+                        <ShopPage />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/advanced-search"
+                    element={
+                      <PageWrapper>
+                        <AdvancedSearch />
+                      </PageWrapper>
+                    }
+                  />
+                  <Route
+                    path="/account"
+                    element={
+                      <ProtectedRoute>
+                        <PageWrapper>
+                          <CustomerAccount />
+                        </PageWrapper>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/checkout"
+                    element={
+                      <ProtectedRoute>
+                        <PageWrapper>
+                          <Checkout />
+                        </PageWrapper>
+                      </ProtectedRoute>
+                    }
+                  />
 
-        {/* Seller Routes */}
-        <Route path='/seller/login' element={<SellerLogin />} />
-        <Route path='/seller/dashboard' element={<Dashboard />} />
-        <Route path='/seller/products' element={<SellerProducts />} />
-        <Route path='/seller/products/add' element={<SellerAddProduct />} />
-        <Route path='/seller/products/edit/:id' element={<SellerEditProduct />} />
-        <Route path='/seller/orders' element={<SellerOrders />} />
-        <Route path='/seller/customers' element={<SellerCustomers />} />
-        <Route path='/seller/payments' element={<SellerPayments />} />
-        <Route path='/seller/analytics' element={<SellerAnalytics />} />
-        <Route path='/seller/messages' element={<SellerMessages />} />
-        <Route path='/seller/settings' element={<SellerSettings />} />
-        <Route path='/seller/help' element={<SellerHelp />} />
+                  {/* Seller Routes */}
+                  <Route path="/seller/login" element={<SellerLogin />} />
+                  <Route path="/seller/dashboard" element={<Dashboard />} />
+                  <Route path="/seller/products" element={<SellerProducts />} />
+                  <Route
+                    path="/seller/products/add"
+                    element={<SellerAddProduct />}
+                  />
+                  <Route
+                    path="/seller/products/edit/:id"
+                    element={<SellerEditProduct />}
+                  />
+                  <Route path="/seller/orders" element={<SellerOrders />} />
+                  <Route
+                    path="/seller/customers"
+                    element={<SellerCustomers />}
+                  />
+                  <Route path="/seller/payments" element={<SellerPayments />} />
+                  <Route
+                    path="/seller/analytics"
+                    element={<SellerAnalytics />}
+                  />
+                  <Route path="/seller/messages" element={<SellerMessages />} />
+                  <Route path="/seller/settings" element={<SellerSettings />} />
+                  <Route path="/seller/help" element={<SellerHelp />} />
 
-        {/* Admin Routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/customers" element={<AdminCustomers />} />
-        <Route path="/admin/sellers" element={<AdminSellers />} />
-        <Route path="/admin/products" element={<AdminProducts />} />
-        <Route path="/admin/advertisements" element={<AdManagement />} />
-        <Route path="/admin/orders" element={<AdminOrders />} />
-        <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                  {/* Admin Routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/customers" element={<AdminCustomers />} />
+                  <Route path="/admin/sellers" element={<AdminSellers />} />
+                  <Route path="/admin/products" element={<AdminProducts />} />
+                  <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
 
-        {/* Error Routes */}
-        <Route path="/error/server" element={<ServerError />} />
-        <Route path="/error/network" element={<NetworkError />} />
-        <Route path="/error/access-denied" element={<AccessDenied />} />
-        <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AuthProvider>
+                  {/* Error Routes */}
+                  <Route path="/error/server" element={<ServerError />} />
+                  <Route path="/error/network" element={<NetworkError />} />
+                  <Route
+                    path="/error/access-denied"
+                    element={<AccessDenied />}
+                  />
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </AuthProvider>
+            }
+          />
+        </Routes>
       </BrowserRouter>
     </ErrorBoundary>
   </StrictMode>

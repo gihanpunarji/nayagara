@@ -18,11 +18,8 @@ const AuthRoute = ({ children }) => {
   }
 
   if (isAuthenticated) {
-    // User is already logged in, redirect to home
     return <Navigate to="/" replace />;
   }
-
-  // User is not authenticated, show the auth page (login/register)
   return children;
 };
 

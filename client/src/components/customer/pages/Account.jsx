@@ -31,7 +31,7 @@ const CustomerAccount = () => {
   const navigate = useNavigate();
 
   // Mock user data
-  const user = {
+  const userData = {
     name: 'Kasun Perera',
     email: 'kasun.perera@gmail.com',
     mobile: '+94 77 123 4567',

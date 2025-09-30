@@ -25,6 +25,9 @@ const Header = ({
     navigate('/');
   };
 
+    // console.log("Filters "+mainCategories);
+
+
   const handleAccountClick = () => {
     if (isAuthenticated) {
       navigate('/account');
@@ -44,7 +47,7 @@ const Header = ({
   const handleFiltersApply = (filters) => {
     setActiveFilters(filters);
     // Here you can implement the actual filtering logic
-    console.log('Applied filters:', filters);
+    // console.log('Applied filters:', filters);
   };
 
   // Count active filters
@@ -195,9 +198,15 @@ const Header = ({
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 sm:space-x-6 overflow-x-auto scrollbar-hide">
                 {quickLinks.map((link, idx) => (
-                  <a key={idx} href={link.href} target='_blank' className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
-                    {link.name}
-                  </a>
+                  link.href.startsWith('#') ? (
+                    <a key={idx} href={link.href} className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
+                      {link.name}
+                    </a>
+                  ) : (
+                    <Link key={idx} to={link.href} className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
+                      {link.name}
+                    </Link>
+                  )
                 ))}
               </div>
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">

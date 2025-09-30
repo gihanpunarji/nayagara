@@ -1,5 +1,6 @@
 const e = require("express");
 const User = require("../models/User");
+const Admin = require("../models/Admin");
 const jwt = require("jsonwebtoken");
 const {
   validateUserInputs,
@@ -10,6 +11,7 @@ const crypto = require("crypto");
 const nodeMailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const { getConnection } = require("../config/database");
+const { log } = require("console");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
@@ -830,11 +832,59 @@ const resetPassword = async (req, res) => {
   }
 };
 
+const loginAdmin = async (req, res) => {
+  try {
+    const {email, password} = req.body;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    } else if (!password) {
+      return res.status(400).json({
+        success: false,
+        message: "Password is required",
+      });
+    }
+
+    const admin = await Admin.loginAdmin(email, password);
+    if (!admin) {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+
+    const validPassword = await Admin.comparePassword(password, admin.admin_password);
+    if (!validPassword) {
+      return res.json({
+        success: false,
+        message: "Invalid credentials",
+      });
+    }
+    
+    const token = generateToken(admin.id);
+    const { password: _, ...adminWithoutPassword } = admin;
+    res.json({
+      success: true,
+      message: "Login successful",
+      admin: adminWithoutPassword,
+      token,
+    });
+
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
 module.exports = {
   register,
   login,
   sellerRegister,
   sellerLogin,
   forgotPassword,
-  resetPassword
+  resetPassword,
+  loginAdmin
 };

@@ -153,11 +153,6 @@ function CustomerRegistration() {
       confirmPassword: formData.confirmPassword,
       firstName: formData.firstName,
       lastName: formData.lastName,
-      province: formData.province,
-      district: formData.district,
-      city: formData.city,
-      address: formData.address,
-      postalCode: formData.postalCode
     });
 
     if (result.success) {
@@ -346,126 +341,23 @@ function CustomerRegistration() {
               </div>
             </div>
 
-            {/* Location Information */}
-            <div className="space-y-4 border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Location Information</h3>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Province
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <select
-                    name="province"
-                    value={formData.province}
-                    onChange={handleProvinceChange}
-                    required
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
-                  >
-                    <option value="">Select Province</option>
-                    {Object.keys(sriLankanLocations).map((provinceName) => (
-                      <option key={provinceName} value={provinceName}>
-                        {provinceName}
-                      </option>
-                    ))}
-                  </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Referral Code
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-4 w-4 text-gray-400" />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    District
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <select
-                      name="district"
-                      value={formData.district}
-                      onChange={handleDistrictChange}
-                      required
-                      disabled={!formData.province}
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select District</option>
-                      {availableDistricts.map((districtName) => (
-                        <option key={districtName} value={districtName}>
-                          {districtName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <select
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      required
-                      disabled={!formData.district}
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select City</option>
-                      {availableCities.map((cityName) => (
-                        <option key={cityName} value={cityName}>
-                          {cityName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter your address"
-                    required
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Postal Code
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    placeholder="Enter postal code"
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
-                  />
-                </div>
+                <input
+                  type="tel"
+                  name="mobile"
+                  value={formData.mobile}
+                  onChange={handleChange}
+                  placeholder="Enter your referral code here (optional)"
+                  required
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
+                />
               </div>
             </div>
 

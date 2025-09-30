@@ -308,6 +308,7 @@ createRoot(document.getElementById("root")).render(
                       </ProtectedRoute>
                     }
                   />
+                  
 
                   {/* Seller Routes */}
                   <Route path="/seller/login" element={<SellerLogin />} />

@@ -834,7 +834,7 @@ const resetPassword = async (req, res) => {
 
 const loginAdmin = async (req, res) => {
   try {
-    const {email, password} = req.body;
+    const {email, password} = req.body;    
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -847,7 +847,7 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    const admin = await Admin.loginAdmin(email, password);
+    const admin = await Admin.checkAdmin(email);
     if (!admin) {
       return res.status(401).json({
         success: false,
@@ -857,26 +857,38 @@ const loginAdmin = async (req, res) => {
 
     const validPassword = await Admin.comparePassword(password, admin.admin_password);
     if (!validPassword) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
     
     const token = generateToken(admin.id);
-    const { password: _, ...adminWithoutPassword } = admin;
     res.json({
       success: true,
       message: "Login successful",
-      admin: adminWithoutPassword,
+      admin: {
+        id: admin.admin_id,
+        email: admin.admin_email,
+        first_name: admin.first_name,
+        last_name: admin.last_name,
+      },
       token,
     });
-
 
   } catch (error) {
     console.log(error);
   }
 };
+
+const verifyEmail = async (req, res) => {
+
+}
+
+
+const verifyMobile = async (req, res) => {
+  
+}
 
 
 module.exports = {
@@ -886,5 +898,6 @@ module.exports = {
   sellerLogin,
   forgotPassword,
   resetPassword,
-  loginAdmin
+  loginAdmin,
+  verifyEmail
 };

@@ -46,12 +46,12 @@ const AdminLogin = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockTimer, setBlockTimer] = useState(0);
 
-  useEffect(() => {
-    const adminToken = localStorage.getItem("admin_token");
-    if (adminToken) {
-      navigate("/admin/dashboard");
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   const adminToken = localStorage.getItem("admin_token");
+  //   if (adminToken) {
+  //     navigate("/admin/dashboard");
+  //   }
+  // }, [navigate]);
 
   // Timer effects
   useEffect(() => {
@@ -158,53 +158,45 @@ const AdminLogin = () => {
     setError("");
 
     try {
+
       const res = await api.post("/auth/admin/login", loginData);
-      console.log(res.data);
+      
       if (res.data.success) {
-        console.log(res.data.data);
-
-        localStorage.setItem("admin_token", token);
-        localStorage.setItem("admin_user", JSON.stringify(admin));
-
-        api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-        navigate("/admin/dashboard");
+        navigate("/admin/dashboard")
+        // setCurrentStep(2);
+        setEmailOtpTimer(300);
+        setCanResendEmail(false);
       } else {
         setError(res.data.message || "Login failed");
       }
     } catch (err) {
-      setError("Authentication failed. Please try again.");
+      setError(err.response?.data?.message);
     } finally {
       setLoading(false);
     }
   };
 
   const handleEmailOtpVerification = async (e) => {
-    // e.preventDefault();
-    // const otpString = emailOtp.join("");
-    // if (otpString.length !== 6) {
-    //   setError("Please enter the complete 6-digit code");
-    //   return;
-    // }
-    // setLoading(true);
-    // setError("");
-    // try {
-    //   await new Promise((resolve) => setTimeout(resolve, 1500));
-    //   // Mock OTP verification (in real app, this would be API call)
-    //   if (otpString === "123456") {
-    //     console.log("Sending phone OTP to:", sessionData.phone);
-    //     setCurrentStep(3);
-    //     setPhoneOtpTimer(300);
-    //     setCanResendPhone(false);
-    //   } else {
-    //     setError("Invalid verification code. Please try again.");
-    //     setEmailOtp(["", "", "", "", "", ""]);
-    //   }
-    // } catch (err) {
-    //   setError("Verification failed. Please try again.");
-    // } finally {
-    //   setLoading(false);
-    // }
+    e.preventDefault();
+    const otpString = emailOtp.join("");
+    if (otpString.length !== 6) {
+      setError("Please enter the complete 6-digit code");
+      return;
+    }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await api.post("/auth/admin/email-verification", loginData.email);
+      // 
+      setCurrentStep(3);
+        setPhoneOtpTimer(300);
+        setCanResendPhone(false);
+
+    } catch (err) {
+      setError("Verification failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePhoneOtpVerification = async (e) => {
@@ -240,21 +232,21 @@ const AdminLogin = () => {
   };
 
   const handleResendOtp = async (type) => {
-    //   if (type === "email" && canResendEmail) {
-    //     setEmailOtpTimer(300);
-    //     setCanResendEmail(false);
-    //     console.log("Resending email OTP");
-    //   } else if (type === "phone" && canResendPhone) {
-    //     setPhoneOtpTimer(300);
-    //     setCanResendPhone(false);
-    //     console.log("Resending phone OTP");
-    //   }
-    // };
-    // const goBack = () => {
+      // if (type === "email" && canResendEmail) {
+      //   setEmailOtpTimer(300);
+      //   setCanResendEmail(false);
+      //   console.log("Resending email OTP");
+      // } else if (type === "phone" && canResendPhone) {
+      //   setPhoneOtpTimer(300);
+      //   setCanResendPhone(false);
+      //   console.log("Resending phone OTP");
+      // }
+    };
+    const goBack = () => {
     //   if (currentStep > 1) {
     //     setCurrentStep(currentStep - 1);
     //     setError("");
-    //   }
+      // }
   };
 
   const renderStepIndicator = () => (

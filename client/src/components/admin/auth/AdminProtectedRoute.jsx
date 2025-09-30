@@ -8,9 +8,10 @@ const AdminProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = () => {
-      const adminToken = localStorage.getItem('admin_token');
+      const adminToken = localStorage.getItem('token');
       
       if (adminToken) {
+        // Set the token in API headers
         api.defaults.headers.common['Authorization'] = `Bearer ${adminToken}`;
         setIsAuthenticated(true);
       } else {

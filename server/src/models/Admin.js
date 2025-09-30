@@ -2,9 +2,9 @@ const { getConnection } = require("../config/database");
 const bcrypt = require("bcrypt");
 
 class Admin {
-    static async loginAdmin(email, password) {
+    static async checkAdmin(email) {        
         const connection = getConnection();
-        const [rows] = await connection.execute("SELECT * FROM admins WHERE admin_email = ? AND admin_password = ?", [email, password]);
+        const [rows] = await connection.execute("SELECT * FROM admins WHERE admin_email = ?", [email]);        
         return rows[0];
     }
 

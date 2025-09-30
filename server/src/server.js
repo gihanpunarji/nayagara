@@ -6,6 +6,7 @@ const authRoutes = require('./routes/authRoutes');
 
 const productRoutes = require('./routes/productRoutes');
 const addressRoutes = require('./routes/addressRoute');
+const advertisementRoutes = require('./routes/advertisementRoutes');
 
 
 
@@ -20,8 +21,9 @@ app.use(cors({
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
-app.use('/api/products', productRoutes)
-app.use('/api/address', addressRoutes)
+app.use('/api/products', productRoutes);
+app.use('/api/address', addressRoutes);
+app.use('/api/advertisements', advertisementRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Server is running successfully!' });

@@ -34,6 +34,11 @@ import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
 import ChatList from "./components/customer/pages/ChatList.jsx";
 
+// Advertisement Components
+import PostAd from "./components/customer/pages/PostAd.jsx";
+import AdDetails from "./components/customer/pages/AdDetails.jsx";
+import AdListings from "./components/customer/pages/AdListings.jsx";
+
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
 import SellerMobileVerify from "./components/seller/auth/SellerMobileVerify.jsx";
@@ -56,6 +61,7 @@ import AdminSellers from "./components/admin/pages/Sellers.jsx";
 import AdminProducts from "./components/admin/pages/Products.jsx";
 import AdminOrders from "./components/admin/pages/Orders.jsx";
 import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
+import AdManagement from "./components/admin/pages/AdManagement.jsx";
 
 // Shared Components
 import NotFound from './components/shared/error/NotFound.jsx'
@@ -174,6 +180,35 @@ createRoot(document.getElementById("root")).render(
           </ProtectedRoute>
         } />
 
+        {/* Advertisement Routes */}
+        <Route path='/post-ad' element={
+          <ProtectedRoute>
+            <PageWrapper>
+              <PostAd />
+            </PageWrapper>
+          </ProtectedRoute>
+        } />
+        <Route path='/ad/:id' element={
+          <PageWrapper>
+            <AdDetails />
+          </PageWrapper>
+        } />
+        <Route path='/ads' element={
+          <PageWrapper>
+            <AdListings />
+          </PageWrapper>
+        } />
+        <Route path='/ads/vehicles' element={
+          <PageWrapper>
+            <AdListings />
+          </PageWrapper>
+        } />
+        <Route path='/ads/property' element={
+          <PageWrapper>
+            <AdListings />
+          </PageWrapper>
+        } />
+
         {/* Seller Routes */}
         <Route path='/seller/login' element={<SellerLogin />} />
         <Route path='/seller/dashboard' element={<Dashboard />} />
@@ -194,6 +229,7 @@ createRoot(document.getElementById("root")).render(
         <Route path="/admin/customers" element={<AdminCustomers />} />
         <Route path="/admin/sellers" element={<AdminSellers />} />
         <Route path="/admin/products" element={<AdminProducts />} />
+        <Route path="/admin/advertisements" element={<AdManagement />} />
         <Route path="/admin/orders" element={<AdminOrders />} />
         <Route path="/admin/analytics" element={<AdminAnalytics />} />
 

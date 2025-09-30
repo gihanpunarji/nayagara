@@ -17,7 +17,8 @@ import {
   Globe,
   HelpCircle,
   Database,
-  Activity
+  Activity,
+  Car
 } from 'lucide-react';
 
 const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
@@ -72,6 +73,12 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           label: 'Products',
           path: '/admin/products',
           badge: '12.5K'
+        },
+        {
+          icon: Car,
+          label: 'Advertisements',
+          path: '/admin/advertisements',
+          badge: '8'
         },
         {
           icon: ShoppingCart,

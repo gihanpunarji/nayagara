@@ -35,6 +35,11 @@ import ChatView from "./components/customer/pages/ChatView.jsx";
 import ChatList from "./components/customer/pages/ChatList.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 
+// Advertisement Components
+import PostAd from "./components/customer/pages/PostAd.jsx";
+import AdDetails from "./components/customer/pages/AdDetails.jsx";
+import AdListings from "./components/customer/pages/AdListings.jsx";
+
 // Seller Components
 import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
 import SellerMobileVerify from "./components/seller/auth/SellerMobileVerify.jsx";
@@ -57,6 +62,7 @@ import AdminSellers from "./components/admin/pages/Sellers.jsx";
 import AdminProducts from "./components/admin/pages/Products.jsx";
 import AdminOrders from "./components/admin/pages/Orders.jsx";
 import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
+import AdManagement from "./components/admin/pages/AdManagement.jsx";
 
 // Shared Components
 import NotFound from "./components/shared/error/NotFound.jsx";
@@ -151,6 +157,7 @@ createRoot(document.getElementById("root")).render(
                   <Route path="/reset-password" element={<ResetPassword />} />
 
                   {/* Seller Routes */}
+                  <Route path="/seller-login" element={<SellerLogin />} />
                   <Route
                     path="/seller/verify-mobile"
                     element={<SellerMobileVerify />}
@@ -327,6 +334,15 @@ createRoot(document.getElementById("root")).render(
                   <Route path="/seller/messages" element={<SellerMessages />} />
                   <Route path="/seller/settings" element={<SellerSettings />} />
                   <Route path="/seller/help" element={<SellerHelp />} />
+
+                  {/* Admin Routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
+                  <Route path="/admin/customers" element={<AdminCustomers />} />
+                  <Route path="/admin/sellers" element={<AdminSellers />} />
+                  <Route path="/admin/products" element={<AdminProducts />} />
+                  <Route path="/admin/orders" element={<AdminOrders />} />
+                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
 
                   {/* Error Routes */}
                   <Route path="/error/server" element={<ServerError />} />

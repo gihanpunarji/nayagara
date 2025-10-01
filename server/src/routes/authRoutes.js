@@ -25,7 +25,7 @@ redisClient
   .connect()
   .catch((e) => console.error("Redis connect error (routes):", e));
 
-const sessionInitLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
+// const sessionInitLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
 
 router.post("/register", (req, res) => register(req, res, "customer"));
 router.post("/login", (req, res) => login(req, res, "customer"));

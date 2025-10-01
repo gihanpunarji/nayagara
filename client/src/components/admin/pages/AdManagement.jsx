@@ -16,7 +16,7 @@ const AdManagement = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
 
   useEffect(() => {
-    fetchPendingAds();
+    // fetchPendingAds();
   }, []);
 
   const fetchPendingAds = async () => {

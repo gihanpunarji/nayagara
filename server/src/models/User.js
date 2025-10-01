@@ -76,6 +76,10 @@ class User {
     return rows[0];
   }
 
+  static async createReferralUser() {
+    
+  }
+
   static async findByNIC(identifier) {
     const connection = getConnection();
     const [rows] = await connection.execute(

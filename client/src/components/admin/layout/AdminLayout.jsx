@@ -7,37 +7,37 @@ const AdminLayout = ({ children }) => {
   const navigate = useNavigate();
   const [showMobileMenu, setShowMobileMenu] = useState(false);
 
-  useEffect(() => {
-    // Check admin authentication
-    const adminSession = localStorage.getItem('adminSession');
-    if (!adminSession) {
-      navigate('/admin/login');
-      return;
-    }
+  // useEffect(() => {
+  //   // Check admin authentication
+  //   const adminSession = localStorage.getItem('adminSession');
+  //   if (!adminSession) {
+  //     navigate('/admin/login');
+  //     return;
+  //   }
 
-    try {
-      const session = JSON.parse(adminSession);
-      const currentTime = Date.now();
-      const sessionDuration = 2 * 60 * 60 * 1000; // 2 hours
+  //   try {
+  //     const session = JSON.parse(adminSession);
+  //     const currentTime = Date.now();
+  //     const sessionDuration = 2 * 60 * 60 * 1000; // 2 hours
 
-      if (!session.authenticated || (currentTime - session.timestamp) > sessionDuration) {
-        localStorage.removeItem('adminSession');
-        navigate('/admin/login');
-        return;
-      }
+  //     if (!session.authenticated || (currentTime - session.timestamp) > sessionDuration) {
+  //       localStorage.removeItem('adminSession');
+  //       navigate('/admin/login');
+  //       return;
+  //     }
 
-      // Update session timestamp for activity tracking
-      const updatedSession = {
-        ...session,
-        lastActivity: currentTime
-      };
-      localStorage.setItem('adminSession', JSON.stringify(updatedSession));
+  //     // Update session timestamp for activity tracking
+  //     const updatedSession = {
+  //       ...session,
+  //       lastActivity: currentTime
+  //     };
+  //     localStorage.setItem('adminSession', JSON.stringify(updatedSession));
 
-    } catch (error) {
-      localStorage.removeItem('adminSession');
-      navigate('/admin/login');
-    }
-  }, [navigate]);
+  //   } catch (error) {
+  //     localStorage.removeItem('adminSession');
+  //     navigate('/admin/login');
+  //   }
+  // }, [navigate]);
 
   const handleMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);

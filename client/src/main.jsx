@@ -36,7 +36,7 @@ import ChatList from "./components/customer/pages/ChatList.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 
 // Advertisement Components
-import PostAd from "./components/customer/pages/PostAd.jsx";
+// import PostAd from "./components/customer/pages/PostAd.jsx";
 import AdDetails from "./components/customer/pages/AdDetails.jsx";
 import AdListings from "./components/customer/pages/AdListings.jsx";
 
@@ -83,49 +83,49 @@ createRoot(document.getElementById("root")).render(
           <Route
             path="/admin/dashboard"
             element={
-              <AdminProtectedRoute>
+              // <AdminProtectedRoute>
                 <AdminDashboard />
-              </AdminProtectedRoute>
+              // </AdminProtectedRoute>
             }
           />
           <Route
             path="/admin/customers"
             element={
-              <AdminProtectedRoute>
+              // <AdminProtectedRoute>
                 <AdminCustomers />
-              </AdminProtectedRoute>
+              // </AdminProtectedRoute>
             }
           />
           <Route
             path="/admin/sellers"
             element={
-              <AdminProtectedRoute>
+              // <AdminProtectedRoute>
                 <AdminSellers />
-              </AdminProtectedRoute>
+              // </AdminProtectedRoute>
             }
           />
           <Route
             path="/admin/products"
             element={
-              <AdminProtectedRoute>
+              // <AdminProtectedRoute>
                 <AdminProducts />
-              </AdminProtectedRoute>
+              // </AdminProtectedRoute>
             }
           />
           <Route
             path="/admin/orders"
             element={
-              <AdminProtectedRoute>
+              // <AdminProtectedRoute>
                 <AdminOrders />
-              </AdminProtectedRoute>
+              // </AdminProtectedRoute>
             }
           />
           <Route
             path="/admin/analytics"
             element={
-              <AdminProtectedRoute>
+              // <AdminProtectedRoute>
                 <AdminAnalytics />
-              </AdminProtectedRoute>
+              // </AdminProtectedRoute>
             }
           />
 
@@ -335,15 +335,6 @@ createRoot(document.getElementById("root")).render(
                   <Route path="/seller/messages" element={<SellerMessages />} />
                   <Route path="/seller/settings" element={<SellerSettings />} />
                   <Route path="/seller/help" element={<SellerHelp />} />
-
-                  {/* Admin Routes */}
-                  <Route path="/admin/login" element={<AdminLogin />} />
-                  <Route path="/admin/dashboard" element={<AdminDashboard />} />
-                  <Route path="/admin/customers" element={<AdminCustomers />} />
-                  <Route path="/admin/sellers" element={<AdminSellers />} />
-                  <Route path="/admin/products" element={<AdminProducts />} />
-                  <Route path="/admin/orders" element={<AdminOrders />} />
-                  <Route path="/admin/analytics" element={<AdminAnalytics />} />
 
                   {/* Error Routes */}
                   <Route path="/error/server" element={<ServerError />} />

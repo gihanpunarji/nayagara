@@ -46,17 +46,17 @@ const AdminHeader = ({ onMenuToggle, showMobileMenu }) => {
     }
   ]);
 
-  useEffect(() => {
-    const adminSession = localStorage.getItem('adminSession');
-    if (adminSession) {
-      try {
-        const session = JSON.parse(adminSession);
-        setAdminData(session);
-      } catch (error) {
-        console.error('Error parsing admin session:', error);
-      }
-    }
-  }, []);
+  // useEffect(() => {
+  //   const adminSession = localStorage.getItem('adminSession');
+  //   if (adminSession) {
+  //     try {
+  //       const session = JSON.parse(adminSession);
+  //       setAdminData(session);
+  //     } catch (error) {
+  //       console.error('Error parsing admin session:', error);
+  //     }
+  //   }
+  // }, []);
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout from the admin panel?')) {

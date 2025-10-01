@@ -3,50 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2, User, Check, MapPin } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 
-// Sri Lankan location data
-const sriLankanLocations = {
-  "Western": {
-    "Colombo": ["Colombo 1", "Colombo 2", "Colombo 3", "Colombo 4", "Colombo 5", "Colombo 6", "Colombo 7", "Colombo 8", "Colombo 9", "Colombo 10", "Colombo 11", "Colombo 12", "Colombo 13", "Colombo 14", "Colombo 15"],
-    "Gampaha": ["Gampaha", "Negombo", "Katunayake", "Ja-Ela", "Wattala", "Kelaniya", "Peliyagoda", "Kadawatha", "Ragama", "Kiribathgoda", "Minuwangoda", "Divulapitiya", "Nittambuwa", "Veyangoda", "Mirigama"],
-    "Kalutara": ["Kalutara", "Panadura", "Horana", "Beruwala", "Aluthgama", "Matugama", "Bandaragama", "Ingiriya", "Bulathsinhala", "Palindanuwara", "Walallawita", "Agalawatta"]
-  },
-  "Central": {
-    "Kandy": ["Kandy", "Gampola", "Nawalapitiya", "Peradeniya", "Akurana", "Kadugannawa", "Katugastota", "Wattegama", "Harispattuwa", "Pathahewaheta", "Udunuwara", "Yatinuwara", "Kundasale", "Delthota"],
-    "Matale": ["Matale", "Dambulla", "Sigiriya", "Galewela", "Ukuwela", "Rattota", "Pallepola", "Naula", "Yatawatta", "Laggala-Pallegama"],
-    "Nuwara Eliya": ["Nuwara Eliya", "Hatton", "Talawakele", "Ginigathena", "Kotagala", "Maskeliya", "Bogawantalawa", "Kotmale", "Walapane", "Hangranketha", "Hanguranketha"]
-  },
-  "Southern": {
-    "Galle": ["Galle", "Hikkaduwa", "Ambalangoda", "Elpitiya", "Bentota", "Baddegama", "Imaduwa", "Yakkalamulla", "Gonapinuwala", "Wanduramba", "Udugama", "Neluwa", "Nagoda", "Bope-Poddala"],
-    "Matara": ["Matara", "Weligama", "Mirissa", "Dikwella", "Tangalle", "Hakmana", "Akuressa", "Malimbada", "Thihagoda", "Kotapola", "Pasgoda", "Pitabeddara", "Kirinda-Puhulwella", "Devinuwara"],
-    "Hambantota": ["Hambantota", "Tangalle", "Tissamaharama", "Ambalantota", "Beliatta", "Weeraketiya", "Kataragama", "Okewela", "Suriyawewa", "Thissamaharama", "Lunugamvehera"]
-  },
-  "Northern": {
-    "Jaffna": ["Jaffna", "Chavakachcheri", "Point Pedro", "Karainagar", "Velanai", "Tellippalai", "Kopay", "Nallur", "Sandilipay", "Delft"],
-    "Kilinochchi": ["Kilinochchi", "Pallai", "Paranthan", "Poonakary"],
-    "Mannar": ["Mannar", "Nanattan", "Musali", "Manthai West"]
-  },
-  "Eastern": {
-    "Trincomalee": ["Trincomalee", "Kinniya", "Kuchchaveli", "Muttur", "Kantale", "Thambalagamuwa", "Gomarankadawala", "Seruvila"],
-    "Batticaloa": ["Batticaloa", "Kaluwanchikudy", "Valachchenai", "Eravur", "Koralai Pattu", "Manmunai North", "Manmunai South & Eruvil Pattu", "Manmunai West", "Porativu Pattu"],
-    "Ampara": ["Ampara", "Akkaraipattu", "Kalmunai", "Sainthamaruthu", "Addalachchenai", "Thirukkovil", "Pottuvil", "Lahugala", "Sammanthurai", "Karaitivu", "Nainthalawa", "Padiyathalawa", "Damana", "Navithanveli", "Dehiattakandiya", "Mahaoya"]
-  },
-  "North Western": {
-    "Kurunegala": ["Kurunegala", "Kuliyapitiya", "Narammala", "Wariyapola", "Pannala", "Melsiripura", "Bingiriya", "Kobeigane", "Nikaweratiya", "Galgamuwa", "Kotawehera", "Polgahawela", "Bamunakotuwa", "Rideegama", "Ibbagamuwa", "Mawathagama", "Giriulla", "Anamaduwa", "Polpithigama", "Ambanpola", "Ehetuwewa", "Ganewatta", "Maspotha", "Rasnayakapura", "Udubaddawa", "Weerambugedara", "Giribawa", "Pannala", "Alawwa", "Dankotuwa"],
-    "Puttalam": ["Puttalam", "Chilaw", "Wennappuwa", "Nattandiya", "Dankotuwa", "Marawila", "Madampe", "Pallama", "Karukupone", "Kalpitiya", "Anamaduwa"]
-  },
-  "North Central": {
-    "Anuradhapura": ["Anuradhapura", "Kekirawa", "Thambuttegama", "Eppawala", "Medawachchiya", "Horowpothana", "Hingurakgoda", "Galenbindunuwewa", "Mihintale", "Nuwaragam Palatha Central", "Nuwaragam Palatha East", "Padaviya", "Palugaswewa", "Rajanganaya", "Rambewa", "Thirappane", "Wijayapura"],
-    "Polonnaruwa": ["Polonnaruwa", "Kaduruwela", "Medirigiriya", "Hingurakgoda", "Dimbulagala", "Lankapura", "Welikanda", "Thamankaduwa"]
-  },
-  "Uva": {
-    "Badulla": ["Badulla", "Bandarawela", "Haputale", "Welimada", "Mahiyanganaya", "Ridimaliyadda", "Haldummulla", "Passara", "Ella", "Uva-Paranagama", "Welimada", "Soranathota", "Kandaketiya", "Rideemaliyadda"],
-    "Monaragala": ["Monaragala", "Wellawaya", "Buttala", "Kataragama", "Medagama", "Sewanagala", "Madulla", "Bibile", "Madulla", "Thanamalvila", "Siyambalanduwa"]
-  },
-  "Sabaragamuwa": {
-    "Ratnapura": ["Ratnapura", "Embilipitiya", "Balangoda", "Rakwana", "Godakawela", "Pelmadulla", "Eheliyagoda", "Kuruwita", "Ayagama", "Kalawana", "Kolonna", "Nivithigala", "Weligepola", "Elapatha", "Nivitigala"],
-    "Kegalle": ["Kegalle", "Mawanella", "Warakapola", "Rambukkana", "Galigamuwa", "Aranayaka", "Bulathkohupitiya", "Yatiyantota", "Ruwanwella", "Deraniyagala", "Dehiowita"]
-  }
-};
 
 function CustomerRegistration() {
   const [formData, setFormData] = useState({
@@ -60,7 +16,8 @@ function CustomerRegistration() {
     district: "",
     city: "",
     address: "",
-    postalCode: ""
+    postalCode: "",
+    refCode: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -77,30 +34,6 @@ function CustomerRegistration() {
       ...formData,
       [e.target.name]: e.target.value
     });
-  };
-
-  // Handle province change
-  const handleProvinceChange = (e) => {
-    const selectedProvince = e.target.value;
-    setFormData({
-      ...formData,
-      province: selectedProvince,
-      district: "",
-      city: ""
-    });
-    setAvailableDistricts(selectedProvince ? Object.keys(sriLankanLocations[selectedProvince] || {}) : []);
-    setAvailableCities([]);
-  };
-
-  // Handle district change
-  const handleDistrictChange = (e) => {
-    const selectedDistrict = e.target.value;
-    setFormData({
-      ...formData,
-      district: selectedDistrict,
-      city: ""
-    });
-    setAvailableCities(selectedDistrict && formData.province ? sriLankanLocations[formData.province][selectedDistrict] || [] : []);
   };
 
   const validateForm = () => {
@@ -153,6 +86,7 @@ function CustomerRegistration() {
       confirmPassword: formData.confirmPassword,
       firstName: formData.firstName,
       lastName: formData.lastName,
+      refCode: formData.refCode
     });
 
     if (result.success) {
@@ -350,9 +284,9 @@ function CustomerRegistration() {
                   <Phone className="h-4 w-4 text-gray-400" />
                 </div>
                 <input
-                  type="tel"
-                  name="mobile"
-                  value={formData.mobile}
+                  type="text"
+                  name="refcode"
+                  value={formData.refCode}
                   onChange={handleChange}
                   placeholder="Enter your referral code here (optional)"
                   required

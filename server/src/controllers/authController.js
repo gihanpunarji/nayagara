@@ -29,6 +29,7 @@ const register = async (req, res, role = "customer") => {
       confirmPassword,
       firstName,
       lastName,
+      refCode
     } = req.body;
 
     const errorMessage = validateUserInputs({
@@ -80,6 +81,9 @@ const register = async (req, res, role = "customer") => {
       user: userWithoutPassword,
       token,
     });
+
+    // User.createReferralUser;
+
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
@@ -873,7 +877,7 @@ const loginAdmin = async (req, res) => {
         first_name: admin.first_name,
         last_name: admin.last_name,
       },
-      token,
+      token
     });
 
   } catch (error) {

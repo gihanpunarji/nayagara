@@ -192,6 +192,9 @@ const AdminLogin = () => {
       });
       //
       if (res.data.success) {
+        const res = await api.post("/auth/admin/email-otp-verify", {
+
+        })
         setCurrentStep(3);
         setPhoneOtpTimer(300);
         setCanResendPhone(false);
@@ -207,35 +210,23 @@ const AdminLogin = () => {
   };
 
   const handlePhoneOtpVerification = async (e) => {
-    //   e.preventDefault();
-    //   const otpString = phoneOtp.join("");
-    //   if (otpString.length !== 6) {
-    //     setError("Please enter the complete 6-digit code");
-    //     return;
-    //   }
-    //   setLoading(true);
-    //   setError("");
-    //   try {
-    //     if (otpString === "654321") {
-    //       // Successful authentication - go directly to dashboard
-    //       localStorage.setItem(
-    //         "adminSession",
-    //         JSON.stringify({
-    //           ...sessionData,
-    //           authenticated: true,
-    //           timestamp: Date.now(),
-    //         })
-    //       );
-    //       navigate("/admin/dashboard");
-    //     } else {
-    //       setError("Invalid verification code. Please try again.");
-    //       setPhoneOtp(["", "", "", "", "", ""]);
-    //     }
-    //   } catch (err) {
-    //     setError("Verification failed. Please try again.");
-    //   } finally {
-    //     setLoading(false);
-    //   }
+      e.preventDefault();
+      const otpString = phoneOtp.join("");
+      if (otpString.length !== 6) {
+        setError("Please enter the complete 6-digit code");
+        return;
+      }
+      setLoading(true);
+      setError("");
+      try {
+        const res = await api.post("/auth/admin/email-otp-verify", {
+
+        })
+      } catch (err) {
+        setError("Verification failed. Please try again.");
+      } finally {
+        setLoading(false);
+      }
   };
 
   const handleResendOtp = async (type) => {

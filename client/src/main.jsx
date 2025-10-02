@@ -78,6 +78,7 @@ createRoot(document.getElementById("root")).render(
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
+          <Route path="/nayagara-water" element={<NayagaraWaterHome />} />
           {/* Admin Routes - WITHOUT AuthProvider */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route

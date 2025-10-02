@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo, useCallback } from "react";
 import { Droplets, Shield, Truck, Award, Users, Leaf, ChevronDown, Play, Star, ArrowRight, Target, Eye, Heart, Menu, X, Phone, Mail, Home, Info, MessageCircle, Settings, ShoppingBag } from "lucide-react";
 
-
-
-export default function NayagaraHome() {
+function NayagaraHome() {
   const [featuredCategories, setFeaturedCategories] = useState([]);
   const [flashSaleItems, setFlashSaleItems] = useState([]);
   const [newArrivals, setNewArrivals] = useState([]);
@@ -11,49 +9,32 @@ export default function NayagaraHome() {
   const [currentPage, setCurrentPage] = useState('home');
   const [activeNavItem, setActiveNavItem] = useState('home');
 
-  // Simple function to scroll to contact area
-  const scrollToContact = (productName = '', price = '', pricePrefix = '') => {
-    // Find contact section
+  const scrollToContact = useCallback((productName = '', price = '', pricePrefix = '') => {
     const contactSection = document.getElementById('contact');
 
     if (contactSection) {
-      // Scroll to contact section
-      contactSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-      });
+      contactSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-      // Pre-fill form after scroll
       setTimeout(() => {
         try {
           const subjectSelect = document.querySelector('select[name="subject"]');
           const messageTextarea = document.querySelector('textarea[name="message"]');
 
-          if (subjectSelect) {
-            subjectSelect.value = 'Place an Order';
-          }
-
+          if (subjectSelect) subjectSelect.value = 'Place an Order';
           if (messageTextarea) {
-            let message = '';
-            if (productName && price) {
-              message = `I would like to order: ${productName}\nPrice: Rs ${price}${pricePrefix ? ' (' + pricePrefix.trim() + ')' : ''}\n\nPlease provide more details about this product and delivery options.`;
-            } else {
-              message = 'I would like to place an order. Please provide more details about your products and delivery options.';
-            }
+            const message = productName && price
+              ? `I would like to order: ${productName}\nPrice: Rs ${price}${pricePrefix ? ' (' + pricePrefix.trim() + ')' : ''}\n\nPlease provide more details about this product and delivery options.`
+              : 'I would like to place an order. Please provide more details about your products and delivery options.';
             messageTextarea.value = message;
           }
         } catch (error) {
-          console.log('Form pre-fill failed:', error);
+          console.error('Form pre-fill failed:', error);
         }
       }, 800);
     } else {
-      // Fallback: scroll to bottom of page
-      window.scrollTo({
-        top: document.body.scrollHeight,
-        behavior: 'smooth'
-      });
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
     }
-  };
+  }, []);
 
   // Example: replace these fetch calls with your real API endpoints
   useEffect(() => {
@@ -135,7 +116,7 @@ export default function NayagaraHome() {
 /* --------------------- Subcomponents below --------------------- */
 
 // Responsive Header Component
-function SimpleHeader({ activeNavItem, setActiveNavItem, scrollToContact }) {
+const SimpleHeader = memo(function SimpleHeader({ activeNavItem, setActiveNavItem, scrollToContact }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -146,78 +127,32 @@ function SimpleHeader({ activeNavItem, setActiveNavItem, scrollToContact }) {
     { id: 'products', label: 'Products', icon: ShoppingBag }
   ];
 
-  // Test function to check if all elements exist
-  const testElementsExist = () => {
-    console.log('=== TESTING ELEMENTS ===');
-    const ids = ['vision-mission', 'contact', 'services-section', 'products-section'];
-    ids.forEach(id => {
-      const element = document.getElementById(id);
-      console.log(`Element ${id}:`, element ? 'FOUND' : 'NOT FOUND', element);
-    });
-    console.log('=== END TEST ===');
-  };
-
   const handleNavClick = (sectionId) => {
-    console.log('Navigation clicked:', sectionId); // Debug log
     setActiveNavItem(sectionId);
-    setIsMobileMenuOpen(false); // Close mobile menu after clicking
+    setIsMobileMenuOpen(false);
 
-    // Test if elements exist first
-    testElementsExist();
-
-    // Add a small delay to ensure mobile menu closes first
     setTimeout(() => {
-      console.log('Attempting to scroll to:', sectionId); // Debug log
-
       if (sectionId === 'home') {
-        console.log('Scrolling to top');
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-        return; // Exit early for home
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
       }
 
-      let targetElement = null;
-      let targetId = '';
+      const sectionMap = {
+        'about': 'vision-mission',
+        'contact': 'contact',
+        'services': 'services-section',
+        'products': 'products-section'
+      };
 
-      // Determine target element based on section
-      if (sectionId === 'about') {
-        targetId = 'vision-mission';
-      } else if (sectionId === 'contact') {
-        targetId = 'contact';
-      } else if (sectionId === 'services') {
-        targetId = 'services-section';
-      } else if (sectionId === 'products') {
-        targetId = 'products-section';
-      }
+      const targetId = sectionMap[sectionId];
+      if (!targetId) return;
 
-      console.log('Looking for element with ID:', targetId);
-
-      // Wait a bit more and try again
       setTimeout(() => {
-        targetElement = document.getElementById(targetId);
-        console.log('Second attempt - Element found:', !!targetElement, targetElement);
-
+        const targetElement = document.getElementById(targetId);
         if (targetElement) {
-          console.log('Element found, scrolling...', targetElement);
-          console.log('Element position:', targetElement.offsetTop);
-
-          // Simple direct scroll approach
-          const elementTop = targetElement.offsetTop;
-          const headerOffset = 100; // Account for sticky header
-          const targetPosition = elementTop - headerOffset;
-
-          console.log('Scrolling to position:', targetPosition);
-
-          window.scrollTo({
-            top: targetPosition,
-            behavior: 'smooth'
-          });
-
-        } else {
-          console.log('❌ Element not found with ID:', targetId);
-          console.log('All elements on page:', document.querySelectorAll('[id]'));
+          const headerOffset = 100;
+          const targetPosition = targetElement.offsetTop - headerOffset;
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
         }
       }, 100);
     }, 150);
@@ -357,12 +292,10 @@ function SimpleHeader({ activeNavItem, setActiveNavItem, scrollToContact }) {
       </div>
     </header>
   );
-}
-
-
+});
 
 // Hero Section - Super Attractive with Animations
-function HeroSection({ scrollToContact }) {
+const HeroSection = memo(function HeroSection({ scrollToContact }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -457,10 +390,10 @@ function HeroSection({ scrollToContact }) {
       `}</style>
     </section>
   );
-}
+});
 
 // Water Purification Process Section with Animations
-function PurificationProcess() {
+const PurificationProcess = memo(function PurificationProcess() {
   const [visibleSteps, setVisibleSteps] = useState([]);
 
   const steps = [
@@ -608,9 +541,9 @@ function PurificationProcess() {
       </div>
     </section>
   );
-}
+});
 
-function FeaturedCategories({ categories = [] }) {
+const FeaturedCategories = memo(function FeaturedCategories({ categories = [] }) {
   return (
     <section className="bg-white p-4 rounded-md shadow-sm">
       <h3 className="text-xl font-semibold mb-4">Shop by Category</h3>
@@ -624,10 +557,10 @@ function FeaturedCategories({ categories = [] }) {
       </div>
     </section>
   );
-}
+});
 
 // Product Showcase Section with Enhanced Design
-function ProductShowcase({ items = [], scrollToContact }) {
+const ProductShowcase = memo(function ProductShowcase({ items = [], scrollToContact }) {
   const [hoveredProduct, setHoveredProduct] = useState(null);
 
   const enhancedProducts = [
@@ -778,12 +711,8 @@ function ProductShowcase({ items = [], scrollToContact }) {
                 {/* CTA Button */}
                 <button
                   onClick={() => {
-                    console.log('Product button clicked:', product.title);
-
-                    // Direct scroll approach
                     const contactSection = document.getElementById('contact');
                     if (contactSection) {
-                      console.log('Scrolling to contact...');
                       contactSection.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
@@ -826,10 +755,10 @@ function ProductShowcase({ items = [], scrollToContact }) {
       </div>
     </section>
   );
-}
+});
 
 // Company Values Section
-function CompanyValues() {
+const CompanyValues = memo(function CompanyValues() {
   const values = [
     { icon: Shield, title: "Quality Assurance", desc: "100% pure and safe water guaranteed" },
     { icon: Truck, title: "Fast Customer Service", desc: "Same-day services across the city" },
@@ -868,9 +797,9 @@ function CompanyValues() {
       </div>
     </section>
   );
-}
+});
 
-function NewArrivals({ items = [] }) {
+const NewArrivals = memo(function NewArrivals({ items = [] }) {
   return (
     <section className="bg-white p-4 rounded-md shadow-sm">
       <h3 className="text-xl font-semibold mb-4">New Arrivals</h3>
@@ -881,9 +810,9 @@ function NewArrivals({ items = [] }) {
       </div>
     </section>
   );
-}
+});
 
-function ProductCard({ product }) {
+const ProductCard = memo(function ProductCard({ product }) {
   return (
     <div className="bg-white border rounded p-3 flex flex-col">
       <img src={product.image} alt={product.title} className="h-28 w-full object-contain mb-2" />
@@ -896,10 +825,10 @@ function ProductCard({ product }) {
       </div>
     </div>
   );
-}
+});
 
 // Vision & Mission Section
-function VisionMissionSection() {
+const VisionMissionSection = memo(function VisionMissionSection() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -1095,10 +1024,10 @@ function VisionMissionSection() {
       </div>
     </section>
   );
-}
+});
 
 // Founder Section
-function FounderSection() {
+const FounderSection = memo(function FounderSection() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -1293,10 +1222,10 @@ function FounderSection() {
       </div>
     </section>
   );
-}
+});
 
 // Services Section
-function ServicesSection() {
+const ServicesSection = memo(function ServicesSection() {
   const services = [
     {
       title: "Home Delivery",
@@ -1355,10 +1284,10 @@ function ServicesSection() {
       </div>
     </section>
   );
-}
+});
 
 // Contact Section
-function ContactSection() {
+const ContactSection = memo(function ContactSection() {
   return (
     <section id="contact" className="py-12 bg-gradient-to-br from-emerald-50 to-green-100 relative overflow-hidden">
       {/* Background Pattern */}
@@ -1635,9 +1564,9 @@ Please respond to the customer's email: ${data.email}`;
       </div>
     </section>
   );
-}
+});
 
-function NewsletterSignup() {
+const NewsletterSignup = memo(function NewsletterSignup() {
   return (
     <section className="py-20 bg-gradient-to-r from-green-600 to-emerald-600 text-white">
       <div className="max-w-4xl mx-auto px-4 text-center">
@@ -1666,10 +1595,10 @@ function NewsletterSignup() {
       </div>
     </section>
   );
-}
+});
 
 // Customer Testimonials Section with animations
-function CustomerTestimonials({ scrollToContact }) {
+const CustomerTestimonials = memo(function CustomerTestimonials({ scrollToContact }) {
   const [visibleItems, setVisibleItems] = useState(new Set());
 
   const testimonials = [
@@ -1917,64 +1846,34 @@ function CustomerTestimonials({ scrollToContact }) {
       `}</style>
     </section>
   );
-}
+});
 
-function MobileBottomNav({ setCurrentPage }) {
+const MobileBottomNav = memo(function MobileBottomNav({ setCurrentPage }) {
   const handleNavigation = (page) => {
-    console.log('Mobile bottom nav clicked:', page); // Debug log
     setCurrentPage(page);
 
-    // Use the same robust navigation logic as the header
     setTimeout(() => {
-      console.log('Mobile nav attempting to scroll to:', page);
-
       if (page === 'home') {
-        console.log('Mobile nav scrolling to top');
-        window.scrollTo({
-          top: 0,
-          behavior: 'smooth'
-        });
-        return; // Exit early for home
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
       }
 
-      let targetElement = null;
-      let targetId = '';
+      const sectionMap = {
+        'about': 'vision-mission',
+        'contact': 'contact',
+        'services': 'services-section',
+        'products': 'products-section'
+      };
 
-      // Determine target element based on page
-      if (page === 'about') {
-        targetId = 'vision-mission';
-      } else if (page === 'contact') {
-        targetId = 'contact';
-      } else if (page === 'services') {
-        targetId = 'services-section';
-      } else if (page === 'products') {
-        targetId = 'products-section';
-      }
+      const targetId = sectionMap[page];
+      if (!targetId) return;
 
-      console.log('Mobile nav looking for element with ID:', targetId);
-
-      // Wait a bit and try
       setTimeout(() => {
-        targetElement = document.getElementById(targetId);
-        console.log('Mobile nav - Second attempt - Element found:', !!targetElement, targetElement);
-
+        const targetElement = document.getElementById(targetId);
         if (targetElement) {
-          console.log('Mobile nav element found, scrolling...', targetElement);
-
-          // Simple direct scroll approach
-          const elementTop = targetElement.offsetTop;
-          const headerOffset = 100; // Account for sticky header
-          const targetPosition = elementTop - headerOffset;
-
-          console.log('Mobile nav scrolling to position:', targetPosition);
-
-          window.scrollTo({
-            top: targetPosition,
-            behavior: 'smooth'
-          });
-
-        } else {
-          console.log('❌ Mobile nav element not found with ID:', targetId);
+          const headerOffset = 100;
+          const targetPosition = targetElement.offsetTop - headerOffset;
+          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
         }
       }, 100);
     }, 100);
@@ -2000,4 +1899,6 @@ function MobileBottomNav({ setCurrentPage }) {
       </button>
     </nav>
   );
-}
+});
+
+export default memo(NayagaraHome);

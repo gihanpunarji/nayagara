@@ -29,7 +29,7 @@ const register = async (req, res, role = "customer") => {
       confirmPassword,
       firstName,
       lastName,
-      refCode
+      refCode,
     } = req.body;
 
     const errorMessage = validateUserInputs({
@@ -83,7 +83,6 @@ const register = async (req, res, role = "customer") => {
     });
 
     // User.createReferralUser;
-
   } catch (error) {
     console.error("Registration error:", error);
     res.status(500).json({
@@ -243,7 +242,7 @@ const login = async (req, res, role = "customer") => {
 
 const sellerLogin = async (req, res, role = "seller") => {
   console.log("Seller Login");
-  
+
   try {
     const { emailOrMobile, password } = req.body;
 
@@ -258,7 +257,7 @@ const sellerLogin = async (req, res, role = "seller") => {
     console.log(user);
     if (!user) {
       console.log("Invalid credentials 1");
-      
+
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
@@ -270,7 +269,7 @@ const sellerLogin = async (req, res, role = "seller") => {
     );
     if (!isPasswordValid) {
       console.log("Invalid credentials 2");
-      
+
       return res
         .status(401)
         .json({ success: false, message: "Invalid credentials" });
@@ -335,12 +334,12 @@ const forgotPassword = async (req, res) => {
         message: "Failed to update token",
       });
     }
-    const resetLink = `${process.env.FRONT_END_API}/reset-password?token=${resetToken}&email=${encodeURIComponent(
-      email
-    )}`;
+    const resetLink = `${
+      process.env.FRONT_END_API
+    }/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     console.log("Password reset link:", resetLink);
 
-    const transporter = nodeMailer.createTransport({
+    const transporter = node.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL_USERNAME,
@@ -799,27 +798,35 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { urlToken, password } = req.body;
-    console.log("token " + urlToken, "Password "+password);
-    
+    console.log("token " + urlToken, "Password " + password);
 
     if (!urlToken || !password) {
-      return res.status(400).json({ success: false, message: "Token and new password are required" });
+      return res.status(400).json({
+        success: false,
+        message: "Token and new password are required",
+      });
     }
 
     const connection = getConnection();
-    const [rows] = await connection.execute(
+    const [
+      rows,
+    ] = await connection.execute(
       "SELECT user_email, reset_token_expires FROM users WHERE reset_token = ?",
       [urlToken]
     );
 
     if (rows.length === 0) {
-      return res.status(400).json({ success: false, message: "Invalid urlToken" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid urlToken" });
     }
 
     const user = rows[0];
 
     if (user.reset_token_expire < Date.now()) {
-      return res.status(400).json({ success: false, message: "Token has expired" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Token has expired" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -838,7 +845,7 @@ const resetPassword = async (req, res) => {
 
 const loginAdmin = async (req, res) => {
   try {
-    const {email, password} = req.body;    
+    const { email, password } = req.body;
     if (!email) {
       return res.status(400).json({
         success: false,
@@ -859,41 +866,106 @@ const loginAdmin = async (req, res) => {
       });
     }
 
-    const validPassword = await Admin.comparePassword(password, admin.admin_password);
+    const validPassword = await Admin.comparePassword(
+      password,
+      admin.admin_password
+    );
     if (!validPassword) {
       return res.status(401).json({
         success: false,
         message: "Invalid credentials",
       });
     }
-    
-    const token = generateToken(admin.id);
+
     res.json({
       success: true,
       message: "Login successful",
-      admin: {
-        id: admin.admin_id,
-        email: admin.admin_email,
-        first_name: admin.first_name,
-        last_name: admin.last_name,
-      },
-      token
     });
-
   } catch (error) {
     console.log(error);
   }
 };
 
-const verifyEmail = async (req, res) => {
+const sendEmail = async (req, res) => {
+  try {
+    const { email } = req.body;
 
-}
+    if (!email) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
+    }
 
+    const verificationCode = Math.floor(
+      100000 + Math.random() * 900000
+    ).toString();
 
-const verifyMobile = async (req, res) => {
-  
-}
+    // Save hashed code & expiry (10 mins)
+    const connection = getConnection();
+    await connection.execute(
+      `UPDATE admins 
+       SET email_code = ?
+       WHERE admin_email = ?`,
+      [verificationCode, email]
+    );
 
+    const transporter = nodeMailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USERNAME,
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
+    // Send email
+    await transporter.sendMail({
+      from: `"Zipzipy" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "Admin Verification Code",
+      html: `
+        <h2>Email Verification</h2>
+        <p>Use the following code to verify your email:</p>
+        <h3>${verificationCode}</h3>
+        <p>This code will expire in 10 minutes.</p>
+      `,
+    });
+
+    res.json({ success: true, message: "Verification code sent to email" });
+  } catch (error) {
+    console.error("Send verification email error:", error);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const verifyEmailOtp = async (req, res) => {
+  try {
+    const { code, email } = req.body;
+    if (!code) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Email is required" });
+    }
+
+    const validCode = Admin.checkCode(code, email);
+    if (!validCode) {
+      return res
+      .status(400)
+      .json({ success: false, message: "Invalid code" });
+    }
+
+    Admin.deleteCode(email);
+
+    return res.json({
+      success: true,
+      message: "OK"
+    })
+
+  } catch (err) {
+    console.log(err);
+  }
+};
+
+const verifyMobile = async (req, res) => {};
 
 module.exports = {
   register,
@@ -903,5 +975,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   loginAdmin,
-  verifyEmail
+  verifyEmailOtp,
+  sendEmail,
 };

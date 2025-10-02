@@ -308,7 +308,14 @@ createRoot(document.getElementById("root")).render(
                       </ProtectedRoute>
                     }
                   />
-                  
+                  <Route
+                    path="/nayagara-water"
+                    element={
+                      <PageWrapper>
+                        <NayagaraWaterHome />
+                      </PageWrapper>
+                    }
+                  />
 
                   {/* Seller Routes */}
                   <Route path="/seller/login" element={<SellerLogin />} />

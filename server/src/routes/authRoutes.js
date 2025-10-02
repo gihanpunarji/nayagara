@@ -11,19 +11,20 @@ const {
   forgotPassword,
   resetPassword,
   loginAdmin,
-  verifyEmail,
+  sendEmail,
+  verifyEmailOtp
 } = require("../controllers/authController");
 const { mobile, verifyOtp } = require("../utils/mobileVerify");
 const { authenticateToken, authenticateAdmin, authenticateAdminLogin } = require("../middleware/auth");
 
 const router = express.Router();
 
-const redisClient = redis.createClient({
-  url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
-});
-redisClient
-  .connect()
-  .catch((e) => console.error("Redis connect error (routes):", e));
+// const redisClient = redis.createClient({
+//   url: process.env.REDIS_URL || "redis://127.0.0.1:6379",
+// });
+// redisClient
+//   .connect()
+//   .catch((e) => console.error("Redis connect error (routes):", e));
 
 // const sessionInitLimiter = rateLimit({ windowMs: 60 * 1000, max: 10 });
 
@@ -53,7 +54,8 @@ router.post("/reset-password", (req, res) => resetPassword(req, res));
 //     return res.status(500).json({ success: false, message: "Server error" });
 //   }
 // });
-router.post("/admin/email-verification", verifyEmail);
+router.post("/admin/send-email", sendEmail);
+router.post("/admin/email-otp-verify", verifyEmailOtp);
 router.post("/admin/login", (req, res) => loginAdmin(req, res));
 
 module.exports = router;

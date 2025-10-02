@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter } from 'lucide-react';
+import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdvancedFilters from './AdvancedFilters';
 import { useAuth } from '../../../context/AuthContext';
@@ -25,7 +25,7 @@ const Header = ({
     navigate('/');
   };
 
-    console.log("Filters "+mainCategories);
+    // console.log("Filters "+mainCategories);
 
 
   const handleAccountClick = () => {
@@ -47,7 +47,7 @@ const Header = ({
   const handleFiltersApply = (filters) => {
     setActiveFilters(filters);
     // Here you can implement the actual filtering logic
-    console.log('Applied filters:', filters);
+    // console.log('Applied filters:', filters);
   };
 
   // Count active filters
@@ -153,6 +153,24 @@ const Header = ({
 
             {/* Right Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* Post Ad Button - Only show for authenticated users */}
+              {isAuthenticated && (
+                <Link
+                  to="/post-ad"
+                  className="hidden sm:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Post Ad</span>
+                </Link>
+              )}
+
+              {/* Mobile Post Ad Button */}
+              {isAuthenticated && (
+                <Link to="/post-ad" className="sm:hidden p-2 text-green-600 hover:text-green-700 transition-colors">
+                  <Plus className="w-5 h-5" />
+                </Link>
+              )}
+
               <Link to="/cart" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>

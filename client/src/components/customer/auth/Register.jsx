@@ -3,50 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2, User, Check, MapPin } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 
-// Sri Lankan location data
-const sriLankanLocations = {
-  "Western": {
-    "Colombo": ["Colombo 1", "Colombo 2", "Colombo 3", "Colombo 4", "Colombo 5", "Colombo 6", "Colombo 7", "Colombo 8", "Colombo 9", "Colombo 10", "Colombo 11", "Colombo 12", "Colombo 13", "Colombo 14", "Colombo 15"],
-    "Gampaha": ["Gampaha", "Negombo", "Katunayake", "Ja-Ela", "Wattala", "Kelaniya", "Peliyagoda", "Kadawatha", "Ragama", "Kiribathgoda", "Minuwangoda", "Divulapitiya", "Nittambuwa", "Veyangoda", "Mirigama"],
-    "Kalutara": ["Kalutara", "Panadura", "Horana", "Beruwala", "Aluthgama", "Matugama", "Bandaragama", "Ingiriya", "Bulathsinhala", "Palindanuwara", "Walallawita", "Agalawatta"]
-  },
-  "Central": {
-    "Kandy": ["Kandy", "Gampola", "Nawalapitiya", "Peradeniya", "Akurana", "Kadugannawa", "Katugastota", "Wattegama", "Harispattuwa", "Pathahewaheta", "Udunuwara", "Yatinuwara", "Kundasale", "Delthota"],
-    "Matale": ["Matale", "Dambulla", "Sigiriya", "Galewela", "Ukuwela", "Rattota", "Pallepola", "Naula", "Yatawatta", "Laggala-Pallegama"],
-    "Nuwara Eliya": ["Nuwara Eliya", "Hatton", "Talawakele", "Ginigathena", "Kotagala", "Maskeliya", "Bogawantalawa", "Kotmale", "Walapane", "Hangranketha", "Hanguranketha"]
-  },
-  "Southern": {
-    "Galle": ["Galle", "Hikkaduwa", "Ambalangoda", "Elpitiya", "Bentota", "Baddegama", "Imaduwa", "Yakkalamulla", "Gonapinuwala", "Wanduramba", "Udugama", "Neluwa", "Nagoda", "Bope-Poddala"],
-    "Matara": ["Matara", "Weligama", "Mirissa", "Dikwella", "Tangalle", "Hakmana", "Akuressa", "Malimbada", "Thihagoda", "Kotapola", "Pasgoda", "Pitabeddara", "Kirinda-Puhulwella", "Devinuwara"],
-    "Hambantota": ["Hambantota", "Tangalle", "Tissamaharama", "Ambalantota", "Beliatta", "Weeraketiya", "Kataragama", "Okewela", "Suriyawewa", "Thissamaharama", "Lunugamvehera"]
-  },
-  "Northern": {
-    "Jaffna": ["Jaffna", "Chavakachcheri", "Point Pedro", "Karainagar", "Velanai", "Tellippalai", "Kopay", "Nallur", "Sandilipay", "Delft"],
-    "Kilinochchi": ["Kilinochchi", "Pallai", "Paranthan", "Poonakary"],
-    "Mannar": ["Mannar", "Nanattan", "Musali", "Manthai West"]
-  },
-  "Eastern": {
-    "Trincomalee": ["Trincomalee", "Kinniya", "Kuchchaveli", "Muttur", "Kantale", "Thambalagamuwa", "Gomarankadawala", "Seruvila"],
-    "Batticaloa": ["Batticaloa", "Kaluwanchikudy", "Valachchenai", "Eravur", "Koralai Pattu", "Manmunai North", "Manmunai South & Eruvil Pattu", "Manmunai West", "Porativu Pattu"],
-    "Ampara": ["Ampara", "Akkaraipattu", "Kalmunai", "Sainthamaruthu", "Addalachchenai", "Thirukkovil", "Pottuvil", "Lahugala", "Sammanthurai", "Karaitivu", "Nainthalawa", "Padiyathalawa", "Damana", "Navithanveli", "Dehiattakandiya", "Mahaoya"]
-  },
-  "North Western": {
-    "Kurunegala": ["Kurunegala", "Kuliyapitiya", "Narammala", "Wariyapola", "Pannala", "Melsiripura", "Bingiriya", "Kobeigane", "Nikaweratiya", "Galgamuwa", "Kotawehera", "Polgahawela", "Bamunakotuwa", "Rideegama", "Ibbagamuwa", "Mawathagama", "Giriulla", "Anamaduwa", "Polpithigama", "Ambanpola", "Ehetuwewa", "Ganewatta", "Maspotha", "Rasnayakapura", "Udubaddawa", "Weerambugedara", "Giribawa", "Pannala", "Alawwa", "Dankotuwa"],
-    "Puttalam": ["Puttalam", "Chilaw", "Wennappuwa", "Nattandiya", "Dankotuwa", "Marawila", "Madampe", "Pallama", "Karukupone", "Kalpitiya", "Anamaduwa"]
-  },
-  "North Central": {
-    "Anuradhapura": ["Anuradhapura", "Kekirawa", "Thambuttegama", "Eppawala", "Medawachchiya", "Horowpothana", "Hingurakgoda", "Galenbindunuwewa", "Mihintale", "Nuwaragam Palatha Central", "Nuwaragam Palatha East", "Padaviya", "Palugaswewa", "Rajanganaya", "Rambewa", "Thirappane", "Wijayapura"],
-    "Polonnaruwa": ["Polonnaruwa", "Kaduruwela", "Medirigiriya", "Hingurakgoda", "Dimbulagala", "Lankapura", "Welikanda", "Thamankaduwa"]
-  },
-  "Uva": {
-    "Badulla": ["Badulla", "Bandarawela", "Haputale", "Welimada", "Mahiyanganaya", "Ridimaliyadda", "Haldummulla", "Passara", "Ella", "Uva-Paranagama", "Welimada", "Soranathota", "Kandaketiya", "Rideemaliyadda"],
-    "Monaragala": ["Monaragala", "Wellawaya", "Buttala", "Kataragama", "Medagama", "Sewanagala", "Madulla", "Bibile", "Madulla", "Thanamalvila", "Siyambalanduwa"]
-  },
-  "Sabaragamuwa": {
-    "Ratnapura": ["Ratnapura", "Embilipitiya", "Balangoda", "Rakwana", "Godakawela", "Pelmadulla", "Eheliyagoda", "Kuruwita", "Ayagama", "Kalawana", "Kolonna", "Nivithigala", "Weligepola", "Elapatha", "Nivitigala"],
-    "Kegalle": ["Kegalle", "Mawanella", "Warakapola", "Rambukkana", "Galigamuwa", "Aranayaka", "Bulathkohupitiya", "Yatiyantota", "Ruwanwella", "Deraniyagala", "Dehiowita"]
-  }
-};
 
 function CustomerRegistration() {
   const [formData, setFormData] = useState({
@@ -60,7 +16,8 @@ function CustomerRegistration() {
     district: "",
     city: "",
     address: "",
-    postalCode: ""
+    postalCode: "",
+    refCode: ""
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -77,30 +34,6 @@ function CustomerRegistration() {
       ...formData,
       [e.target.name]: e.target.value
     });
-  };
-
-  // Handle province change
-  const handleProvinceChange = (e) => {
-    const selectedProvince = e.target.value;
-    setFormData({
-      ...formData,
-      province: selectedProvince,
-      district: "",
-      city: ""
-    });
-    setAvailableDistricts(selectedProvince ? Object.keys(sriLankanLocations[selectedProvince] || {}) : []);
-    setAvailableCities([]);
-  };
-
-  // Handle district change
-  const handleDistrictChange = (e) => {
-    const selectedDistrict = e.target.value;
-    setFormData({
-      ...formData,
-      district: selectedDistrict,
-      city: ""
-    });
-    setAvailableCities(selectedDistrict && formData.province ? sriLankanLocations[formData.province][selectedDistrict] || [] : []);
   };
 
   const validateForm = () => {
@@ -153,11 +86,7 @@ function CustomerRegistration() {
       confirmPassword: formData.confirmPassword,
       firstName: formData.firstName,
       lastName: formData.lastName,
-      province: formData.province,
-      district: formData.district,
-      city: formData.city,
-      address: formData.address,
-      postalCode: formData.postalCode
+      refCode: formData.refCode
     });
 
     if (result.success) {
@@ -346,126 +275,23 @@ function CustomerRegistration() {
               </div>
             </div>
 
-            {/* Location Information */}
-            <div className="space-y-4 border-t border-gray-200 pt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">Location Information</h3>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Province
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <select
-                    name="province"
-                    value={formData.province}
-                    onChange={handleProvinceChange}
-                    required
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
-                  >
-                    <option value="">Select Province</option>
-                    {Object.keys(sriLankanLocations).map((provinceName) => (
-                      <option key={provinceName} value={provinceName}>
-                        {provinceName}
-                      </option>
-                    ))}
-                  </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Referral Code
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Phone className="h-4 w-4 text-gray-400" />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    District
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <select
-                      name="district"
-                      value={formData.district}
-                      onChange={handleDistrictChange}
-                      required
-                      disabled={!formData.province}
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select District</option>
-                      {availableDistricts.map((districtName) => (
-                        <option key={districtName} value={districtName}>
-                          {districtName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    City
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <select
-                      name="city"
-                      value={formData.city}
-                      onChange={handleChange}
-                      required
-                      disabled={!formData.district}
-                      className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm disabled:bg-gray-100 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select City</option>
-                      {availableCities.map((cityName) => (
-                        <option key={cityName} value={cityName}>
-                          {cityName}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Address
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="address"
-                    value={formData.address}
-                    onChange={handleChange}
-                    placeholder="Enter your address"
-                    required
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Postal Code
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <MapPin className="h-4 w-4 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    name="postalCode"
-                    value={formData.postalCode}
-                    onChange={handleChange}
-                    placeholder="Enter postal code"
-                    className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
-                  />
-                </div>
+                <input
+                  type="text"
+                  name="refcode"
+                  value={formData.refCode}
+                  onChange={handleChange}
+                  placeholder="Enter your referral code here (optional)"
+                  required
+                  className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
+                />
               </div>
             </div>
 

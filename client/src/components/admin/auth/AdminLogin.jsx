@@ -16,16 +16,16 @@ import {
   ArrowLeft,
   RefreshCw,
 } from "lucide-react";
+import api from "../../../api/axios";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [currentStep, setCurrentStep] = useState(1); // 1: Login, 2: Email OTP, 3: Phone OTP
+  const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [sessionData, setSessionData] = useState(null);
 
-  // Step 1 - Primary Login
   const [loginData, setLoginData] = useState({
     email: "",
     password: "",
@@ -41,11 +41,17 @@ const AdminLogin = () => {
   const [phoneOtpTimer, setPhoneOtpTimer] = useState(300);
   const [canResendPhone, setCanResendPhone] = useState(false);
 
-
   // Security tracking
   const [attemptCount, setAttemptCount] = useState(0);
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockTimer, setBlockTimer] = useState(0);
+
+  // useEffect(() => {
+  //   const adminToken = localStorage.getItem("admin_token");
+  //   if (adminToken) {
+  //     navigate("/admin/dashboard");
+  //   }
+  // }, [navigate]);
 
   // Timer effects
   useEffect(() => {
@@ -152,45 +158,19 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      // Simulate API call for primary authentication
-      await new Promise((resolve) => setTimeout(resolve, 2000));
 
-      // Mock authentication logic
-      if (
-        loginData.email === "supun9402@gmail.com" &&
-        loginData.password === "Admin@123"
-      ) {
-        // Store session data
-        const session = {
-          adminId: "admin_001",
-          email: loginData.email,
-          phone: "+94772010915", // This would come from API
-          timestamp: Date.now(),
-        };
-        setSessionData(session);
-
-        // Send email OTP (mock)
-        console.log("Sending email OTP to:", loginData.email);
-
-        setCurrentStep(2);
+      const res = await api.post("/auth/admin/login", loginData);
+      
+      if (res.data.success) {
+        navigate("/admin/dashboard")
+        // setCurrentStep(2);
         setEmailOtpTimer(300);
         setCanResendEmail(false);
       } else {
-        const newAttemptCount = attemptCount + 1;
-        setAttemptCount(newAttemptCount);
-
-        if (newAttemptCount >= 3) {
-          setIsBlocked(true);
-          setBlockTimer(900); // 15 minutes
-          setError("Too many failed attempts. Account blocked for 15 minutes.");
-        } else {
-          setError(
-            `Invalid credentials. ${3 - newAttemptCount} attempts remaining.`
-          );
-        }
+        setError(res.data.message || "Login failed");
       }
     } catch (err) {
-      setError("Authentication failed. Please try again.");
+      setError(err.response?.data?.message);
     } finally {
       setLoading(false);
     }
@@ -199,28 +179,19 @@ const AdminLogin = () => {
   const handleEmailOtpVerification = async (e) => {
     e.preventDefault();
     const otpString = emailOtp.join("");
-
     if (otpString.length !== 6) {
       setError("Please enter the complete 6-digit code");
       return;
     }
-
     setLoading(true);
     setError("");
-
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      // Mock OTP verification (in real app, this would be API call)
-      if (otpString === "123456") {
-        console.log("Sending phone OTP to:", sessionData.phone);
-        setCurrentStep(3);
+      const res = await api.post("/auth/admin/email-verification", loginData.email);
+      // 
+      setCurrentStep(3);
         setPhoneOtpTimer(300);
         setCanResendPhone(false);
-      } else {
-        setError("Invalid verification code. Please try again.");
-        setEmailOtp(["", "", "", "", "", ""]);
-      }
+
     } catch (err) {
       setError("Verification failed. Please try again.");
     } finally {
@@ -229,61 +200,53 @@ const AdminLogin = () => {
   };
 
   const handlePhoneOtpVerification = async (e) => {
-    e.preventDefault();
-    const otpString = phoneOtp.join("");
-
-    if (otpString.length !== 6) {
-      setError("Please enter the complete 6-digit code");
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-
-      if (otpString === "654321") {
-        // Successful authentication - go directly to dashboard
-        localStorage.setItem(
-          "adminSession",
-          JSON.stringify({
-            ...sessionData,
-            authenticated: true,
-            timestamp: Date.now(),
-          })
-        );
-
-        navigate("/admin/dashboard");
-      } else {
-        setError("Invalid verification code. Please try again.");
-        setPhoneOtp(["", "", "", "", "", ""]);
-      }
-    } catch (err) {
-      setError("Verification failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
+    //   e.preventDefault();
+    //   const otpString = phoneOtp.join("");
+    //   if (otpString.length !== 6) {
+    //     setError("Please enter the complete 6-digit code");
+    //     return;
+    //   }
+    //   setLoading(true);
+    //   setError("");
+    //   try {
+    //     if (otpString === "654321") {
+    //       // Successful authentication - go directly to dashboard
+    //       localStorage.setItem(
+    //         "adminSession",
+    //         JSON.stringify({
+    //           ...sessionData,
+    //           authenticated: true,
+    //           timestamp: Date.now(),
+    //         })
+    //       );
+    //       navigate("/admin/dashboard");
+    //     } else {
+    //       setError("Invalid verification code. Please try again.");
+    //       setPhoneOtp(["", "", "", "", "", ""]);
+    //     }
+    //   } catch (err) {
+    //     setError("Verification failed. Please try again.");
+    //   } finally {
+    //     setLoading(false);
+    //   }
   };
-
 
   const handleResendOtp = async (type) => {
-    if (type === "email" && canResendEmail) {
-      setEmailOtpTimer(300);
-      setCanResendEmail(false);
-      console.log("Resending email OTP");
-    } else if (type === "phone" && canResendPhone) {
-      setPhoneOtpTimer(300);
-      setCanResendPhone(false);
-      console.log("Resending phone OTP");
-    }
-  };
-
-  const goBack = () => {
-    if (currentStep > 1) {
-      setCurrentStep(currentStep - 1);
-      setError("");
-    }
+      // if (type === "email" && canResendEmail) {
+      //   setEmailOtpTimer(300);
+      //   setCanResendEmail(false);
+      //   console.log("Resending email OTP");
+      // } else if (type === "phone" && canResendPhone) {
+      //   setPhoneOtpTimer(300);
+      //   setCanResendPhone(false);
+      //   console.log("Resending phone OTP");
+      // }
+    };
+    const goBack = () => {
+    //   if (currentStep > 1) {
+    //     setCurrentStep(currentStep - 1);
+    //     setError("");
+      // }
   };
 
   const renderStepIndicator = () => (
@@ -341,7 +304,7 @@ const AdminLogin = () => {
               value={loginData.email}
               onChange={(e) => handleInputChange("email", e.target.value)}
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              placeholder="admin@nayagara.lk"
+              placeholder="Enter your email"
               required
               disabled={isBlocked}
             />

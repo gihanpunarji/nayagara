@@ -1,17 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   User, Package, CreditCard, MapPin, HelpCircle,
   LogOut, ChevronRight, Star, Truck, Clock, Shield, Eye,
   Edit, Copy, X, Check, AlertCircle, Phone, Mail, Calendar,
-  Download, MessageCircle, FileText, Headphones, Plus, Minus
+  Download, MessageCircle, FileText, Headphones, Plus, Minus,
+  Car, Home, Settings, Trash2
 } from 'lucide-react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../context/AuthContext';
 
 const CustomerAccount = () => {
+  const { logout } = useAuth();
   const storedUsser = localStorage.getItem('user');
   if(storedUsser == null) {
     return <Navigate to={'/'} replace />
-  
+
   }
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -22,6 +25,9 @@ const CustomerAccount = () => {
   const [orderStatusFilter, setOrderStatusFilter] = useState('all');
   const [editingPhone, setEditingPhone] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [myAds, setMyAds] = useState([]);
+  const [adsLoading, setAdsLoading] = useState(false);
+  const [selectedAdStatus, setSelectedAdStatus] = useState('all');
   const navigate = useNavigate();
 
   // Mock user data
@@ -189,10 +195,80 @@ const CustomerAccount = () => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: User },
     { id: 'orders', label: 'My Orders', icon: Package },
+    { id: 'my-ads', label: 'My Ads', icon: Car },
     { id: 'wallet', label: 'My Wallet', icon: CreditCard },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'support', label: 'Help & Support', icon: HelpCircle }
   ];
+
+  // Fetch user's advertisements
+  useEffect(() => {
+    if (activeTab === 'my-ads') {
+      fetchMyAds();
+    }
+  }, [activeTab]);
+
+  const fetchMyAds = async () => {
+    setAdsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('/api/advertisements/user/my-ads', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setMyAds(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching ads:', error);
+    } finally {
+      setAdsLoading(false);
+    }
+  };
+
+  const handleDeleteAd = async (adId) => {
+    if (window.confirm('Are you sure you want to delete this advertisement?')) {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`/api/advertisements/${adId}`, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        const data = await response.json();
+        if (data.success) {
+          setMyAds(myAds.filter(ad => ad.ad_id !== adId));
+        } else {
+          alert('Failed to delete advertisement');
+        }
+      } catch (error) {
+        alert('Error deleting advertisement');
+      }
+    }
+  };
+
+  const getAdStatusColor = (status) => {
+    switch (status) {
+      case 'approved': return 'text-green-600 bg-green-100';
+      case 'pending_approval': return 'text-yellow-600 bg-yellow-100';
+      case 'rejected': return 'text-red-600 bg-red-100';
+      case 'expired': return 'text-gray-600 bg-gray-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const formatPrice = (price) => {
+    return new Intl.NumberFormat('en-LK', {
+      style: 'currency',
+      currency: 'LKR',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
 
   const handleSignOut = () => {
     logout();
@@ -663,6 +739,195 @@ const CustomerAccount = () => {
     </div>
   );
 
+  const renderMyAds = () => {
+    const filteredAds = selectedAdStatus === 'all'
+      ? myAds
+      : myAds.filter(ad => ad.status === selectedAdStatus);
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">My Advertisements</h2>
+            <p className="text-gray-600">Manage your posted advertisements</p>
+          </div>
+          <Link
+            to="/post-ad"
+            className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Post New Ad</span>
+          </Link>
+        </div>
+
+        {/* Status Filter */}
+        <div className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center space-x-4">
+            <span className="text-sm font-medium text-gray-700">Filter by status:</span>
+            <div className="flex space-x-2">
+              {[
+                { value: 'all', label: 'All Ads' },
+                { value: 'pending_approval', label: 'Pending' },
+                { value: 'approved', label: 'Approved' },
+                { value: 'rejected', label: 'Rejected' }
+              ].map(filter => (
+                <button
+                  key={filter.value}
+                  onClick={() => setSelectedAdStatus(filter.value)}
+                  className={`px-3 py-1 text-sm rounded-full transition-colors ${
+                    selectedAdStatus === filter.value
+                      ? 'bg-blue-100 text-blue-800'
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Ads List */}
+        {adsLoading ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="text-gray-600 mt-2">Loading your ads...</p>
+          </div>
+        ) : filteredAds.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+            {selectedAdStatus === 'all' ? (
+              <>
+                <Car className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No advertisements yet</h3>
+                <p className="text-gray-600 mb-4">Start selling by posting your first advertisement</p>
+                <Link
+                  to="/post-ad"
+                  className="inline-flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Post Your First Ad</span>
+                </Link>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">No {selectedAdStatus.replace('_', ' ')} ads</h3>
+                <p className="text-gray-600">No advertisements match the selected status filter.</p>
+              </>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredAds.map(ad => (
+              <div key={ad.ad_id} className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-start justify-between">
+                  <div className="flex space-x-4 flex-1">
+                    {/* Ad Image */}
+                    <div className="w-24 h-24 bg-gray-200 rounded-lg overflow-hidden flex-shrink-0">
+                      {ad.images && ad.images.length > 0 ? (
+                        <img
+                          src={ad.images[0]}
+                          alt={ad.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          {ad.ad_type === 'vehicle' ? (
+                            <Car className="w-8 h-8 text-gray-400" />
+                          ) : (
+                            <Home className="w-8 h-8 text-gray-400" />
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Ad Details */}
+                    <div className="flex-1">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-900 mb-1">{ad.title}</h3>
+                          <p className="text-gray-600 text-sm mb-2 line-clamp-2">{ad.description}</p>
+
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span>{formatPrice(ad.price)}</span>
+                            <span>•</span>
+                            <span className="flex items-center space-x-1">
+                              <MapPin className="w-3 h-3" />
+                              <span>{ad.location_city}</span>
+                            </span>
+                            <span>•</span>
+                            <span className="flex items-center space-x-1">
+                              <Eye className="w-3 h-3" />
+                              <span>{ad.views} views</span>
+                            </span>
+                            <span>•</span>
+                            <span>{new Date(ad.created_at).toLocaleDateString()}</span>
+                          </div>
+
+                          {/* Package Type */}
+                          {ad.package_type !== 'standard' && (
+                            <div className="mt-2">
+                              <span className={`inline-flex px-2 py-1 text-xs font-bold rounded-full ${
+                                ad.package_type === 'urgent' ? 'bg-orange-100 text-orange-800' : 'bg-purple-100 text-purple-800'
+                              }`}>
+                                {ad.package_type.toUpperCase()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-col items-end space-y-2">
+                          {/* Status Badge */}
+                          <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${getAdStatusColor(ad.status)}`}>
+                            {ad.status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                          </span>
+
+                          {/* Actions */}
+                          <div className="flex items-center space-x-2">
+                            <Link
+                              to={`/ad/${ad.ad_id}`}
+                              className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                              title="View Ad"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Link>
+                            <Link
+                              to={`/post-ad?edit=${ad.ad_id}`}
+                              className="p-1 text-gray-600 hover:text-gray-800 transition-colors"
+                              title="Edit Ad"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Link>
+                            <button
+                              onClick={() => handleDeleteAd(ad.ad_id)}
+                              className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                              title="Delete Ad"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Admin Notes for Rejected Ads */}
+                      {ad.status === 'rejected' && ad.admin_notes && (
+                        <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                          <p className="text-sm font-medium text-red-800">Rejection Reason:</p>
+                          <p className="text-sm text-red-700 mt-1">{ad.admin_notes}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderSupport = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -777,6 +1042,7 @@ const CustomerAccount = () => {
     switch (activeTab) {
       case 'dashboard': return renderDashboard();
       case 'orders': return renderOrders();
+      case 'my-ads': return renderMyAds();
       case 'wallet': return renderWallet();
       case 'addresses': return renderAddresses();
       case 'support': return renderSupport();

@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "setup-db": "node src/scripts/setupDatabase.js",
+    "setup-ads": "node src/scripts/setupAdvertisements.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -16,9 +18,11 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "mysql2": "^3.15.0",
-    "nodemailer": "^7.0.6"
+    "nodemailer": "^7.0.6",
+    "redis": "^5.8.2"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

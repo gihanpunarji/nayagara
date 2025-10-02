@@ -11,6 +11,50 @@ export default function NayagaraHome() {
   const [currentPage, setCurrentPage] = useState('home');
   const [activeNavItem, setActiveNavItem] = useState('home');
 
+  // Simple function to scroll to contact area
+  const scrollToContact = (productName = '', price = '', pricePrefix = '') => {
+    // Find contact section
+    const contactSection = document.getElementById('contact');
+
+    if (contactSection) {
+      // Scroll to contact section
+      contactSection.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start'
+      });
+
+      // Pre-fill form after scroll
+      setTimeout(() => {
+        try {
+          const subjectSelect = document.querySelector('select[name="subject"]');
+          const messageTextarea = document.querySelector('textarea[name="message"]');
+
+          if (subjectSelect) {
+            subjectSelect.value = 'Place an Order';
+          }
+
+          if (messageTextarea) {
+            let message = '';
+            if (productName && price) {
+              message = `I would like to order: ${productName}\nPrice: Rs ${price}${pricePrefix ? ' (' + pricePrefix.trim() + ')' : ''}\n\nPlease provide more details about this product and delivery options.`;
+            } else {
+              message = 'I would like to place an order. Please provide more details about your products and delivery options.';
+            }
+            messageTextarea.value = message;
+          }
+        } catch (error) {
+          console.log('Form pre-fill failed:', error);
+        }
+      }, 800);
+    } else {
+      // Fallback: scroll to bottom of page
+      window.scrollTo({
+        top: document.body.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   // Example: replace these fetch calls with your real API endpoints
   useEffect(() => {
     // Simulated fetch with example data
@@ -44,17 +88,17 @@ export default function NayagaraHome() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
       {/* Page Header with Navigation */}
-      <SimpleHeader activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem} />
+      <SimpleHeader activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem} scrollToContact={scrollToContact} />
 
       {/* Hero Section */}
-      <HeroSection />
+      <HeroSection scrollToContact={scrollToContact} />
 
       {/* Water Purification Process */}
       <PurificationProcess />
 
       {/* Product Showcase */}
       <div id="products-section" className="products-section">
-        <ProductShowcase items={flashSaleItems} />
+        <ProductShowcase items={flashSaleItems} scrollToContact={scrollToContact} />
       </div>
 
       {/* Company Values */}
@@ -78,7 +122,7 @@ export default function NayagaraHome() {
       <NewsletterSignup />
 
       {/* Customer Testimonials */}
-      <CustomerTestimonials />
+      <CustomerTestimonials scrollToContact={scrollToContact} />
 
       {/* Mobile Bottom Nav - Hidden on larger screens since we have header nav */}
       <div className="md:hidden">
@@ -91,7 +135,7 @@ export default function NayagaraHome() {
 /* --------------------- Subcomponents below --------------------- */
 
 // Responsive Header Component
-function SimpleHeader({ activeNavItem, setActiveNavItem }) {
+function SimpleHeader({ activeNavItem, setActiveNavItem, scrollToContact }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
@@ -214,8 +258,8 @@ function SimpleHeader({ activeNavItem, setActiveNavItem }) {
 
           {/* Contact Info */}
           <div className="flex items-center gap-4">
-            
-            <button className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
+
+            <button onClick={() => scrollToContact()} className="bg-emerald-600 text-white px-6 py-2 rounded-lg hover:bg-emerald-700 transition-colors">
               Order Now
             </button>
           </div>
@@ -303,7 +347,7 @@ function SimpleHeader({ activeNavItem, setActiveNavItem }) {
 
             {/* Mobile Contact Actions */}
             <div className="mt-4 grid grid-cols-1 gap-2">
-              <button className="px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
+              <button onClick={() => scrollToContact()} className="px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
                 <Phone className="w-4 h-4" />
                 Order Now
               </button>
@@ -318,7 +362,7 @@ function SimpleHeader({ activeNavItem, setActiveNavItem }) {
 
 
 // Hero Section - Super Attractive with Animations
-function HeroSection() {
+function HeroSection({ scrollToContact }) {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -366,12 +410,12 @@ function HeroSection() {
         </div>
 
         {/* Main Heading with Typewriter Effect */}
-        <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold mb-8 text-white leading-tight">
+        <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-8 text-white leading-tight">
           <span className="bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent">
-            Pure Water
+            Your Daily Dose Of
           </span>
           <br />
-          <span className="text-white">For Life</span>
+          <span className="text-white">Happiness</span>
         </h1>
 
         {/* Animated Subtitle */}
@@ -383,7 +427,7 @@ function HeroSection() {
 
         {/* Call-to-Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
-          <button className="group bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center gap-3">
+          <button onClick={() => scrollToContact()} className="group bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center gap-3">
             <span>Order Now</span>
             <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
           </button>
@@ -424,42 +468,42 @@ function PurificationProcess() {
       icon: "🔍",
       title: "Pre-Filtration",
       desc: "Initial screening removes large particles and sediments",
-      image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: "public/pre-filtering.jpg",
       delay: 100
     },
     {
       icon: "⚡",
       title: "Activated Carbon",
       desc: "Removes chlorine, odors and improves taste",
-      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: "public/carbon.jpg",
       delay: 200
     },
     {
       icon: "🧪",
       title: "Reverse Osmosis",
       desc: "99.9% contaminant removal through membrane filtration",
-      image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: "public/waterjet.jpg",
       delay: 300
     },
     {
       icon: "💧",
       title: "UV Sterilization",
       desc: "Eliminates bacteria, viruses and microorganisms",
-      image: "https://images.unsplash.com/photo-1559827260-dc66d52bef19?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: "public/uv.jpg",
       delay: 400
     },
     {
       icon: "🍃",
       title: "Mineralization",
       desc: "Adds essential minerals for health and taste",
-      image: "https://images.unsplash.com/photo-1523906834658-6e24ef2386f9?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: "public/Mineralization.jpg",
       delay: 500
     },
     {
       icon: "✅",
       title: "Quality Testing",
       desc: "Final purity verification and quality assurance",
-      image: "https://images.unsplash.com/photo-1582719471384-894fbb16e074?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=80",
+      image: "public/quality.jpg",
       delay: 600
     }
   ];
@@ -493,7 +537,7 @@ function PurificationProcess() {
 
       <div className="max-w-7xl mx-auto px-4 relative">
         <div className="text-center mb-20">
-        
+
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-6">
             Our <span className="text-emerald-600">6-Stage</span> Purification Process
           </h2>
@@ -583,38 +627,41 @@ function FeaturedCategories({ categories = [] }) {
 }
 
 // Product Showcase Section with Enhanced Design
-function ProductShowcase({ items = [] }) {
+function ProductShowcase({ items = [], scrollToContact }) {
   const [hoveredProduct, setHoveredProduct] = useState(null);
 
   const enhancedProducts = [
     {
       id: 1,
-      title: "Home water filters",
+      title: "Home Water Filters",
       subtitle: "Perfect for families",
-      price: 450,
-      oldPrice: 550,
-      image:  "https://nayagara.lk/wp-content/uploads/2025/03/55555555555-1.jpg",
-      features: ["BPA Free", "6-Stage Purified", "Home Delivery"],
+      price: 65000,
+      oldPrice: 68000,
+      image: "https://nayagara.lk/wp-content/uploads/2025/03/55555555555-1.jpg",
+      features: ["Home Water Filters", "BPA Free", "6-Stage Purified", "Home Delivery"],
+      description: "Our home water filters are designed to provide your family with clean and safe drinking water. Equipped with advanced filtration technology, these systems effectively remove contaminants and ensure optimal taste. Easy to install and maintain, they fit seamlessly into your home routine.",
       popular: true
     },
     {
       id: 2,
-      title: "Institutional water filters",
+      title: "Institutional Water Filters",
       subtitle: "Ideal for workplace",
-      price: 800,
-      oldPrice: 1000,
+      price: 475000,
+      pricePrefix: "Up to ",
       image: "https://nayagara.lk/wp-content/uploads/2025/03/38969fb5-1f14-45bd-bfaf-97ddfc73b1f1.jpeg",
-      features: ["Food Grade", "Easy Handle", "Volume Discount"],
+      features: ["Institutional Water Filters", "Food Grade", "Easy Handle", "Volume Discount"],
+      description: "Our institutional water filters, designed for restaurants, schools, and hospitals, meet the high demand for clean water. These robust systems are designed for heavy use while maintaining high filtration standards. Trust our filters to protect the health of your establishment's patrons.",
       popular: false
     },
     {
       id: 3,
-      title: "Special water filters",
+      title: "Bathroom Pollution Solutions",
       subtitle: "Complete filtration system",
-      price: 12000,
-      oldPrice: 15000,
-      image:"https://nayagara.lk/wp-content/uploads/2025/03/435c401e-a423-4c07-bbd3-b1288ffca60e.jpeg",
-      features: ["6-Stage Filter", "UV + RO", "2 Year Warranty"],
+      price: 330000,
+      pricePrefix: "Up to ",
+      image: "https://nayagara.lk/wp-content/uploads/2025/03/435c401e-a423-4c07-bbd3-b1288ffca60e.jpeg",
+      features: ["Bathroom Pollution Solutions", "6-Stage Filter", "UV", "1 Year Warranty"],
+      description: "Prevent bathroom pollution with our specialized filtration systems. These filters are designed to reduce harmful bacteria and impurities in water used in bathrooms. With a focus on hygiene, our solutions help create a safe environment in your home.",
       popular: false
     }
   ];
@@ -682,6 +729,9 @@ function ProductShowcase({ items = [] }) {
                     {product.title}
                   </h3>
                   <p className="text-gray-500 text-sm">{product.subtitle}</p>
+                  {product.description && (
+                    <p className="text-gray-600 text-sm mt-3 leading-relaxed">{product.description}</p>
+                  )}
                 </div>
 
                 {/* Features */}
@@ -699,22 +749,68 @@ function ProductShowcase({ items = [] }) {
                 </div>
 
                 {/* Pricing */}
-                <div className="flex items-center justify-between mb-6">
-                  <div>
-                    <span className="text-3xl font-bold text-emerald-600">Rs {product.price}</span>
+                {product.price && (
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <div className="flex items-center gap-3">
+                        <span className="text-3xl font-bold text-emerald-600">Rs {product.price}</span>
+                        {product.pricePrefix && (
+                          <div className="relative">
+                            <span className="bg-gradient-to-r from-orange-500 to-red-500 text-white px-3 py-1 rounded-full text-sm font-bold shadow-lg animate-pulse">
+                              {product.pricePrefix.trim()}
+                            </span>
+                            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-bounce"></div>
+                          </div>
+                        )}
+                      </div>
+                      {product.oldPrice && (
+                        <span className="text-lg text-gray-400 line-through ml-2">Rs {product.oldPrice}</span>
+                      )}
+                    </div>
                     {product.oldPrice && (
-                      <span className="text-lg text-gray-400 line-through ml-2">Rs {product.oldPrice}</span>
+                      <div className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-sm font-semibold">
+                        Save Rs {product.oldPrice - product.price}
+                      </div>
                     )}
                   </div>
-                  {product.oldPrice && (
-                    <div className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-sm font-semibold">
-                      Save Rs {product.oldPrice - product.price}
-                    </div>
-                  )}
-                </div>
+                )}
 
                 {/* CTA Button */}
-                <button className="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-bold hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 group">
+                <button
+                  onClick={() => {
+                    console.log('Product button clicked:', product.title);
+
+                    // Direct scroll approach
+                    const contactSection = document.getElementById('contact');
+                    if (contactSection) {
+                      console.log('Scrolling to contact...');
+                      contactSection.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                      });
+
+                      // Pre-fill form
+                      setTimeout(() => {
+                        const subjectSelect = document.querySelector('select[name="subject"]');
+                        const messageTextarea = document.querySelector('textarea[name="message"]');
+
+                        if (subjectSelect) {
+                          subjectSelect.value = 'Place an Order';
+                        }
+
+                        if (messageTextarea) {
+                          const priceText = product.price ? product.price.toLocaleString() : '';
+                          const prefixText = product.pricePrefix || '';
+                          messageTextarea.value = `I would like to order: ${product.title}\nPrice: Rs ${priceText}${prefixText ? ' (' + prefixText.trim() + ')' : ''}\n\nPlease provide more details about this product and delivery options.`;
+                        }
+                      }, 1000);
+                    } else {
+                      console.error('Contact section not found!');
+                      alert('Contact section not found!');
+                    }
+                  }}
+                  className="w-full py-4 bg-gradient-to-r from-emerald-600 to-green-600 text-white rounded-xl font-bold hover:from-emerald-700 hover:to-green-700 transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 group"
+                >
                   <span>Order Now</span>
                   <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                 </button>
@@ -726,12 +822,7 @@ function ProductShowcase({ items = [] }) {
           ))}
         </div>
 
-        {/* Call to Action */}
-        <div className="text-center mt-16">
-          <button className="bg-white text-emerald-600 px-8 py-4 rounded-full text-lg font-bold hover:bg-emerald-50 transition-colors shadow-lg hover:shadow-xl transform hover:scale-105">
-            View All Products
-          </button>
-        </div>
+
       </div>
     </section>
   );
@@ -741,7 +832,7 @@ function ProductShowcase({ items = [] }) {
 function CompanyValues() {
   const values = [
     { icon: Shield, title: "Quality Assurance", desc: "100% pure and safe water guaranteed" },
-    { icon: Truck, title: "Fast Delivery", desc: "Same-day delivery across the city" },
+    { icon: Truck, title: "Fast Customer Service", desc: "Same-day services across the city" },
     { icon: Award, title: "Certified Standards", desc: "ISO certified purification process" },
     { icon: Users, title: "Customer First", desc: "Your satisfaction is our priority" },
     { icon: Leaf, title: "Eco-Friendly", desc: "Sustainable packaging and practices" },
@@ -895,9 +986,9 @@ function VisionMissionSection() {
                   Our Vision
                 </h3>
                 <p className="text-emerald-100 text-lg leading-relaxed">
-                  To become Sri Lanka's most trusted water brand, providing pure, healthy, and sustainable
-                  water solutions to every household and business, while setting the gold standard for
-                  quality, innovation, and environmental responsibility in the water industry.
+                  "To become the number one best online goods and services provider in Sri Lanka by 2030 by increasing customer satisfaction."
+                  <br /><br />
+                  "පාරිභෝගික තෘප්තිය වැඩි කිරීමෙන් 2030 වන විට ශ්‍රී ලංකාවේ අංක එකේ වඩාත් හොඳම අන්තර්ජාල භාණ්ඩ සහ සේවා සැපයුම්කරු බවට පත්වීම."
                 </p>
               </div>
 
@@ -928,10 +1019,10 @@ function VisionMissionSection() {
                   Our Mission
                 </h3>
                 <p className="text-green-100 text-lg leading-relaxed">
-                  To deliver the purest, safest water through advanced 6-stage purification technology,
-                  exceptional customer service, and sustainable practices. We are committed to promoting
-                  health, wellness, and environmental stewardship while building lasting relationships
-                  with our customers and communities.
+                  "To become the number one best online goods and services provider in Sri Lanka by
+                  increasing customer satisfaction."
+                  <br /><br />
+                  "අපගේ මෙහෙවර වන්නේ රටේ වඩාත්ම විශ්වාසදායක සහ පාරිභෝගික කේන්ද්‍රිය ඊ-වාණිජ්‍ය වේදිකාව ගොඩනැගීම මගින් සෑම ශ්‍රී ලාකිකයෙකුටම විශ්වාසයෙන් යුතුව සාප්පු සවාරි යාමට බලගැන්වීමයි.  මිතුරා වන අන්තර්ජාල භාණ්ඩ සහ සේවා සැපයුම්කරු බවට පත්වීමයි."
                 </p>
               </div>
 
@@ -1113,7 +1204,7 @@ function FounderSection() {
                       We grew from Niagara Water in 2018 into Nayagara Lanka in 2023 because we never
                       stopped learning, never stopped improving, and never stopped listening to our customers.
                       Today, as we step into the world of online shopping, our promise remains the same:,<b> to serve
-                      every Sri Lankan with quality, honesty, and care.</b>
+                        every Sri Lankan with quality, honesty, and care.</b>
                     </p>
                     <p>
                       The future belongs to those who innovate with purpose — and together, we’re creating a
@@ -1124,8 +1215,8 @@ function FounderSection() {
                   </div>
                 </div>
 
-              
-                
+
+
               </div>
 
               {/* Stats & Achievements */}
@@ -1301,13 +1392,13 @@ function ContactSection() {
                   <span className="text-xl">📍</span>
                   Our Location
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">Colombo 07, Sri Lanka</p>
+                <p className="text-sm text-gray-600 mt-1">Nayagara Lanaka pvt,Anamaduwa</p>
               </div>
 
               {/* Google Maps iFrame */}
               <div className="relative h-48">
                 <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.8998046470563!2d79.86124237566889!3d6.902106918493588!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3ae259684e86d4d5%3A0xb6d8b9a0a1a0a0a0!2sColombo%2007%2C%20Sri%20Lanka!5e0!3m2!1sen!2sus!4v1680000000000!5m2!1sen!2sus"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.1234567890123!2d80.0148205!3d7.890179!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3afd27cdf42130f5%3A0x1fc14e993f614e69!2sNayagara%20Lanka%20pvt%20ltd!5e0!3m2!1sen!2slk!4v1640000000000!5m2!1sen!2slk"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
@@ -1328,8 +1419,8 @@ function ContactSection() {
                   <div>
                     <h4 className="font-semibold text-gray-800 text-sm">Phone Numbers</h4>
                     <div className="text-xs text-gray-600 space-y-1">
-                      <p>Main: <a href="tel:+94123456789" className="text-emerald-600">+94 12 345 6789</a></p>
-                      <p>Orders: <a href="tel:+94123456790" className="text-emerald-600">+94 12 345 6790</a></p>
+                      <p>Main: <a href="tel:+94123456789" className="text-emerald-600">+94 37 316 6584</a></p>
+                      <p>Orders: <a href="tel:+94123456790" className="text-emerald-600">+94 76 125 0050</a></p>
                     </div>
                   </div>
                 </div>
@@ -1368,13 +1459,17 @@ function ContactSection() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-3">
-              <a href="tel:+94123456789" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-3 rounded-xl text-center block hover:from-emerald-600 hover:to-green-700 transition-colors">
+              <a href="tel:+94776613003" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-3 rounded-xl text-center block hover:from-emerald-600 hover:to-green-700 transition-colors">
                 <div className="text-xl mb-1">📞</div>
                 <div className="font-bold text-sm">Call Now</div>
               </a>
 
-              <a href="https://wa.me/94771234567" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-xl text-center block hover:from-green-600 hover:to-emerald-700 transition-colors">
-                <div className="text-xl mb-1">💬</div>
+              <a href="https://wa.me/94717750039" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-xl text-center block hover:from-green-600 hover:to-emerald-700 transition-colors">
+                <div className="text-xl mb-1">
+                  <svg className="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.516" />
+                  </svg>
+                </div>
                 <div className="font-bold text-sm">WhatsApp</div>
               </a>
             </div>
@@ -1387,12 +1482,74 @@ function ContactSection() {
               Send us a Message
             </h3>
 
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={(e) => {
+              e.preventDefault();
+              const formData = new FormData(e.target);
+              const data = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                subject: formData.get('subject'),
+                message: formData.get('message')
+              };
+
+              // Validate required fields
+              if (!data.firstName || !data.lastName || !data.email || !data.phone || !data.subject || !data.message) {
+                alert('Please fill in all required fields.');
+                return;
+              }
+
+              // Create professional email content
+              const emailSubject = `Website Contact: ${data.subject}`;
+              const emailBody = `New message from Nayagara Water website:
+
+Full Name: ${data.firstName} ${data.lastName}
+Email: ${data.email}
+Phone: ${data.phone}
+Subject: ${data.subject}
+
+Message:
+${data.message}
+
+---
+This message was sent from the Nayagara Water website contact form.
+Please respond to the customer's email: ${data.email}`;
+
+              // Create mailto link
+              const mailtoLink = `mailto:info@nayagara.lk?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+
+              try {
+                // Open email client
+                window.location.href = mailtoLink;
+
+                // Show improved success message
+                setTimeout(() => {
+                  const response = confirm(
+                    `✅ Email ready to send to info@nayagara.lk\n\n` +
+                    `Your email client should now be open with your message.\n` +
+                    `If it didn't open, please manually email: info@nayagara.lk\n\n` +
+                    `Click OK to clear this form, or Cancel to keep your information.`
+                  );
+
+                  if (response) {
+                    // Clear the form
+                    e.target.reset();
+                    alert('Form cleared. Thank you for contacting Nayagara Water!');
+                  }
+                }, 1000);
+
+              } catch (error) {
+                alert('⚠️ Could not open email client.\n\nPlease manually send your message to:\ninfo@nayagara.lk');
+              }
+            }}>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-2">First Name</label>
                   <input
                     type="text"
+                    name="firstName"
+                    required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
                     placeholder="Your first name"
                   />
@@ -1401,6 +1558,8 @@ function ContactSection() {
                   <label className="block text-sm font-semibold text-gray-700 mb-2">Last Name</label>
                   <input
                     type="text"
+                    name="lastName"
+                    required
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
                     placeholder="Your last name"
                   />
@@ -1411,6 +1570,8 @@ function ContactSection() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
                 <input
                   type="email"
+                  name="email"
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
                   placeholder="your.email@example.com"
                 />
@@ -1420,6 +1581,8 @@ function ContactSection() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Phone Number</label>
                 <input
                   type="tel"
+                  name="phone"
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors"
                   placeholder="+94 77 123 4567"
                 />
@@ -1427,7 +1590,7 @@ function ContactSection() {
 
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Subject</label>
-                <select className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors">
+                <select name="subject" required className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors">
                   <option>General Inquiry</option>
                   <option>Place an Order</option>
                   <option>Technical Support</option>
@@ -1440,6 +1603,8 @@ function ContactSection() {
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Message</label>
                 <textarea
                   rows="4"
+                  name="message"
+                  required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors resize-none"
                   placeholder="Tell us how we can help you..."
                 ></textarea>
@@ -1458,9 +1623,9 @@ function ContactSection() {
 
         {/* Service Areas */}
         <div className="mt-16 text-center">
-          <h3 className="text-2xl font-bold text-gray-800 mb-8">We Deliver Across Sri Lanka</h3>
+          <h3 className="text-2xl font-bold text-gray-800 mb-8">We Service Across Sri Lanka</h3>
           <div className="flex flex-wrap justify-center gap-4">
-            {['Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Matara', 'Kurunegala', 'Anuradhapura'].map((city, index) => (
+            {['Colombo', 'Kaluthara', 'Gampaha','Negambo', 'Kegalle', 'Kurunegala', 'Puttalam', 'Mannar', 'Anuradhapura'].map((city, index) => (
               <div key={index} className="bg-white px-4 py-2 rounded-full shadow-md hover:shadow-lg transition-shadow border border-emerald-100">
                 <span className="text-gray-700 font-medium">{city}</span>
               </div>
@@ -1504,7 +1669,7 @@ function NewsletterSignup() {
 }
 
 // Customer Testimonials Section with animations
-function CustomerTestimonials() {
+function CustomerTestimonials({ scrollToContact }) {
   const [visibleItems, setVisibleItems] = useState(new Set());
 
   const testimonials = [
@@ -1705,7 +1870,7 @@ function CustomerTestimonials() {
               Experience the pure difference with Nayagara Water. Order now and taste the quality yourself!
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <button className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+              <button onClick={() => scrollToContact()} className="px-8 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-lg font-semibold hover:from-green-700 hover:to-emerald-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
                 Order Now
               </button>
               <button className="px-8 py-3 border-2 border-green-600 text-green-600 rounded-lg font-semibold hover:bg-green-600 hover:text-white transition-all duration-300">

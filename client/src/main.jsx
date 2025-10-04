@@ -63,6 +63,17 @@ import AdminProducts from "./components/admin/pages/Products.jsx";
 import AdminOrders from "./components/admin/pages/Orders.jsx";
 import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
 import AdManagement from "./components/admin/pages/AdManagement.jsx";
+import AdminCategories from "./components/admin/pages/Categories.jsx";
+import AdminInventory from "./components/admin/pages/Inventory.jsx";
+import AdminReviewsRatings from "./components/admin/pages/ReviewsRatings.jsx";
+import AdminPromotions from "./components/admin/pages/PromotionsDiscounts.jsx";
+import AdminPayments from "./components/admin/pages/Payments.jsx";
+import AdminShipping from "./components/admin/pages/Shipping.jsx";
+import AdminSupport from "./components/admin/pages/Support.jsx";
+import AdminSettings from "./components/admin/pages/Settings.jsx";
+import AdminNotifications from "./components/admin/pages/Notifications.jsx";
+import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
+import AdminBanners from "./components/admin/pages/BannerSlider.jsx";
 
 // Shared Components
 import NotFound from "./components/shared/error/NotFound.jsx";
@@ -125,6 +136,102 @@ createRoot(document.getElementById("root")).render(
             element={
               // <AdminProtectedRoute>
                 <AdminAnalytics />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/advertisements"
+            element={
+              // <AdminProtectedRoute>
+                <AdManagement />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              // <AdminProtectedRoute>
+                <AdminCategories />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/inventory"
+            element={
+              // <AdminProtectedRoute>
+                <AdminInventory />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reviews"
+            element={
+              // <AdminProtectedRoute>
+                <AdminReviewsRatings />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/promotions"
+            element={
+              // <AdminProtectedRoute>
+                <AdminPromotions />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payments"
+            element={
+              // <AdminProtectedRoute>
+                <AdminPayments />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/shipping"
+            element={
+              // <AdminProtectedRoute>
+                <AdminShipping />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/support"
+            element={
+              // <AdminProtectedRoute>
+                <AdminSupport />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              // <AdminProtectedRoute>
+                <AdminSettings />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/notifications"
+            element={
+              // <AdminProtectedRoute>
+                <AdminNotifications />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/returns"
+            element={
+              // <AdminProtectedRoute>
+                <AdminReturns />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/banners"
+            element={
+              // <AdminProtectedRoute>
+                <AdminBanners />
               // </AdminProtectedRoute>
             }
           />

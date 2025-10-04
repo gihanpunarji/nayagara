@@ -141,9 +141,7 @@ createRoot(document.getElementById("root")).render(
               // </AdminProtectedRoute>
             }
           />
-<<<<<<< HEAD
           <Route path="/reset-password" element={<ResetPassword />} />
-=======
           <Route
             path="/admin/advertisements"
             element={
@@ -240,7 +238,6 @@ createRoot(document.getElementById("root")).render(
               // </AdminProtectedRoute>
             }
           />
->>>>>>> main
 
           {/* All other routes WITH AuthProvider */}
           <Route

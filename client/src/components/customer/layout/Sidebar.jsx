@@ -119,7 +119,7 @@ const Sidebar = ({ mainCategories }) => {
 
       {/* Mobile Categories - Horizontal Scroll */}
       <div className="lg:hidden mb-6">
-        <div className="bg-white rounded-lg shadow-green p-4">
+        <div className="bg-black rounded-lg shadow-green p-4">
           <h3 className="font-heading font-bold text-lg mb-4 text-gray-800">Shop by Category</h3>
           <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
             {mainCategories.map((category, idx) => (

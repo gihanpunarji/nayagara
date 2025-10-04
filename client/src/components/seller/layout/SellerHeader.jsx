@@ -5,14 +5,19 @@ import {
   X,
   LogOut
 } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 
 const SellerHeader = ({ onMenuToggle, showMobileMenu, sellerName = "Supun" }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const navigate = useNavigate();
+  const { logout } = useAuth();
 
   const handleLogout = () => {
     setShowLogoutConfirm(false);
-    navigate('/'); // Navigate to home page instead of login
+    // Clear all localStorage and authentication state
+    logout();
+    // Navigate to home page
+    navigate('/');
   };
 
   return (

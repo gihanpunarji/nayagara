@@ -18,7 +18,14 @@ import {
   HelpCircle,
   Database,
   Activity,
-  Car
+  Car,
+  Folder,
+  Star,
+  Tag,
+  Truck,
+  RotateCcw,
+  Bell,
+  Image
 } from 'lucide-react';
 
 const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
@@ -87,9 +94,51 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           badge: '45'
         },
         {
+          icon: Folder,
+          label: 'Categories',
+          path: '/admin/categories',
+          badge: null
+        },
+        {
+          icon: Database,
+          label: 'Inventory',
+          path: '/admin/inventory',
+          badge: null
+        },
+        {
+          icon: Star,
+          label: 'Reviews & Ratings',
+          path: '/admin/reviews',
+          badge: null
+        },
+        {
+          icon: Tag,
+          label: 'Promotions',
+          path: '/admin/promotions',
+          badge: null
+        },
+        {
           icon: CreditCard,
           label: 'Payments',
           path: '/admin/payments',
+          badge: null
+        },
+        {
+          icon: Truck,
+          label: 'Shipping',
+          path: '/admin/shipping',
+          badge: null
+        },
+        {
+          icon: RotateCcw,
+          label: 'Returns & Refunds',
+          path: '/admin/returns',
+          badge: null
+        },
+        {
+          icon: Image,
+          label: 'Banner & Slider',
+          path: '/admin/banners',
           badge: null
         },
         {
@@ -127,6 +176,12 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
       title: 'System',
       items: [
         {
+          icon: Bell,
+          label: 'Notifications',
+          path: '/admin/notifications',
+          badge: null
+        },
+        {
           icon: Globe,
           label: 'Platform Settings',
           path: '/admin/platform-settings',
@@ -156,8 +211,8 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
     },
     {
       icon: HelpCircle,
-      label: 'Help & Support',
-      path: '/admin/help'
+      label: 'Support',
+      path: '/admin/support'
     }
   ];
 

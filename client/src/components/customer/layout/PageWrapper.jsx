@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import MobileLayout from '../../shared/layout/MobileLayout';
+import MobileLayout from './MobileLayout';
 import Header from './Header';
 import Footer from './Footer';
 

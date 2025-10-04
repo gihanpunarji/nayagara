@@ -5,7 +5,7 @@ import { useLocation } from "react-router-dom";
 import Header from "../layout/Header";
 import Sidebar from "../layout/Sidebar";
 import Footer from "../layout/Footer";
-import MobileLayout from "../../shared/layout/MobileLayout";
+import MobileLayout from "../layout/MobileLayout";
 
 // Import page components
 import HeroSection from "../sections/HeroSection";

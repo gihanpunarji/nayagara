@@ -1,5 +1,6 @@
 import React, { useState, useEffect, memo, useCallback } from "react";
 import { Droplets, Shield, Truck, Award, Users, Leaf, ChevronDown, Play, Star, ArrowRight, Target, Eye, Heart, Menu, X, Phone, Mail, Home, Info, MessageCircle, Settings, ShoppingBag } from "lucide-react";
+import MobileMenu from "../layout/MobileMenu";
 
 function NayagaraHome() {
   const [featuredCategories, setFeaturedCategories] = useState([]);
@@ -67,7 +68,7 @@ function NayagaraHome() {
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 w-full overflow-x-hidden pb-safe">
       {/* Page Header with Navigation */}
       <SimpleHeader activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem} scrollToContact={scrollToContact} />
 
@@ -105,10 +106,8 @@ function NayagaraHome() {
       {/* Customer Testimonials */}
       <CustomerTestimonials scrollToContact={scrollToContact} />
 
-      {/* Mobile Bottom Nav - Hidden on larger screens since we have header nav */}
-      <div className="md:hidden">
-        <MobileBottomNav setCurrentPage={setCurrentPage} />
-      </div>
+      {/* Add padding at bottom for mobile navigation */}
+      <div className="h-20 md:hidden"></div>
     </div>
   );
 }
@@ -253,43 +252,20 @@ const SimpleHeader = memo(function SimpleHeader({ activeNavItem, setActiveNavIte
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="p-2 rounded-md text-gray-600 hover:text-emerald-600 hover:bg-emerald-50"
           >
-            {isMobileMenuOpen ? (
-              <X className="w-6 h-6" />
-            ) : (
-              <Menu className="w-6 h-6" />
-            )}
+            <Menu className="w-6 h-6" />
           </button>
         </div>
-
-        {/* Mobile Menu */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-3">
-            <nav className="grid grid-cols-2 gap-2">
-              {navItems.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavClick(item.id)}
-                  className={`flex items-center gap-2 px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200 ${activeNavItem === item.id
-                    ? 'bg-emerald-100 text-emerald-600'
-                    : 'text-gray-700 hover:text-emerald-600 hover:bg-emerald-50'
-                    }`}
-                >
-                  <item.icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </nav>
-
-            {/* Mobile Contact Actions */}
-            <div className="mt-4 grid grid-cols-1 gap-2">
-              <button onClick={() => scrollToContact()} className="px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center justify-center gap-2">
-                <Phone className="w-4 h-4" />
-                Order Now
-              </button>
-            </div>
-          </div>
-        )}
       </div>
+
+      {/* Mobile Menu Component */}
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        navItems={navItems}
+        activeNavItem={activeNavItem}
+        handleNavClick={handleNavClick}
+        scrollToContact={scrollToContact}
+      />
     </header>
   );
 });
@@ -303,7 +279,7 @@ const HeroSection = memo(function HeroSection({ scrollToContact }) {
   }, []);
 
   return (
-    <section className="relative h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-[85vh] sm:min-h-[90vh] lg:h-screen flex items-center justify-center overflow-hidden py-16 sm:py-20 lg:py-0">
       {/* Background with Parallax Effect */}
       <div
         className="absolute inset-0 bg-cover bg-center bg-fixed"
@@ -313,7 +289,7 @@ const HeroSection = memo(function HeroSection({ scrollToContact }) {
       ></div>
 
       {/* Animated Water Droplets Background */}
-      <div className="absolute inset-0">
+      <div className="absolute inset-0 hidden sm:block">
         <div className="absolute top-20 left-10 animate-bounce delay-100">
           <Droplets className="w-8 h-8 text-emerald-300 opacity-60" />
         </div>
@@ -332,18 +308,18 @@ const HeroSection = memo(function HeroSection({ scrollToContact }) {
       <div className="absolute inset-0 bg-gradient-to-br from-green-900/80 via-emerald-800/70 to-green-600/60"></div>
 
       {/* Animated Content */}
-      <div className={`relative z-10 text-center max-w-5xl mx-auto px-4 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+      <div className={`relative z-10 text-center max-w-5xl mx-auto px-4 sm:px-6 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
         }`}>
 
         {/* Floating Water Drop Animation */}
-        <div className="mb-8 relative">
+        <div className="mb-4 sm:mb-6 lg:mb-8 relative">
           <div className="animate-float">
-            <Droplets className="w-20 h-20 mx-auto mb-6 text-emerald-200 drop-shadow-lg" />
+            <Droplets className="w-12 h-12 sm:w-16 sm:h-16 lg:w-20 lg:h-20 mx-auto mb-3 sm:mb-4 lg:mb-6 text-emerald-200 drop-shadow-lg" />
           </div>
         </div>
 
         {/* Main Heading with Typewriter Effect */}
-        <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-8 text-white leading-tight">
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-7xl font-bold mb-4 sm:mb-6 lg:mb-8 text-white leading-tight">
           <span className="bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent">
             Your Daily Dose Of
           </span>
@@ -352,27 +328,27 @@ const HeroSection = memo(function HeroSection({ scrollToContact }) {
         </h1>
 
         {/* Animated Subtitle */}
-        <p className="text-lg sm:text-xl md:text-3xl mb-10 text-emerald-100 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-base sm:text-lg md:text-xl lg:text-3xl mb-6 sm:mb-8 lg:mb-10 text-emerald-100 max-w-3xl mx-auto leading-relaxed px-2">
           Experience the difference with our
           <span className="text-emerald-200 font-semibold"> 6-stage purification </span>
           process delivering the purest water to your doorstep
         </p>
 
         {/* Call-to-Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center">
-          <button onClick={() => scrollToContact()} className="group bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-10 py-3 sm:py-4 rounded-full text-base sm:text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:gap-6 justify-center items-center">
+          <button onClick={() => scrollToContact()} className="group bg-emerald-500 hover:bg-emerald-600 text-white px-6 sm:px-8 lg:px-10 py-3 sm:py-3.5 lg:py-4 rounded-full text-sm sm:text-base lg:text-lg font-bold transition-all duration-300 transform hover:scale-105 hover:shadow-2xl flex items-center gap-2 sm:gap-3">
             <span>Order Now</span>
             <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
           </button>
 
-          <button className="group bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full text-base sm:text-lg font-semibold hover:bg-white/30 transition-all duration-300 flex items-center gap-3">
+          <button className="group bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white px-6 sm:px-8 py-3 sm:py-3.5 lg:py-4 rounded-full text-sm sm:text-base lg:text-lg font-semibold hover:bg-white/30 transition-all duration-300 flex items-center gap-2 sm:gap-3">
             <Play className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>Watch Our Story</span>
           </button>
         </div>
 
         {/* Scroll Down Indicator */}
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
+        <div className="hidden lg:block absolute bottom-8 left-1/2 transform -translate-x-1/2 animate-bounce">
           <ChevronDown className="w-8 h-8 text-emerald-200" />
           <p className="text-emerald-200 text-sm mt-2">Scroll to Explore</p>
         </div>
@@ -570,7 +546,7 @@ const ProductShowcase = memo(function ProductShowcase({ items = [], scrollToCont
       subtitle: "Perfect for families",
       price: 65000,
       oldPrice: 68000,
-      image: "https://nayagara.lk/wp-content/uploads/2025/03/55555555555-1.jpg",
+      image: "/home_filter.jpg",
       features: ["Home Water Filters", "BPA Free", "6-Stage Purified", "Home Delivery"],
       description: "Our home water filters are designed to provide your family with clean and safe drinking water. Equipped with advanced filtration technology, these systems effectively remove contaminants and ensure optimal taste. Easy to install and maintain, they fit seamlessly into your home routine.",
       popular: true
@@ -581,7 +557,7 @@ const ProductShowcase = memo(function ProductShowcase({ items = [], scrollToCont
       subtitle: "Ideal for workplace",
       price: 475000,
       pricePrefix: "Up to ",
-      image: "https://nayagara.lk/wp-content/uploads/2025/03/38969fb5-1f14-45bd-bfaf-97ddfc73b1f1.jpeg",
+      image: "/office_filter.jpg",
       features: ["Institutional Water Filters", "Food Grade", "Easy Handle", "Volume Discount"],
       description: "Our institutional water filters, designed for restaurants, schools, and hospitals, meet the high demand for clean water. These robust systems are designed for heavy use while maintaining high filtration standards. Trust our filters to protect the health of your establishment's patrons.",
       popular: false
@@ -592,7 +568,7 @@ const ProductShowcase = memo(function ProductShowcase({ items = [], scrollToCont
       subtitle: "Complete filtration system",
       price: 330000,
       pricePrefix: "Up to ",
-      image: "https://nayagara.lk/wp-content/uploads/2025/03/435c401e-a423-4c07-bbd3-b1288ffca60e.jpeg",
+      image: "/bathroom_filter.jpg",
       features: ["Bathroom Pollution Solutions", "6-Stage Filter", "UV", "1 Year Warranty"],
       description: "Prevent bathroom pollution with our specialized filtration systems. These filters are designed to reduce harmful bacteria and impurities in water used in bathrooms. With a focus on hygiene, our solutions help create a safe environment in your home.",
       popular: false
@@ -829,7 +805,7 @@ const ProductCard = memo(function ProductCard({ product }) {
 
 // Vision & Mission Section
 const VisionMissionSection = memo(function VisionMissionSection() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -838,7 +814,7 @@ const VisionMissionSection = memo(function VisionMissionSection() {
           setIsVisible(true);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.05 }
     );
 
     const section = document.getElementById('vision-mission');
@@ -848,7 +824,7 @@ const VisionMissionSection = memo(function VisionMissionSection() {
   }, []);
 
   return (
-    <section id="vision-mission" className="py-20 bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 relative overflow-hidden">
+    <section id="vision-mission" className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-emerald-900 via-green-800 to-teal-900 relative overflow-hidden">
       {/* Animated Background Elements */}
       <div className="absolute inset-0">
         <div className="absolute top-10 left-10 w-64 h-64 bg-emerald-400/10 rounded-full blur-3xl animate-pulse"></div>
@@ -874,47 +850,47 @@ const VisionMissionSection = memo(function VisionMissionSection() {
         ))}
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div className={`text-center mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+        <div className={`text-center mb-12 sm:mb-16 lg:mb-20 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
-          <div className="inline-flex items-center gap-3 bg-emerald-500/20 backdrop-blur-sm px-6 py-3 rounded-full mb-8 border border-emerald-400/30">
-            <Heart className="w-6 h-6 text-emerald-300" />
-            <span className="text-emerald-100 font-semibold text-lg">Our Purpose</span>
+          <div className="inline-flex items-center gap-2 sm:gap-3 bg-emerald-500/20 backdrop-blur-sm px-4 sm:px-6 py-2 sm:py-3 rounded-full mb-6 sm:mb-8 border border-emerald-400/30">
+            <Heart className="w-4 h-4 sm:w-6 sm:h-6 text-emerald-300" />
+            <span className="text-emerald-100 font-semibold text-sm sm:text-lg">Our Purpose</span>
           </div>
-          <h2 className="text-6xl font-bold text-white mb-6 leading-tight">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 sm:mb-6 leading-tight px-2">
             <span className="bg-gradient-to-r from-emerald-200 to-green-300 bg-clip-text text-transparent">
               Vision & Mission
             </span>
           </h2>
-          <p className="text-xl text-emerald-100 max-w-4xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-emerald-100 max-w-4xl mx-auto leading-relaxed px-4">
             Driven by purpose, guided by values, and committed to delivering pure water solutions
             that transform lives and communities across Sri Lanka
           </p>
         </div>
 
         {/* Vision & Mission Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 lg:gap-12">
           {/* Vision Card */}
           <div className={`transform transition-all duration-1000 delay-300 ${isVisible ? 'translate-x-0 opacity-100' : '-translate-x-10 opacity-0'
             }`}>
-            <div className="group bg-white/10 backdrop-blur-lg rounded-3xl p-10 border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-500 hover:transform hover:scale-105 relative overflow-hidden">
+            <div className="group bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 border border-emerald-400/20 hover:border-emerald-400/40 transition-all duration-500 hover:transform hover:scale-105 relative overflow-hidden">
               {/* Card Background Effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-green-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               {/* Icon */}
-              <div className="relative z-10 mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-500">
-                  <Eye className="w-10 h-10 text-white" />
+              <div className="relative z-10 mb-6 sm:mb-8">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-emerald-400 to-green-500 rounded-xl sm:rounded-2xl flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-500">
+                  <Eye className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
                 </div>
               </div>
 
               {/* Content */}
               <div className="relative z-10">
-                <h3 className="text-3xl font-bold text-white mb-6 group-hover:text-emerald-200 transition-colors">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 sm:mb-6 group-hover:text-emerald-200 transition-colors">
                   Our Vision
                 </h3>
-                <p className="text-emerald-100 text-lg leading-relaxed">
+                <p className="text-emerald-100 text-sm sm:text-base lg:text-lg leading-relaxed">
                   "To become the number one best online goods and services provider in Sri Lanka by 2030 by increasing customer satisfaction."
                   <br /><br />
                   "පාරිභෝගික තෘප්තිය වැඩි කිරීමෙන් 2030 වන විට ශ්‍රී ලංකාවේ අංක එකේ වඩාත් හොඳම අන්තර්ජාල භාණ්ඩ සහ සේවා සැපයුම්කරු බවට පත්වීම."
@@ -922,8 +898,8 @@ const VisionMissionSection = memo(function VisionMissionSection() {
               </div>
 
               {/* Decorative Elements */}
-              <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-40 transition-opacity">
-                <div className="w-24 h-24 border-2 border-emerald-300 rounded-full"></div>
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 opacity-20 group-hover:opacity-40 transition-opacity">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 border-2 border-emerald-300 rounded-full"></div>
               </div>
             </div>
           </div>
@@ -931,23 +907,23 @@ const VisionMissionSection = memo(function VisionMissionSection() {
           {/* Mission Card */}
           <div className={`transform transition-all duration-1000 delay-500 ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-10 opacity-0'
             }`}>
-            <div className="group bg-white/10 backdrop-blur-lg rounded-3xl p-10 border border-green-400/20 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 relative overflow-hidden">
+            <div className="group bg-white/10 backdrop-blur-lg rounded-2xl sm:rounded-3xl p-6 sm:p-8 lg:p-10 border border-green-400/20 hover:border-green-400/40 transition-all duration-500 hover:transform hover:scale-105 relative overflow-hidden">
               {/* Card Background Effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-teal-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
 
               {/* Icon */}
-              <div className="relative z-10 mb-8">
-                <div className="w-20 h-20 bg-gradient-to-br from-green-400 to-teal-500 rounded-2xl flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-500">
-                  <Target className="w-10 h-10 text-white" />
+              <div className="relative z-10 mb-6 sm:mb-8">
+                <div className="w-14 h-14 sm:w-16 sm:h-16 lg:w-20 lg:h-20 bg-gradient-to-br from-green-400 to-teal-500 rounded-xl sm:rounded-2xl flex items-center justify-center transform group-hover:rotate-6 transition-transform duration-500">
+                  <Target className="w-7 h-7 sm:w-8 sm:h-8 lg:w-10 lg:h-10 text-white" />
                 </div>
               </div>
 
               {/* Content */}
               <div className="relative z-10">
-                <h3 className="text-3xl font-bold text-white mb-6 group-hover:text-green-200 transition-colors">
+                <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-white mb-4 sm:mb-6 group-hover:text-green-200 transition-colors">
                   Our Mission
                 </h3>
-                <p className="text-green-100 text-lg leading-relaxed">
+                <p className="text-green-100 text-sm sm:text-base lg:text-lg leading-relaxed">
                   "To become the number one best online goods and services provider in Sri Lanka by
                   increasing customer satisfaction."
                   <br /><br />
@@ -956,22 +932,22 @@ const VisionMissionSection = memo(function VisionMissionSection() {
               </div>
 
               {/* Decorative Elements */}
-              <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-40 transition-opacity">
-                <div className="w-24 h-24 border-2 border-green-300 rounded-full"></div>
+              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 opacity-20 group-hover:opacity-40 transition-opacity">
+                <div className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 border-2 border-green-300 rounded-full"></div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Core Values */}
-        <div className={`mt-20 transform transition-all duration-1000 delay-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+        <div className={`mt-12 sm:mt-16 lg:mt-20 transform transition-all duration-1000 delay-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
-          <div className="text-center mb-12">
-            <h3 className="text-4xl font-bold text-white mb-4">Core Values</h3>
-            <p className="text-emerald-100 text-lg">The principles that guide every decision we make</p>
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12 px-4">
+            <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-3 sm:mb-4">Core Values</h3>
+            <p className="text-emerald-100 text-sm sm:text-base lg:text-lg">The principles that guide every decision we make</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 px-4">
             {[
               {
                 icon: Shield,
@@ -995,11 +971,11 @@ const VisionMissionSection = memo(function VisionMissionSection() {
               const IconComponent = value.icon;
               return (
                 <div key={index} className="text-center group">
-                  <div className={`w-16 h-16 bg-${value.color}-500/20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:bg-${value.color}-500/30 transition-colors`}>
-                    <IconComponent className={`w-8 h-8 text-${value.color}-300`} />
+                  <div className={`w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-${value.color}-500/20 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6 group-hover:bg-${value.color}-500/30 transition-colors`}>
+                    <IconComponent className={`w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-${value.color}-300`} />
                   </div>
-                  <h4 className="text-xl font-bold text-white mb-3">{value.title}</h4>
-                  <p className="text-emerald-100">{value.desc}</p>
+                  <h4 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3">{value.title}</h4>
+                  <p className="text-emerald-100 text-sm sm:text-base">{value.desc}</p>
                 </div>
               );
             })}
@@ -1007,16 +983,16 @@ const VisionMissionSection = memo(function VisionMissionSection() {
         </div>
 
         {/* Call to Action */}
-        <div className={`text-center mt-20 transform transition-all duration-1000 delay-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+        <div className={`text-center mt-12 sm:mt-16 lg:mt-20 transform transition-all duration-1000 delay-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
-          <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-8 border border-emerald-400/20 max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold text-white mb-4">
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-emerald-400/20 max-w-2xl mx-4 sm:mx-auto">
+            <h3 className="text-xl sm:text-2xl font-bold text-white mb-3 sm:mb-4">
               Ready to Experience Pure Water?
             </h3>
-            <p className="text-emerald-100 mb-6">
+            <p className="text-emerald-100 mb-4 sm:mb-6 text-sm sm:text-base">
               Join our mission to provide pure, healthy water to every home in Sri Lanka
             </p>
-            <button className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-8 py-4 rounded-full font-bold hover:from-emerald-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+            <button className="bg-gradient-to-r from-emerald-500 to-green-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-full font-bold hover:from-emerald-600 hover:to-green-700 transition-all duration-300 transform hover:scale-105 shadow-lg text-sm sm:text-base">
               Start Your Journey
             </button>
           </div>
@@ -1028,7 +1004,7 @@ const VisionMissionSection = memo(function VisionMissionSection() {
 
 // Founder Section
 const FounderSection = memo(function FounderSection() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -1037,7 +1013,7 @@ const FounderSection = memo(function FounderSection() {
           setIsVisible(true);
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.05 }
     );
 
     const section = document.getElementById('founder');
@@ -1047,22 +1023,22 @@ const FounderSection = memo(function FounderSection() {
   }, []);
 
   return (
-    <section id="founder" className="py-20 bg-gradient-to-br from-gray-50 to-emerald-50 relative overflow-hidden">
+    <section id="founder" className="py-12 sm:py-16 lg:py-20 bg-gradient-to-br from-gray-50 to-emerald-50 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
         <div className="absolute top-20 left-20 w-64 h-64 bg-emerald-500 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-20 right-20 w-80 h-80 bg-green-500 rounded-full blur-3xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 relative z-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div className={`text-center mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+        <div className={`text-center mb-10 sm:mb-12 lg:mb-16 transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
 
-          <h2 className="text-5xl font-bold text-gray-800 mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-800 mb-4 sm:mb-6 px-2">
             Meet Our <span className="text-emerald-600">Founder</span>
           </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-3xl mx-auto px-4">
             The visionary leader behind Nayagara Water's commitment to pure, sustainable water solutions
           </p>
         </div>
@@ -1070,63 +1046,63 @@ const FounderSection = memo(function FounderSection() {
         {/* Founder Card */}
         <div className={`max-w-4xl mx-auto transform transition-all duration-1000 delay-300 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
-          <div className="bg-white rounded-3xl shadow-2xl overflow-hidden hover:shadow-3xl transition-all duration-500 p-8">
+          <div className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden hover:shadow-3xl transition-all duration-500 p-4 sm:p-6 lg:p-8">
             {/* Cute Founder Profile */}
-            <div className="text-center mb-8">
+            <div className="text-center mb-6 sm:mb-8">
               <div className="relative inline-block">
-                {/* Profile Image - Slightly Larger */}
-                <div className="relative w-40 h-40 mx-auto mb-6">
+                {/* Profile Image - Responsive */}
+                <div className="relative w-28 h-28 sm:w-36 sm:h-36 lg:w-40 lg:h-40 mx-auto mb-4 sm:mb-6">
                   <img
                     src="/owner.jpg"
                     alt="Founder - Mr.Gayan Thennakoon"
-                    className="w-40 h-40 rounded-full object-cover border-4 border-emerald-200 shadow-lg hover:scale-110 transition-transform duration-500"
+                    className="w-28 h-28 sm:w-36 sm:h-36 lg:w-40 lg:h-40 rounded-full object-cover border-3 sm:border-4 border-emerald-200 shadow-lg hover:scale-110 transition-transform duration-500"
                   />
 
                   {/* Cute Decorative Elements */}
-                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
-                    <Droplets className="w-5 h-5 text-white" />
+                  <div className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg animate-bounce">
+                    <Droplets className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
 
-                  <div className="absolute -bottom-1 -left-2 w-8 h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-md">
-                    <span className="text-sm">⭐</span>
+                  <div className="absolute -bottom-1 -left-1 sm:-left-2 w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-md">
+                    <span className="text-xs sm:text-sm">⭐</span>
                   </div>
 
-                  <div className="absolute top-3 -left-4 w-6 h-6 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full opacity-80 animate-pulse"></div>
+                  <div className="absolute top-2 sm:top-3 -left-3 sm:-left-4 w-5 h-5 sm:w-6 sm:h-6 bg-gradient-to-br from-blue-400 to-cyan-500 rounded-full opacity-80 animate-pulse"></div>
                 </div>
 
                 {/* Cute Badge */}
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-100 to-green-100 px-4 py-2 rounded-full border border-emerald-200">
-                  <span className="text-lg">👨‍💼</span>
-                  <span className="text-emerald-700 font-semibold text-sm">Founder & CEO</span>
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-100 to-green-100 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200">
+                  <span className="text-base sm:text-lg">👨‍💼</span>
+                  <span className="text-emerald-700 font-semibold text-xs sm:text-sm">Founder & CEO</span>
                 </div>
               </div>
 
               {/* Name & Title */}
-              <div className="mb-6">
-                <h3 className="text-3xl font-bold text-gray-800 mb-2">
+              <div className="mb-4 sm:mb-6">
+                <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-2">
                   Mr. Gayan Thennakoon
                 </h3>
-                <p className="text-emerald-600 text-lg font-semibold">
+                <p className="text-emerald-600 text-base sm:text-lg font-semibold">
                   Founder & CEO, Nayagara Lanka (Pvt) Ltd
                 </p>
-                <div className="w-20 h-1 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full mx-auto mt-3"></div>
+                <div className="w-16 sm:w-20 h-1 bg-gradient-to-r from-emerald-500 to-green-600 rounded-full mx-auto mt-2 sm:mt-3"></div>
               </div>
             </div>
 
             {/* Content in a cleaner layout */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
               {/* Story Section */}
-              <div className="lg:col-span-2 space-y-6">
-                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-2xl p-6 border border-emerald-100">
-                  <h4 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <span className="text-2xl">📖</span>
+              <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 rounded-xl sm:rounded-2xl p-4 sm:p-6 border border-emerald-100">
+                  <h4 className="text-lg sm:text-xl font-bold text-gray-800 mb-3 sm:mb-4 flex items-center gap-2">
+                    <span className="text-xl sm:text-2xl">📖</span>
                     A Message from Our CEO
                   </h4>
-                  <div className="space-y-4 text-gray-700 leading-relaxed">
+                  <div className="space-y-3 sm:space-y-4 text-gray-700 leading-relaxed text-sm sm:text-base">
                     <p>
                       At Nayagara Lanka, our journey began with a simple belief — that every home and every
                       business deserves access to reliable solutions that make life better. From water purification to
-                      modern e-commerce, our mission has always been about more than products. It’s about <b>trust,
+                      modern e-commerce, our mission has always been about more than products. It's about <b>trust,
                         progress, and people.</b>
                     </p>
                     <p>
@@ -1136,7 +1112,7 @@ const FounderSection = memo(function FounderSection() {
                         every Sri Lankan with quality, honesty, and care.</b>
                     </p>
                     <p>
-                      The future belongs to those who innovate with purpose — and together, we’re creating a
+                      The future belongs to those who innovate with purpose — and together, we're creating a
                       future that is cleaner, safer, and more connected. With every product delivered, with every
                       customer supported, we are not just building a business… we are building trust and shaping
                       tomorrow.
@@ -1149,25 +1125,25 @@ const FounderSection = memo(function FounderSection() {
               </div>
 
               {/* Stats & Achievements */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Cute Stats Cards */}
-                <div className="space-y-4">
-                  <div className="bg-emerald-50 rounded-2xl p-6 text-center border-2 border-emerald-100 hover:border-emerald-300 transition-colors">
-                    <div className="text-3xl mb-2">🏆</div>
-                    <div className="text-2xl font-bold text-emerald-600">8+</div>
-                    <div className="text-sm text-gray-600 font-medium">Years Experience</div>
+                <div className="grid grid-cols-3 lg:grid-cols-1 gap-3 sm:gap-4">
+                  <div className="bg-emerald-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 text-center border-2 border-emerald-100 hover:border-emerald-300 transition-colors">
+                    <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">🏆</div>
+                    <div className="text-xl sm:text-2xl font-bold text-emerald-600">8+</div>
+                    <div className="text-xs sm:text-sm text-gray-600 font-medium">Years Experience</div>
                   </div>
 
-                  <div className="bg-green-50 rounded-2xl p-6 text-center border-2 border-green-100 hover:border-green-300 transition-colors">
-                    <div className="text-3xl mb-2">👥</div>
-                    <div className="text-2xl font-bold text-green-600">500+</div>
-                    <div className="text-sm text-gray-600 font-medium">Families Served</div>
+                  <div className="bg-green-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 text-center border-2 border-green-100 hover:border-green-300 transition-colors">
+                    <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">👥</div>
+                    <div className="text-xl sm:text-2xl font-bold text-green-600">500+</div>
+                    <div className="text-xs sm:text-sm text-gray-600 font-medium">Families Served</div>
                   </div>
 
-                  <div className="bg-blue-50 rounded-2xl p-6 text-center border-2 border-blue-100 hover:border-blue-300 transition-colors">
-                    <div className="text-3xl mb-2">🌟</div>
-                    <div className="text-2xl font-bold text-blue-600">ISO</div>
-                    <div className="text-sm text-gray-600 font-medium">Certified Quality</div>
+                  <div className="bg-blue-50 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 text-center border-2 border-blue-100 hover:border-blue-300 transition-colors">
+                    <div className="text-2xl sm:text-3xl mb-1 sm:mb-2">🌟</div>
+                    <div className="text-xl sm:text-2xl font-bold text-blue-600">ISO</div>
+                    <div className="text-xs sm:text-sm text-gray-600 font-medium">Certified Quality</div>
                   </div>
                 </div>
 
@@ -1194,14 +1170,14 @@ const FounderSection = memo(function FounderSection() {
         </div>
 
         {/* Company Journey Timeline */}
-        <div className={`mt-20 transform transition-all duration-1000 delay-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
+        <div className={`mt-12 sm:mt-16 lg:mt-20 transform transition-all duration-1000 delay-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}>
-          <div className="text-center mb-12">
-            <h3 className="text-3xl font-bold text-gray-800 mb-4">Our Journey</h3>
-            <p className="text-gray-600">Key milestones in our mission to provide pure water</p>
+          <div className="text-center mb-8 sm:mb-10 lg:mb-12 px-4">
+            <h3 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">Our Journey</h3>
+            <p className="text-gray-600 text-sm sm:text-base">Key milestones in our mission to provide pure water</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
             {[
               { year: "2018", event: "Company Founded", desc: "Started with a vision for pure water" },
               { year: "2020", event: "First 100 Customers", desc: "Reached our first major milestone" },
@@ -1209,12 +1185,12 @@ const FounderSection = memo(function FounderSection() {
               { year: "2024", event: "500+ Families", desc: "Serving communities across Sri Lanka" }
             ].map((milestone, index) => (
               <div key={index} className="text-center">
-                <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-4 text-white font-bold text-lg">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-emerald-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4 text-white font-bold text-base sm:text-lg">
                   {index + 1}
                 </div>
-                <div className="text-2xl font-bold text-emerald-600 mb-2">{milestone.year}</div>
-                <h4 className="font-semibold text-gray-800 mb-2">{milestone.event}</h4>
-                <p className="text-gray-600 text-sm">{milestone.desc}</p>
+                <div className="text-xl sm:text-2xl font-bold text-emerald-600 mb-1 sm:mb-2">{milestone.year}</div>
+                <h4 className="font-semibold text-gray-800 mb-1 sm:mb-2 text-sm sm:text-base">{milestone.event}</h4>
+                <p className="text-gray-600 text-xs sm:text-sm">{milestone.desc}</p>
               </div>
             ))}
           </div>
@@ -1248,34 +1224,34 @@ const ServicesSection = memo(function ServicesSection() {
   ];
 
   return (
-    <section className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-800 mb-4">
+    <section className="py-12 sm:py-16 lg:py-20 bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10 sm:mb-12 lg:mb-16">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-800 mb-3 sm:mb-4">
             Our Services
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 px-4">
             Comprehensive water solutions for every need
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {services.map((service, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-lg p-8 hover:shadow-xl transition-shadow">
-              <div className="text-center mb-6">
-                <div className="text-4xl mb-4">{service.icon}</div>
-                <h3 className="text-2xl font-semibold text-gray-800 mb-2">{service.title}</h3>
-                <p className="text-gray-600">{service.description}</p>
+            <div key={index} className="bg-white rounded-lg shadow-lg p-4 sm:p-6 lg:p-8 hover:shadow-xl transition-shadow">
+              <div className="text-center mb-4 sm:mb-6">
+                <div className="text-3xl sm:text-4xl mb-3 sm:mb-4">{service.icon}</div>
+                <h3 className="text-lg sm:text-xl lg:text-2xl font-semibold text-gray-800 mb-2">{service.title}</h3>
+                <p className="text-gray-600 text-sm sm:text-base">{service.description}</p>
               </div>
               <ul className="space-y-2">
                 {service.features.map((feature, idx) => (
-                  <li key={idx} className="flex items-center text-gray-700">
+                  <li key={idx} className="flex items-center text-gray-700 text-sm sm:text-base">
                     <span className="text-green-500 mr-2">✓</span>
                     {feature}
                   </li>
                 ))}
               </ul>
-              <button className="w-full mt-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+              <button className="w-full mt-4 sm:mt-6 py-2.5 sm:py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base">
                 Learn More
               </button>
             </div>
@@ -1289,29 +1265,29 @@ const ServicesSection = memo(function ServicesSection() {
 // Contact Section
 const ContactSection = memo(function ContactSection() {
   return (
-    <section id="contact" className="py-12 bg-gradient-to-br from-emerald-50 to-green-100 relative overflow-hidden">
+    <section id="contact" className="py-10 sm:py-12 lg:py-16 bg-gradient-to-br from-emerald-50 to-green-100 relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-10 left-10 w-20 h-20 bg-emerald-500 rounded-full blur-2xl animate-pulse"></div>
         <div className="absolute bottom-10 right-10 w-24 h-24 bg-green-500 rounded-full blur-2xl animate-pulse delay-1000"></div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 relative z-10">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 bg-emerald-100 px-3 py-1 rounded-full mb-4">
+        <div className="text-center mb-6 sm:mb-8">
+          <div className="inline-flex items-center gap-2 bg-emerald-100 px-3 py-1 rounded-full mb-3 sm:mb-4">
             <Phone className="w-4 h-4 text-emerald-600" />
-            <span className="text-emerald-800 font-semibold text-sm">Get in Touch</span>
+            <span className="text-emerald-800 font-semibold text-xs sm:text-sm">Get in Touch</span>
           </div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-800 mb-3 sm:mb-4">
             Contact <span className="text-emerald-600">Us</span>
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
             Ready to experience pure water? Get in touch with our team
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Google Map Location */}
           <div className="space-y-4">
             {/* Google Maps Embed */}
@@ -1393,7 +1369,7 @@ const ContactSection = memo(function ContactSection() {
                 <div className="font-bold text-sm">Call Now</div>
               </a>
 
-              <a href="https://wa.me/94717750039" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-xl text-center block hover:from-green-600 hover:to-emerald-700 transition-colors">
+              <a href="https://wa.me/94776613003" target="_blank" rel="noopener noreferrer" className="bg-gradient-to-r from-green-500 to-emerald-600 text-white p-3 rounded-xl text-center block hover:from-green-600 hover:to-emerald-700 transition-colors">
                 <div className="text-xl mb-1">
                   <svg className="w-6 h-6 mx-auto" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.890-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.516" />
@@ -1845,59 +1821,6 @@ const CustomerTestimonials = memo(function CustomerTestimonials({ scrollToContac
         }
       `}</style>
     </section>
-  );
-});
-
-const MobileBottomNav = memo(function MobileBottomNav({ setCurrentPage }) {
-  const handleNavigation = (page) => {
-    setCurrentPage(page);
-
-    setTimeout(() => {
-      if (page === 'home') {
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        return;
-      }
-
-      const sectionMap = {
-        'about': 'vision-mission',
-        'contact': 'contact',
-        'services': 'services-section',
-        'products': 'products-section'
-      };
-
-      const targetId = sectionMap[page];
-      if (!targetId) return;
-
-      setTimeout(() => {
-        const targetElement = document.getElementById(targetId);
-        if (targetElement) {
-          const headerOffset = 100;
-          const targetPosition = targetElement.offsetTop - headerOffset;
-          window.scrollTo({ top: targetPosition, behavior: 'smooth' });
-        }
-      }, 100);
-    }, 100);
-  };
-
-  return (
-    <nav className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-white rounded-full shadow-lg px-3 py-2 flex gap-2">
-      <button onClick={() => handleNavigation('home')} className="flex flex-col items-center text-xs hover:text-emerald-600 px-2 py-1 rounded">
-        <Home className="w-4 h-4 mb-1" />
-        <span>Home</span>
-      </button>
-      <button onClick={() => handleNavigation('about')} className="flex flex-col items-center text-xs hover:text-emerald-600 px-2 py-1 rounded">
-        <Info className="w-4 h-4 mb-1" />
-        <span>About</span>
-      </button>
-      <button onClick={() => handleNavigation('services')} className="flex flex-col items-center text-xs hover:text-emerald-600 px-2 py-1 rounded">
-        <Settings className="w-4 h-4 mb-1" />
-        <span>Services</span>
-      </button>
-      <button onClick={() => handleNavigation('contact')} className="flex flex-col items-center text-xs hover:text-emerald-600 px-2 py-1 rounded">
-        <Phone className="w-4 h-4 mb-1" />
-        <span>Contact</span>
-      </button>
-    </nav>
   );
 });
 

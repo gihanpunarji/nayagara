@@ -1297,19 +1297,21 @@ const ContactSection = memo(function ContactSection() {
                   <span className="text-xl">📍</span>
                   Our Location
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">Nayagara Lanaka pvt,Anamaduwa</p>
+                <p className="text-sm text-gray-600 mt-1">Nayagara Lanka pvt, Anamaduwa</p>
               </div>
 
               {/* Google Maps iFrame */}
-              <div className="relative h-48">
+              <div className="relative h-64 sm:h-80">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3962.1234567890123!2d80.0148205!3d7.890179!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3afd27cdf42130f5%3A0x1fc14e993f614e69!2sNayagara%20Lanka%20pvt%20ltd!5e0!3m2!1sen!2slk!4v1640000000000!5m2!1sen!2slk"
                   width="100%"
                   height="100%"
                   style={{ border: 0 }}
-                  allowFullScreen=""
+                  allowFullScreen={true}
                   loading="lazy"
                   referrerPolicy="no-referrer-when-downgrade"
+                  title="Nayagara Lanka Location"
+                  className="absolute inset-0"
                 ></iframe>
               </div>
             </div>

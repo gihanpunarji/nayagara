@@ -71,7 +71,7 @@ const register = async (req, res, role = "customer") => {
       lastName,
       role,
     });
-    const token = generateToken(user.id);
+    const token = generateToken(user.user_id);
 
     const { first_name, last_name, user_role } = user;
 
@@ -146,7 +146,7 @@ const sellerRegister = async (req, res, role = "seller") => {
       role,
       nic,
     });
-    const token = generateToken(user.id);
+    const token = generateToken(user.user_id);
     const userId = user.user_id;
 
     createAddressForSeller({
@@ -221,7 +221,7 @@ const login = async (req, res, role = "customer") => {
       });
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.user_id);
     const { first_name, last_name, user_role } = user;
 
     res.json({
@@ -286,7 +286,7 @@ const sellerLogin = async (req, res, role = "seller") => {
       return res.status(403).json({ success: false, message: "mnv" });
     }
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.user_id);
     const { first_name, last_name, user_role } = user;
 
     res.json({
@@ -966,42 +966,6 @@ const verifyEmailOtp = async (req, res) => {
 
 const verifyMobile = async (req, res) => {};
 
-const getSellerProfile = async (req, res) => {
-  try {
-    const userId = req.user.userId;
-    
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    // Check if user is a seller
-    if (user.user_type !== 'seller') {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Not a seller account."
-      });
-    }
-
-    // Return seller profile data (excluding password)
-    const { user_password, reset_token, reset_token_expires, ...sellerProfile } = user;
-    
-    res.json({
-      success: true,
-      user: sellerProfile
-    });
-  } catch (error) {
-    console.error("Get seller profile error:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error"
-    });
-  }
-};
-
 module.exports = {
   register,
   login,
@@ -1012,5 +976,4 @@ module.exports = {
   loginAdmin,
   verifyEmailOtp,
   sendEmail,
-  getSellerProfile,
 };

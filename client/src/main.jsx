@@ -90,6 +90,8 @@ createRoot(document.getElementById("root")).render(
       <BrowserRouter>
         <Routes>
           <Route path="/verify-mobile" element={<SellerMobileVerify />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
 
           {/* Admin Routes - WITHOUT AuthProvider */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -141,9 +143,6 @@ createRoot(document.getElementById("root")).render(
               // </AdminProtectedRoute>
             }
           />
-<<<<<<< HEAD
-          <Route path="/reset-password" element={<ResetPassword />} />
-=======
           <Route
             path="/admin/advertisements"
             element={
@@ -240,7 +239,6 @@ createRoot(document.getElementById("root")).render(
               // </AdminProtectedRoute>
             }
           />
->>>>>>> main
 
           {/* All other routes WITH AuthProvider */}
           <Route

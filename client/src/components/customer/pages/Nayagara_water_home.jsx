@@ -377,42 +377,42 @@ const PurificationProcess = memo(function PurificationProcess() {
       icon: "🔍",
       title: "Pre-Filtration",
       desc: "Initial screening removes large particles and sediments",
-      image: "public/pre-filtering.jpg",
+      image: "/pre-filtering.jpg",
       delay: 100
     },
     {
       icon: "⚡",
       title: "Activated Carbon",
       desc: "Removes chlorine, odors and improves taste",
-      image: "public/carbon.jpg",
+      image: "/carbon.jpg",
       delay: 200
     },
     {
       icon: "🧪",
       title: "Reverse Osmosis",
       desc: "99.9% contaminant removal through membrane filtration",
-      image: "public/waterjet.jpg",
+      image: "/waterjet.jpg",
       delay: 300
     },
     {
       icon: "💧",
       title: "UV Sterilization",
       desc: "Eliminates bacteria, viruses and microorganisms",
-      image: "public/uv.jpg",
+      image: "/Uv.jpg",
       delay: 400
     },
     {
       icon: "🍃",
       title: "Mineralization",
       desc: "Adds essential minerals for health and taste",
-      image: "public/Mineralization.jpg",
+      image: "/Mineralization.jpg",
       delay: 500
     },
     {
       icon: "✅",
       title: "Quality Testing",
       desc: "Final purity verification and quality assurance",
-      image: "public/quality.jpg",
+      image: "/quality.jpg",
       delay: 600
     }
   ];

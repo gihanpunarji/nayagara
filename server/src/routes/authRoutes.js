@@ -1,7 +1,4 @@
 const express = require("express");
-const crypto = require("crypto");
-const redis = require("redis");
-const rateLimit = require("express-rate-limit");
 
 const {
   register,
@@ -12,11 +9,9 @@ const {
   resetPassword,
   loginAdmin,
   sendEmail,
-  verifyEmailOtp,
-  getSellerProfile
+  verifyEmailOtp
 } = require("../controllers/authController");
 const { mobile, verifyOtp } = require("../utils/mobileVerify");
-const { authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -28,7 +23,6 @@ router.post("/send-otp", mobile);
 router.post("/verify-otp", verifyOtp);
 router.post("/forgot-password", (req, res) => forgotPassword(req, res));
 router.post("/reset-password", (req, res) => resetPassword(req, res));
-router.get("/seller/profile", authenticateToken, getSellerProfile);
 router.post("/admin/send-email", sendEmail);
 router.post("/admin/email-otp-verify", verifyEmailOtp);
 router.post("/admin/login", (req, res) => loginAdmin(req, res));

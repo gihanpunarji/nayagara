@@ -2,8 +2,8 @@ import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
+const ProtectedRoute = ({ children, requiredRole = null }) => {
+  const { isAuthenticated, loading, userRole } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -18,8 +18,21 @@ const ProtectedRoute = ({ children }) => {
   }
 
   if (!isAuthenticated) {
-    // Redirect to login page and save the attempted location
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    // Redirect to appropriate login page based on current path
+    const redirectPath = location.pathname.includes('/seller') ? '/seller/login' : '/login';
+    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+  }
+
+  // Check role-based access
+  if (requiredRole && userRole !== requiredRole) {
+    // Redirect based on user role
+    if (userRole === 'seller') {
+      return <Navigate to="/seller/dashboard" replace />;
+    } else if (userRole === 'customer') {
+      return <Navigate to="/" replace />;
+    } else {
+      return <Navigate to="/login" replace />;
+    }
   }
 
   return children;

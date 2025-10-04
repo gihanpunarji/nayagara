@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2 } from 'lucide-react';
+import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 
 function CustomerLogin() {
@@ -8,24 +8,50 @@ function CustomerLogin() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { loginCustomer, loading } = useAuth();
+  const { loginCustomer } = useAuth();
 
   const from = location.state?.from?.pathname || "/";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Prevent multiple submissions
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     setError("");
 
-    const result = await loginCustomer(emailOrMobile, password);
+    try {
+      const result = await loginCustomer(emailOrMobile, password);
+      console.log('Login result received:', result); // Debug log
 
-    if (result.success) {
-      // Navigate to the page they were trying to visit, or home
-      navigate(from, { replace: true });
-    } else {
-      setError(result.error);
+      if (result && result.success) {
+        console.log('Login successful, navigating...'); // Debug log
+        // Navigate to the page they were trying to visit, or home
+        navigate(from, { replace: true });
+      } else {
+        console.log('Login failed with error:', result?.error); // Debug log
+        // Handle specific error for seller accounts trying to login as customer
+        if (result?.error?.includes("not registered as a customer")) {
+          const errorMsg = "This email is registered as a seller account. Please use seller login instead.";
+          console.log('Setting error:', errorMsg); // Debug log
+          setError(errorMsg);
+        } else {
+          const errorMsg = result?.error || "Login failed. Please try again.";
+          console.log('Setting error:', errorMsg); // Debug log
+          setError(errorMsg);
+        }
+      }
+    } catch (err) {
+      console.error('Login exception:', err); // Debug log
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -125,24 +151,19 @@ function CustomerLogin() {
             </div>
 
             {error && (
-              <div className="bg-error bg-opacity-10 border border-error text-error px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
+            {/* Debug: Show error state */}
+            {console.log('Current error state:', error)}
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-primary text-white py-3 px-4 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-primary text-white py-3 px-4 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Signing In...</span>
-                </>
-              ) : (
-                <span>Sign In</span>
-              )}
+              Sign In
             </button>
           </form>
 

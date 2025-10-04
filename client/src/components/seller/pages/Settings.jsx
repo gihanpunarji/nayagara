@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   User,
   CreditCard,
@@ -6,10 +6,35 @@ import {
   Camera
 } from 'lucide-react';
 import SellerLayout from '../layout/SellerLayout';
+import api from '../../../api/axios';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
-  const [showPassword, setShowPassword] = useState(false);
+  const [profileData, setProfileData] = useState(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchSellerProfile();
+  }, []);
+
+  const fetchSellerProfile = async () => {
+    try {
+      const response = await api.get('/auth/seller/profile');
+
+      if (response.data.success) {
+        setProfileData(response.data.user);
+        setError('');
+      } else {
+        setError(response.data.message || 'Failed to fetch profile data');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to connect to server');
+      console.error('Profile fetch error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const tabs = [
     { key: 'profile', label: 'Profile', icon: User },
@@ -30,102 +55,147 @@ const Settings = () => {
     </button>
   );
 
-  const ProfileSettings = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Information</h2>
+  const ProfileSettings = () => {
+    if (loading) {
+      return (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Loading profile...</p>
+          </div>
+        </div>
+      );
+    }
 
-        {/* Profile Picture */}
-        <div className="flex items-center space-x-6 mb-6">
-          <div className="relative">
-            <div className="w-20 h-20 bg-gradient-to-r from-primary-600 to-primary-700 rounded-full flex items-center justify-center text-white text-2xl font-bold">
-              S
+    if (error) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-700">{error}</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!profileData) {
+      return (
+        <div className="space-y-6">
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <p className="text-yellow-700">No profile data available</p>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Information</h2>
+
+          {/* Profile Picture */}
+          <div className="flex items-center space-x-6 mb-6">
+            <div className="relative">
+              <div className="w-20 h-20 bg-gradient-to-r from-primary-600 to-primary-700 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                {profileData.first_name ? profileData.first_name.charAt(0).toUpperCase() : 'S'}
+              </div>
+              <button className="absolute -bottom-1 -right-1 bg-white border-2 border-gray-300 rounded-full p-1 hover:bg-gray-50 transition-colors">
+                <Camera className="w-4 h-4 text-gray-600" />
+              </button>
             </div>
-            <button className="absolute -bottom-1 -right-1 bg-white border-2 border-gray-300 rounded-full p-1 hover:bg-gray-50 transition-colors">
-              <Camera className="w-4 h-4 text-gray-600" />
-            </button>
+            <div>
+              <h3 className="font-semibold text-gray-900">Profile Photo</h3>
+              <p className="text-sm text-gray-600">Update your profile picture</p>
+            </div>
           </div>
-          <div>
-            <h3 className="font-semibold text-gray-900">Profile Photo</h3>
-            <p className="text-sm text-gray-600">Update your profile picture</p>
+
+          {/* Profile Form */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+              <input
+                type="text"
+                defaultValue={profileData.first_name || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+              <input
+                type="text"
+                defaultValue={profileData.last_name || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+              <input
+                type="email"
+                defaultValue={profileData.user_email || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+              <input
+                type="tel"
+                defaultValue={profileData.user_mobile || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">NIC Number</label>
+              <input
+                type="text"
+                defaultValue={profileData.nic || ''}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
+              <input
+                type="text"
+                defaultValue=""
+                placeholder="Enter your store name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Store Description</label>
+              <textarea
+                rows={3}
+                defaultValue=""
+                placeholder="Describe your store and products"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
+
+            <div className="lg:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+              <textarea
+                rows={2}
+                defaultValue=""
+                placeholder="Enter your business address"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              />
+            </div>
           </div>
         </div>
 
-        {/* Profile Form */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-            <input
-              type="text"
-              defaultValue="Supun"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-            <input
-              type="text"
-              defaultValue="Perera"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input
-              type="email"
-              defaultValue="supun@example.com"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-            <input
-              type="tel"
-              defaultValue="+94 77 123 4567"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Store Name</label>
-            <input
-              type="text"
-              defaultValue="Supun's Electronics Store"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Store Description</label>
-            <textarea
-              rows={3}
-              defaultValue="Premium electronics and gadgets with warranty"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
-
-          <div className="lg:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
-            <textarea
-              rows={2}
-              defaultValue="123 Main Street, Colombo 03, Western Province, 00300"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-          </div>
+        <div className="flex justify-end pt-6 border-t border-gray-200">
+          <button className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
+            <Save className="w-4 h-4" />
+            <span>Save Changes</span>
+          </button>
         </div>
       </div>
-
-      <div className="flex justify-end pt-6 border-t border-gray-200">
-        <button className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-          <Save className="w-4 h-4" />
-          <span>Save Changes</span>
-        </button>
-      </div>
-    </div>
-  );
+    );
+  };
 
 
 

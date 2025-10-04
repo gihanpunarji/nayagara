@@ -282,7 +282,7 @@ const CustomerAccount = () => {
       alert('Please enter a valid amount');
       return;
     }
-    if (parseFloat(withdrawAmount) > walletBalance) {
+    if (parseFloat(withdrawAmount) > user.walletBalance) {
       alert('Insufficient balance');
       return;
     }
@@ -329,7 +329,7 @@ const CustomerAccount = () => {
               <CreditCard className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">Rs. {walletBalance.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">Rs. {user.walletBalance.toLocaleString()}</p>
               <p className="text-sm text-gray-500">Wallet Balance</p>
             </div>
           </div>
@@ -502,7 +502,7 @@ const CustomerAccount = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-green-100 mb-1">Available Balance</p>
-            <h3 className="text-3xl font-bold">Rs. {walletBalance.toLocaleString()}</h3>
+            <h3 className="text-3xl font-bold">Rs. {user.walletBalance.toLocaleString()}</h3>
           </div>
           <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <CreditCard className="w-8 h-8" />
@@ -565,7 +565,7 @@ const CustomerAccount = () => {
             </div>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {walletBalance.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {user.walletBalance.toLocaleString()}</p>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Withdrawal Amount
               </label>

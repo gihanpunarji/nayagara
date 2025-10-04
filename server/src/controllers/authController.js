@@ -73,12 +73,12 @@ const register = async (req, res, role = "customer") => {
     });
     const token = generateToken(user.id);
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { first_name, last_name, user_role } = user;
 
     res.status(201).json({
       success: true,
       message: "Registration Successful",
-      user: userWithoutPassword,
+      user: { first_name, last_name, user_role },
       token,
     });
 
@@ -131,7 +131,6 @@ const sellerRegister = async (req, res, role = "seller") => {
     }
 
     const existingUser = await User.findByEmailandRoleAndNIC(email, role, nic);
-    console.log(existingUser);
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -161,12 +160,12 @@ const sellerRegister = async (req, res, role = "seller") => {
       isActive: true,
     });
 
-    const { password: _, ...userWithoutPassword } = user;
+    const { first_name, last_name, user_role } = user;
 
     res.status(201).json({
       success: true,
       message: "Registration Successful",
-      user: userWithoutPassword,
+      user: { first_name, last_name, user_role },
       token,
     });
   } catch (error) {
@@ -205,9 +204,9 @@ const login = async (req, res, role = "customer") => {
 
     const checkRole = await User.checkRole(emailOrMobile, role);
     if (!checkRole) {
-      return res.status(401).json({
+      return res.status(403).json({
         success: false,
-        message: "Invalid credentials",
+        message: "This account is not registered as a customer. Please use seller login if you have a seller account.",
       });
     }
 
@@ -223,12 +222,12 @@ const login = async (req, res, role = "customer") => {
     }
 
     const token = generateToken(user.id);
-    const { password: _, ...userWithoutPassword } = user;
+    const { first_name, last_name, user_role } = user;
 
     res.json({
       success: true,
       message: "Login successful",
-      user: userWithoutPassword,
+      user: {first_name, last_name, user_role},
       token,
     });
   } catch (error) {
@@ -254,7 +253,6 @@ const sellerLogin = async (req, res, role = "seller") => {
     }
 
     const user = await User.findByEmailOrMobile(emailOrMobile);
-    console.log(user);
     if (!user) {
       console.log("Invalid credentials 1");
 
@@ -275,25 +273,26 @@ const sellerLogin = async (req, res, role = "seller") => {
         .json({ success: false, message: "Invalid credentials" });
     }
 
+    // Check role first before mobile verification
+    const checkRole = await User.checkRole(emailOrMobile, role);
+    if (!checkRole) {
+      return res
+        .status(403)
+        .json({ success: false, message: "This account is not registered as a seller. Please use customer login or register as a seller." });
+    }
+
     const isMobileVerified = await User.isMobileVerified(emailOrMobile);
     if (!isMobileVerified) {
       return res.status(403).json({ success: false, message: "mnv" });
     }
 
-    const checkRole = await User.checkRole(emailOrMobile, role);
-    if (!checkRole) {
-      return res
-        .status(403)
-        .json({ success: false, message: "Unauthorized role" });
-    }
-
     const token = generateToken(user.id);
-    const { user_password, ...userWithoutPassword } = user;
+    const { first_name, last_name, user_role } = user;
 
     res.json({
       success: true,
       message: "Login successful",
-      user: userWithoutPassword,
+      user: {first_name, last_name, user_role},
       token,
     });
   } catch (error) {
@@ -339,7 +338,7 @@ const forgotPassword = async (req, res) => {
     }/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     console.log("Password reset link:", resetLink);
 
-    const transporter = node.createTransport({
+    const transporter = nodeMailer.createTransport({
       service: "gmail",
       auth: {
         user: process.env.EMAIL_USERNAME,
@@ -967,6 +966,42 @@ const verifyEmailOtp = async (req, res) => {
 
 const verifyMobile = async (req, res) => {};
 
+const getSellerProfile = async (req, res) => {
+  try {
+    const userId = req.user.userId;
+    
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Check if user is a seller
+    if (user.user_type !== 'seller') {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Not a seller account."
+      });
+    }
+
+    // Return seller profile data (excluding password)
+    const { user_password, reset_token, reset_token_expires, ...sellerProfile } = user;
+    
+    res.json({
+      success: true,
+      user: sellerProfile
+    });
+  } catch (error) {
+    console.error("Get seller profile error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -977,4 +1012,5 @@ module.exports = {
   loginAdmin,
   verifyEmailOtp,
   sendEmail,
+  getSellerProfile,
 };

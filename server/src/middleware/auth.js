@@ -10,6 +10,9 @@ const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
 
+    console.log("Auth header:", authHeader);
+    console.log("Extracted token:", token);
+
     if (!token) {
       return res.status(401).json({
         success: false,
@@ -17,8 +20,12 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
+    console.log("JWT_SECRET exists:", !!JWT_SECRET);
     const decoded = jwt.verify(token, JWT_SECRET);
+    console.log("Decoded token:", decoded);
+    
     const user = await User.findById(decoded.userId);
+    console.log("Found user:", !!user);
 
     if (!user) {
       return res.status(401).json({
@@ -30,6 +37,7 @@ const authenticateToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.error("Auth middleware error:", error.message);
     return res.status(403).json({
       success: false,
       message: "Invalid or expired token",

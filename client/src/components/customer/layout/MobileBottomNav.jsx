@@ -1,8 +1,8 @@
 import React from 'react';
-import { Home, Search, ShoppingCart, User } from 'lucide-react';
+import { Home, Search, ShoppingCart, User, Droplets } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-const MobileBottomNav = ({ cartCount = 0 }) => {
+const MobileBottomNav = ({ cartCount = 0, onMenuToggle }) => {
   const location = useLocation();
 
   const navItems = [
@@ -12,6 +12,13 @@ const MobileBottomNav = ({ cartCount = 0 }) => {
       icon: Home,
       path: '/',
       active: location.pathname === '/'
+    },
+    {
+      id: 'water',
+      label: 'Water',
+      icon: Droplets,
+      path: '/nayagara-water',
+      active: location.pathname === '/nayagara-water'
     },
     {
       id: 'search',
@@ -32,7 +39,7 @@ const MobileBottomNav = ({ cartCount = 0 }) => {
       id: 'account',
       label: 'Account',
       icon: User,
-      path: '/account',
+      action: 'menu',
       active: location.pathname.includes('/account') || location.pathname.includes('/login')
     }
   ];
@@ -41,10 +48,39 @@ const MobileBottomNav = ({ cartCount = 0 }) => {
     <>
       {/* Bottom Navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden shadow-lg">
-        <div className="grid grid-cols-4 h-16">
+        <div className="grid grid-cols-5 h-16">
           {navItems.map((item) => {
             const IconComponent = item.icon;
             const isActive = item.active;
+
+            // If it's a menu action, render button instead of Link
+            if (item.action === 'menu') {
+              return (
+                <button
+                  key={item.id}
+                  onClick={onMenuToggle}
+                  className={`flex flex-col items-center justify-center transition-all duration-200 relative ${
+                    isActive
+                      ? 'text-primary-600'
+                      : 'text-gray-500 hover:text-primary-600'
+                  }`}
+                >
+                  {/* Active Indicator */}
+                  {isActive && (
+                    <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-8 h-1 bg-primary-600 rounded-b-full"></div>
+                  )}
+
+                  <div className="relative flex flex-col items-center">
+                    <div className="relative">
+                      <IconComponent className={`w-6 h-6 ${isActive ? 'text-primary-600' : ''}`} />
+                    </div>
+                    <span className={`text-xs mt-1 font-medium ${isActive ? 'text-primary-600' : ''}`}>
+                      {item.label}
+                    </span>
+                  </div>
+                </button>
+              );
+            }
 
             return (
               <Link

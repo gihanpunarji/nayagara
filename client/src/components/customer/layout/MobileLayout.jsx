@@ -31,7 +31,7 @@ const MobileLayout = ({ children, user = null }) => {
       </main>
 
       {/* Mobile Bottom Navigation */}
-      <MobileBottomNav cartCount={cartCount} />
+      <MobileBottomNav cartCount={cartCount} onMenuToggle={handleMenuToggle} />
 
       {/* Mobile Menu */}
       <MobileMenu

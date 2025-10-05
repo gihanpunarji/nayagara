@@ -35,6 +35,14 @@ class Admin {
         `UPDATE admins SET email_code = NULL WHERE admin_email = ?`, [email]
     );
   }
+
+  static async getAdminContactMobile() {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      "SELECT mobile FROM admins WHERE mobile IS NOT NULL LIMIT 1"
+    );
+    return rows[0]?.mobile || null;
+  }
 }
 
 module.exports = Admin;

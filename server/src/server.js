@@ -25,6 +25,9 @@ app.use(
 
 app.use(express.json());
 
+// Serve static files from uploads directory
+app.use('/uploads', express.static('uploads'));
+
 app.use("/api/auth", authRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/products", productRoutes);

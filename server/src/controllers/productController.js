@@ -1,7 +1,452 @@
+const Product = require("../models/Product");
+const ProductImage = require("../models/ProductImage");
+const User = require("../models/User");
+
+// Create a new product
+const createProduct = async (req, res) => {
+  try {
+    const sellerId = req.user.user_id;
+    const {
+      title,
+      description,
+      price,
+      category,
+      subcategory,
+      stock,
+      dynamicFields,
+      weightKg,
+      locationCityId,
+      metaTitle,
+      metaDescription,
+      expiresAt
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !price || !category || !subcategory || !stock) {
+      return res.status(400).json({
+        success: false,
+        message: "Title, description, price, category, subcategory, and stock are required"
+      });
+    }
+
+    // Check if user is a seller
+    const user = await User.findById(sellerId);
+    if (!user || user.user_type !== 'seller') {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Not a seller account."
+      });
+    }
+
+    // Generate slug from title
+    const baseSlug = Product.generateSlug(title);
+    let productSlug = baseSlug;
+    let counter = 1;
+
+    // Ensure slug is unique
+    while (await Product.findBySlug(productSlug)) {
+      productSlug = `${baseSlug}-${counter}`;
+      counter++;
+    }
+
+    // Prepare product attributes (dynamic fields)
+    const productAttributes = Product.formatProductAttributes(dynamicFields || {});
+
+    // Calculate expires at (default 30 days from now if not provided)
+    const expirationDate = expiresAt ? new Date(expiresAt) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
+    // Create product
+    const productResult = await Product.create({
+      productTitle: title,
+      productSlug: productSlug,
+      productDescription: description,
+      categoryId: subcategory, // Using subcategory as the category_id
+      sellerId: sellerId,
+      price: parseFloat(price),
+      currencyCode: 'LKR',
+      weightKg: weightKg ? parseFloat(weightKg) : null,
+      stockQuantity: parseInt(stock),
+      productStatus: 'pending', // All products start as pending approval
+      isFeatured: 0,
+      isPromoted: 0,
+      locationCityId: locationCityId || null,
+      metaTitle: metaTitle || title,
+      metaDescription: metaDescription || description.substring(0, 160),
+      productAttributes: productAttributes,
+      expiresAt: expirationDate
+    });
+
+    const productId = productResult.insertId;
+
+    // Handle image uploads if any
+    if (req.files && req.files.length > 0) {
+      const imageData = req.files.map((file, index) => ({
+        imageUrl: ProductImage.generateImageUrl(file.filename),
+        imageAlt: `${title} - Image ${index + 1}`
+      }));
+
+      await ProductImage.createMultiple(productId, imageData);
+    }
+
+    // Get the created product with images
+    const createdProduct = await Product.findById(productId);
+    const productImages = await ProductImage.findByProductId(productId);
+
+    res.status(201).json({
+      success: true,
+      message: "Product created successfully",
+      data: {
+        product: {
+          ...createdProduct,
+          product_attributes: Product.parseProductAttributes(createdProduct.product_attributes)
+        },
+        images: productImages
+      }
+    });
+
+  } catch (error) {
+    console.error("Create product error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+// Get seller's products with search and filtering
+const getSellerProducts = async (req, res) => {
+  try {
+    const sellerId = req.user.user_id;
+    const { 
+      page = 1, 
+      limit = 50,
+      search,
+      status,
+      category,
+      sort = 'newest'
+    } = req.query;
+    
+    const offset = (page - 1) * limit;
+
+    // If no filters are applied, use the simple method
+    if (!search && (!status || status === 'all') && !category && sort === 'newest') {
+      const products = await Product.findBySellerId(sellerId, parseInt(limit), offset);
+
+      // Get images for each product
+      const productsWithImages = await Promise.all(
+        products.map(async (product) => {
+          const images = await ProductImage.findByProductId(product.product_id);
+          return {
+            ...product,
+            product_attributes: Product.parseProductAttributes(product.product_attributes),
+            images: images
+          };
+        })
+      );
+
+      return res.json({
+        success: true,
+        message: "Products fetched successfully",
+        data: productsWithImages,
+        pagination: {
+          page: parseInt(page),
+          limit: parseInt(limit),
+          total: productsWithImages.length
+        }
+      });
+    }
+
+    // For filtered queries, use custom SQL
+    const { getConnection } = require("../config/database");
+    const connection = getConnection();
+    
+    let query = `
+      SELECT p.*, 
+             c.category_name,
+             sc.sub_category_name
+      FROM products p
+      LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
+      LEFT JOIN categories c ON sc.categories_category_id = c.category_id
+      WHERE p.seller_id = ?
+    `;
+    const queryParams = [sellerId];
+
+    // Add search filter
+    if (search && search.trim()) {
+      query += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      queryParams.push(searchTerm, searchTerm);
+    }
+
+    // Add status filter
+    if (status && status !== 'all') {
+      if (status === 'out_of_stock') {
+        query += ` AND p.stock_quantity = 0`;
+      } else {
+        query += ` AND p.product_status = ?`;
+        queryParams.push(status);
+      }
+    }
+
+    // Add category filter
+    if (category && category.trim()) {
+      query += ` AND c.category_name = ?`;
+      queryParams.push(category.trim());
+    }
+
+    // Add sorting
+    switch (sort) {
+      case 'oldest':
+        query += ` ORDER BY p.created_at ASC`;
+        break;
+      case 'price_high':
+        query += ` ORDER BY p.price DESC`;
+        break;
+      case 'price_low':
+        query += ` ORDER BY p.price ASC`;
+        break;
+      case 'most_viewed':
+        query += ` ORDER BY p.view_count DESC`;
+        break;
+      case 'best_selling':
+        query += ` ORDER BY p.inquiry_count DESC`;
+        break;
+      case 'newest':
+      default:
+        query += ` ORDER BY p.created_at DESC`;
+        break;
+    }
+
+    // Add pagination
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(parseInt(limit), offset);
+
+    const [products] = await connection.execute(query, queryParams);
+
+    // Get images for each product
+    const productsWithImages = await Promise.all(
+      products.map(async (product) => {
+        const images = await ProductImage.findByProductId(product.product_id);
+        return {
+          ...product,
+          product_attributes: Product.parseProductAttributes(product.product_attributes),
+          images: images
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      message: "Products fetched successfully",
+      data: productsWithImages,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: productsWithImages.length
+      }
+    });
+
+  } catch (error) {
+    console.error("Get seller products error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      details: error.message
+    });
+  }
+};
+
+// Get single product by ID
+const getProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const sellerId = req.user.user_id;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required"
+      });
+    }
+
+    const product = await Product.findById(productId);
+
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    // Check if the product belongs to the seller
+    if (product.seller_id !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Product does not belong to you."
+      });
+    }
+
+    // Get product images
+    const images = await ProductImage.findByProductId(productId);
+
+    res.json({
+      success: true,
+      message: "Product fetched successfully",
+      data: {
+        product: {
+          ...product,
+          product_attributes: Product.parseProductAttributes(product.product_attributes)
+        },
+        images: images
+      }
+    });
+
+  } catch (error) {
+    console.error("Get product by ID error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+// Update product
+const updateProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const sellerId = req.user.user_id;
+    const {
+      title,
+      description,
+      price,
+      stock,
+      dynamicFields,
+      weightKg,
+      locationCityId,
+      metaTitle,
+      metaDescription,
+      expiresAt
+    } = req.body;
+
+    // Validate required fields
+    if (!title || !description || !price || stock === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: "Title, description, price, and stock are required"
+      });
+    }
+
+    // Check if product exists and belongs to seller
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    if (existingProduct.seller_id !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Product does not belong to you."
+      });
+    }
+
+    // Generate new slug if title changed
+    let productSlug = existingProduct.product_slug;
+    if (title !== existingProduct.product_title) {
+      const baseSlug = Product.generateSlug(title);
+      productSlug = baseSlug;
+      let counter = 1;
+
+      // Ensure slug is unique (exclude current product)
+      while (true) {
+        const existingSlugProduct = await Product.findBySlug(productSlug);
+        if (!existingSlugProduct || existingSlugProduct.product_id === parseInt(productId)) {
+          break;
+        }
+        productSlug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+    }
+
+    // Prepare product attributes (dynamic fields)
+    const productAttributes = Product.formatProductAttributes(dynamicFields || {});
+
+    // Calculate expires at
+    const expirationDate = expiresAt ? new Date(expiresAt) : existingProduct.expires_at;
+
+    // Update product
+    const affectedRows = await Product.update({
+      productId: parseInt(productId),
+      productTitle: title,
+      productSlug: productSlug,
+      productDescription: description,
+      categoryId: existingProduct.category_id, // Keep original category
+      price: parseFloat(price),
+      currencyCode: existingProduct.currency_code || 'LKR',
+      weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
+      stockQuantity: parseInt(stock),
+      productStatus: existingProduct.product_status, // Keep original status
+      isFeatured: existingProduct.is_featured,
+      isPromoted: existingProduct.is_promoted,
+      locationCityId: locationCityId || existingProduct.location_city_id,
+      metaTitle: metaTitle || title,
+      metaDescription: metaDescription || description.substring(0, 160),
+      productAttributes: productAttributes,
+      expiresAt: expirationDate
+    });
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found or no changes made"
+      });
+    }
+
+    // Handle new image uploads if any
+    if (req.files && req.files.length > 0) {
+      const imageData = req.files.map((file, index) => ({
+        imageUrl: ProductImage.generateImageUrl(file.filename),
+        imageAlt: `${title} - Image ${index + 1}`
+      }));
+
+      await ProductImage.createMultiple(productId, imageData);
+    }
+
+    // Get the updated product with images
+    const updatedProduct = await Product.findById(productId);
+    const productImages = await ProductImage.findByProductId(productId);
+
+    res.json({
+      success: true,
+      message: "Product updated successfully",
+      data: {
+        product: {
+          ...updatedProduct,
+          product_attributes: Product.parseProductAttributes(updatedProduct.product_attributes)
+        },
+        images: productImages
+      }
+    });
+
+  } catch (error) {
+    console.error("Update product error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 const filterProducts = async (req, res) => {
 
 }
 
 module.exports = {
+    createProduct,
+    getSellerProducts,
+    getProductById,
+    updateProduct,
     filterProducts
 }

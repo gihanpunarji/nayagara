@@ -20,7 +20,9 @@ const Settings = () => {
 
   const fetchSellerProfile = async () => {
     try {
-      const response = await api.get('/auth/seller/profile');
+      const response = await api.get('/seller/profile');
+      console.log(response.data);
+      
 
       if (response.data.success) {
         setProfileData(response.data.user);

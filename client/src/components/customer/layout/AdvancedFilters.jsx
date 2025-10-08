@@ -42,20 +42,33 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
   }, [])
 
 
-  // Simplified dynamic filter configurations for each category
+  // Dynamic filter configurations for categories
+  const getCategoryIcon = (categoryName) => {
+    const name = categoryName.toLowerCase();
+    if (name.includes('electronics')) return <Cpu className="w-4 h-4" />;
+    if (name.includes('vehicles') || name.includes('automotive')) return <Car className="w-4 h-4" />;
+    if (name.includes('fashion') || name.includes('clothing')) return <Shirt className="w-4 h-4" />;
+    if (name.includes('home') || name.includes('furniture')) return <Home className="w-4 h-4" />;
+    if (name.includes('beauty') || name.includes('health')) return <Heart className="w-4 h-4" />;
+    if (name.includes('sports')) return <Car className="w-4 h-4" />;
+    if (name.includes('books') || name.includes('media')) return <Book className="w-4 h-4" />;
+    if (name.includes('services')) return <Wrench className="w-4 h-4" />;
+    return <Cpu className="w-4 h-4" />;
+  };
+
   const categoryFilters = {
     'Electronics': {
       icon: <Cpu className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'brand', label: 'Brand', options: ['All', 'Apple', 'Samsung', 'Sony', 'Dell', 'HP'] },
-        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used'] }
+        { type: 'select', key: 'brand', label: 'Brand', options: ['All', 'Apple', 'Samsung', 'Sony', 'Dell', 'HP', 'LG', 'Xiaomi'] },
+        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used', 'Refurbished'] }
       ]
     },
-    'Vehicles': {
+    'Automotive': {
       icon: <Car className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'make', label: 'Make', options: ['All', 'Toyota', 'Honda', 'Nissan', 'Suzuki'] },
-        { type: 'select', key: 'fuel', label: 'Fuel', options: ['Any', 'Petrol', 'Diesel', 'Hybrid'] },
+        { type: 'select', key: 'make', label: 'Make', options: ['All', 'Toyota', 'Honda', 'Nissan', 'Suzuki', 'BMW', 'Mercedes', 'Audi'] },
+        { type: 'select', key: 'fuel', label: 'Fuel Type', options: ['Any', 'Petrol', 'Diesel', 'Hybrid', 'Electric'] },
         { type: 'input', key: 'yearMin', label: 'Min Year', placeholder: '2010' },
         { type: 'input', key: 'yearMax', label: 'Max Year', placeholder: '2024' }
       ]
@@ -63,44 +76,38 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
     'Fashion': {
       icon: <Shirt className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'gender', label: 'Gender', options: ['All', 'Men', 'Women', 'Kids'] },
-        { type: 'select', key: 'size', label: 'Size', options: ['All', 'XS', 'S', 'M', 'L', 'XL'] },
+        { type: 'select', key: 'gender', label: 'Gender', options: ['All', 'Men', 'Women', 'Kids', 'Unisex'] },
+        { type: 'select', key: 'size', label: 'Size', options: ['All', 'XS', 'S', 'M', 'L', 'XL', 'XXL'] },
         { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Like New', 'Used'] }
       ]
     },
-    'Home & Living': {
+    'Furniture': {
       icon: <Home className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Furniture', 'Appliances', 'Decor'] },
-        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used'] }
+        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Living Room', 'Bedroom', 'Kitchen', 'Office', 'Outdoor'] },
+        { type: 'select', key: 'material', label: 'Material', options: ['Any', 'Wood', 'Metal', 'Plastic', 'Glass'] },
+        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used', 'Refurbished'] }
       ]
     },
-    'Beauty & Health': {
+    'Beauty': {
       icon: <Heart className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Skincare', 'Makeup', 'Hair Care'] },
-        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Unopened'] }
+        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Skincare', 'Makeup', 'Hair Care', 'Fragrance'] },
+        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Unopened', 'Lightly Used'] }
       ]
     },
     'Sports': {
       icon: <Car className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'sport', label: 'Sport', options: ['All', 'Cricket', 'Football', 'Tennis'] },
-        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used'] }
+        { type: 'select', key: 'sport', label: 'Sport', options: ['All', 'Cricket', 'Football', 'Tennis', 'Swimming', 'Gym'] },
+        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used', 'Like New'] }
       ]
     },
-    'Books & Media': {
+    'Books': {
       icon: <Book className="w-4 h-4" />,
       filters: [
-        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Books', 'DVDs', 'Games'] },
-        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used'] }
-      ]
-    },
-    'Services': {
-      icon: <Wrench className="w-4 h-4" />,
-      filters: [
-        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Home', 'Professional', 'Education'] },
-        { type: 'select', key: 'availability', label: 'Availability', options: ['Any', 'Weekdays', 'Weekends', '24/7'] }
+        { type: 'select', key: 'type', label: 'Type', options: ['All', 'Fiction', 'Non-Fiction', 'Educational', 'Children'] },
+        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used', 'Like New'] }
       ]
     }
   };
@@ -108,7 +115,27 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
   // Get current category filters
   const getCurrentCategoryFilters = () => {
     const categoryName = filters.category === 'All Categories' ? 'Electronics' : filters.category;
-    return categoryFilters[categoryName] || categoryFilters['Electronics'];
+    
+    // Try exact match first
+    if (categoryFilters[categoryName]) {
+      return categoryFilters[categoryName];
+    }
+    
+    // Try partial matches
+    for (const [key, config] of Object.entries(categoryFilters)) {
+      if (categoryName.toLowerCase().includes(key.toLowerCase()) || 
+          key.toLowerCase().includes(categoryName.toLowerCase())) {
+        return config;
+      }
+    }
+    
+    // Default fallback
+    return {
+      icon: getCategoryIcon(categoryName),
+      filters: [
+        { type: 'select', key: 'condition', label: 'Condition', options: ['Any', 'New', 'Used', 'Like New'] }
+      ]
+    };
   };
 
   // Handle filter changes
@@ -197,6 +224,7 @@ const AdvancedFilters = ({ isOpen, onClose, onFiltersApply, selectedCategory, ma
                 value={filters.district}
                 onChange={(e) => handleFilterChange('district', e.target.value)}
               >
+                <option value="">All Districts</option>
                 {districts.map(district => (
                   <option key={district} value={district}>{district}</option>
                 ))}

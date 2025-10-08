@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Zap, TrendingUp, Gift, Star, MapPin, Truck,
   ChevronRight, Heart, ShoppingCart, Eye
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { publicApi } from '../../../api/axios';
 
 const MobileHome = () => {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [featuredProducts, setFeaturedProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   // Hero banners for mobile
   const heroBanners = [
@@ -47,45 +50,42 @@ const MobileHome = () => {
     { name: 'Top Rated', icon: Star, color: 'bg-yellow-500', textColor: 'text-yellow-600', path: '/top-rated' }
   ];
 
-  // Featured products
-  const featuredProducts = [
-    {
-      id: 1,
-      name: 'iPhone 15 Pro Max',
-      price: 385000,
-      originalPrice: 420000,
-      image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      rating: 4.9,
-      reviews: 2847,
-      discount: 8,
-      badge: 'Best Seller',
-      location: 'Colombo 07'
-    },
-    {
-      id: 2,
-      name: 'Gaming Laptop RTX 4070',
-      price: 425000,
-      originalPrice: 485000,
-      image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      rating: 4.8,
-      reviews: 567,
-      discount: 12,
-      badge: 'Gaming',
-      location: 'Nugegoda'
-    },
-    {
-      id: 3,
-      name: 'Bridal Saree Collection',
-      price: 18500,
-      originalPrice: 22000,
-      image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-      rating: 4.9,
-      reviews: 345,
-      discount: 16,
-      badge: 'Trending',
-      location: 'Kandy'
+  // Fetch featured products
+  const fetchFeaturedProducts = async () => {
+    try {
+      setLoading(true);
+      const response = await publicApi.get('/products/public?limit=6&sort=featured');
+      
+      if (response.data.success) {
+        // Transform API data to match the expected format
+        const transformedProducts = response.data.data.map(product => ({
+          id: product.product_id,
+          name: product.product_title,
+          price: product.price,
+          originalPrice: null, // You can calculate this if you have discount information
+          image: product.images.length > 0 
+            ? `http://localhost:5001${product.images[0].image_url}` 
+            : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+          rating: 4.5, // You can add this field to your database if needed
+          reviews: Math.floor(Math.random() * 1000) + 100, // Random for now
+          discount: null,
+          badge: product.is_featured ? 'Featured' : 'New',
+          location: product.location_city_name || 'Sri Lanka'
+        }));
+        setFeaturedProducts(transformedProducts);
+      }
+    } catch (error) {
+      console.error('Error fetching featured products:', error);
+      // Fallback to empty array on error
+      setFeaturedProducts([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  useEffect(() => {
+    fetchFeaturedProducts();
+  }, []);
 
   const getBadgeColor = (badge) => {
     switch (badge) {
@@ -171,20 +171,33 @@ const MobileHome = () => {
           <span className="text-sm">Ends in 12:34:56</span>
         </div>
         <div className="flex space-x-3 overflow-x-auto">
-          {featuredProducts.slice(0, 2).map((product) => (
-            <div key={product.id} className="bg-white rounded-lg p-3 min-w-[140px] flex-shrink-0">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-20 object-cover rounded-lg mb-2"
-              />
-              <p className="text-xs font-medium text-gray-900 truncate">{product.name}</p>
-              <div className="flex items-center space-x-1">
-                <span className="text-sm font-bold text-red-600">Rs. {product.price.toLocaleString()}</span>
-                <span className="text-xs text-gray-500 line-through">Rs. {product.originalPrice.toLocaleString()}</span>
+          {loading ? (
+            // Loading skeleton for flash sale
+            [1, 2].map((item) => (
+              <div key={item} className="bg-white rounded-lg p-3 min-w-[140px] flex-shrink-0 animate-pulse">
+                <div className="w-full h-20 bg-gray-200 rounded-lg mb-2"></div>
+                <div className="h-3 bg-gray-200 rounded mb-1"></div>
+                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
               </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            featuredProducts.slice(0, 2).map((product) => (
+              <div key={product.id} className="bg-white rounded-lg p-3 min-w-[140px] flex-shrink-0">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-20 object-contain rounded-lg mb-2 bg-gray-50"
+                />
+                <p className="text-xs font-medium text-gray-900 truncate">{product.name}</p>
+                <div className="flex items-center space-x-1">
+                  <span className="text-sm font-bold text-red-600">Rs. {product.price?.toLocaleString()}</span>
+                  {product.originalPrice && (
+                    <span className="text-xs text-gray-500 line-through">Rs. {product.originalPrice?.toLocaleString()}</span>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -198,8 +211,22 @@ const MobileHome = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          {featuredProducts.map((product) => (
+        {loading ? (
+          <div className="grid grid-cols-2 gap-3">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 animate-pulse">
+                <div className="w-full h-32 bg-gray-200"></div>
+                <div className="p-3">
+                  <div className="h-4 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded mb-2 w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            {featuredProducts.map((product) => (
             <Link
               key={product.id}
               to={`/product/${product.id}`}
@@ -254,11 +281,13 @@ const MobileHome = () => {
                 <div className="flex items-center justify-between">
                   <div>
                     <span className="text-sm font-bold text-primary-600">
-                      Rs. {product.price.toLocaleString()}
+                      Rs. {product.price?.toLocaleString()}
                     </span>
-                    <div className="text-xs text-gray-500 line-through">
-                      Rs. {product.originalPrice.toLocaleString()}
-                    </div>
+                    {product.originalPrice && (
+                      <div className="text-xs text-gray-500 line-through">
+                        Rs. {product.originalPrice?.toLocaleString()}
+                      </div>
+                    )}
                   </div>
                   <button className="w-7 h-7 bg-primary-500 text-white rounded-full flex items-center justify-center">
                     <ShoppingCart className="w-4 h-4" />
@@ -267,7 +296,8 @@ const MobileHome = () => {
               </div>
             </Link>
           ))}
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Services Banner */}

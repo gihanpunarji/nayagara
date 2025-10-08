@@ -1,128 +1,121 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Grid, List, Filter, ArrowUpDown, ChevronDown, Star, Heart,
   ShoppingCart, MapPin, Truck, Eye, TrendingUp, Zap, Gift, Loader2
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { publicApi } from '../../../api/axios';
 
 const ShopPage = () => {
   const [searchParams] = useSearchParams();
-  const categoryFromUrl = searchParams.get('category');
+  
+  // Get search parameters
+  const searchQuery = searchParams.get('search') || '';
+  const categoryFromUrl = searchParams.get('category') || 'all';
+  const districtFromUrl = searchParams.get('district') || '';
+  const priceMinFromUrl = searchParams.get('priceMin') || '';
+  const priceMaxFromUrl = searchParams.get('priceMax') || '';
 
   const [viewMode, setViewMode] = useState('grid');
-  const [sortBy, setSortBy] = useState('relevance');
+  const [sortBy, setSortBy] = useState('newest');
   const [showSortMenu, setShowSortMenu] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl || 'all');
+  const [selectedCategory, setSelectedCategory] = useState(categoryFromUrl);
+  const [categories, setCategories] = useState([]);
 
-  // Infinite scroll state
+  // Products state
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
+  const [totalProducts, setTotalProducts] = useState(0);
 
-  // Mock product data generator
-  const generateMockProducts = (pageNum, category) => {
-    const baseProducts = [
-      {
-        name: 'iPhone 15 Pro Max 256GB',
-        price: 385000,
-        originalPrice: 420000,
-        image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        rating: 4.9,
-        reviews: 2847,
-        category: 'Electronics',
-        location: 'Colombo 07',
-        seller: 'TechZone Lanka'
-      },
-      {
-        name: 'Toyota Prius Hybrid 2020',
-        price: 8500000,
-        originalPrice: 9200000,
-        image: 'https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        rating: 4.7,
-        reviews: 1234,
-        category: 'Vehicles',
-        location: 'Kandy',
-        seller: 'Premium Cars'
-      },
-      {
-        name: 'Gaming Laptop RTX 4070',
-        price: 425000,
-        originalPrice: 485000,
-        image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        rating: 4.6,
-        reviews: 892,
-        category: 'Electronics',
-        location: 'Nugegoda',
-        seller: 'Gamer Hub'
-      },
-      {
-        name: '3BHK Apartment Colombo',
-        price: 25000000,
-        originalPrice: 28000000,
-        image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        rating: 4.8,
-        reviews: 456,
-        category: 'Property',
-        location: 'Colombo 03',
-        seller: 'Dream Homes'
-      },
-      {
-        name: 'Premium Basmati Rice 25kg',
-        price: 4750,
-        originalPrice: 5200,
-        image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-        rating: 4.4,
-        reviews: 667,
-        category: 'Grocery',
-        location: 'Kelaniya',
-        seller: 'Fresh Mart'
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await publicApi.get('/categories-with-subcategories');
+        setCategories(res.data.data || []);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
       }
-    ];
+    };
 
-    return baseProducts
-      .filter(product => category === 'all' || product.category.toLowerCase() === category.toLowerCase())
-      .map((product, index) => ({
-        ...product,
-        id: (pageNum - 1) * 12 + index + 1,
-        name: `${product.name} - Batch ${pageNum}`,
-        discount: Math.floor(((product.originalPrice - product.price) / product.originalPrice) * 100)
-      }))
-      .slice(0, 12); // 12 products per page
-  };
+    fetchCategories();
+  }, []);
 
-  // Load more products
-  const loadMoreProducts = useCallback(async () => {
-    if (loading || !hasMore) return;
-
+  // Fetch products from backend
+  const fetchProducts = useCallback(async (pageNum = 1, append = false) => {
     setLoading(true);
 
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const params = new URLSearchParams();
+      params.append('page', pageNum.toString());
+      params.append('limit', '12');
+      
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
+      if (districtFromUrl) params.append('district', districtFromUrl);
+      if (priceMinFromUrl) params.append('priceMin', priceMinFromUrl);
+      if (priceMaxFromUrl) params.append('priceMax', priceMaxFromUrl);
+      
+      // Add sort parameter
+      switch (sortBy) {
+        case 'price-low':
+          params.append('sort', 'price_low');
+          break;
+        case 'price-high':
+          params.append('sort', 'price_high');
+          break;
+        case 'rating':
+          params.append('sort', 'most_viewed');
+          break;
+        case 'newest':
+        default:
+          params.append('sort', 'newest');
+          break;
+      }
 
-    const newProducts = generateMockProducts(page, selectedCategory);
-
-    if (newProducts.length === 0 || page > 10) { // Limit to 10 pages for demo
+      const res = await publicApi.get(`/products/public?${params.toString()}`);
+      const fetchedProducts = res.data.data || [];
+      
+      if (append) {
+        setProducts(prev => [...prev, ...fetchedProducts]);
+      } else {
+        setProducts(fetchedProducts);
+      }
+      
+      setTotalProducts(fetchedProducts.length);
+      setHasMore(fetchedProducts.length === 12); // If we get less than 12, no more products
+      
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      setProducts([]);
       setHasMore(false);
-    } else {
-      setProducts(prev => [...prev, ...newProducts]);
-      setPage(prev => prev + 1);
     }
 
     setLoading(false);
-  }, [page, selectedCategory, loading, hasMore]);
+  }, [searchQuery, selectedCategory, districtFromUrl, priceMinFromUrl, priceMaxFromUrl, sortBy]);
 
-  // Load initial products
+  // Load more products for infinite scroll
+  const loadMoreProducts = useCallback(async () => {
+    if (loading || !hasMore) return;
+    await fetchProducts(page + 1, true);
+    setPage(prev => prev + 1);
+  }, [fetchProducts, page, loading, hasMore]);
+
+  // Load initial products when search params change
   useEffect(() => {
     setProducts([]);
     setPage(1);
     setHasMore(true);
+    fetchProducts(1, false);
+  }, [fetchProducts]);
 
-    const initialProducts = generateMockProducts(1, selectedCategory);
-    setProducts(initialProducts);
-    setPage(2);
-  }, [selectedCategory]);
+  // Update selected category when URL changes
+  useEffect(() => {
+    setSelectedCategory(categoryFromUrl);
+  }, [categoryFromUrl]);
 
   // Infinite scroll effect
   useEffect(() => {
@@ -137,70 +130,77 @@ const ShopPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMoreProducts]);
 
-  const ProductCard = ({ product }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group overflow-hidden">
-      <div className="relative">
-        <Link to={`/product/${product.id}`}>
-          <img
-            src={product.image}
-            alt={product.name}
-            className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-        </Link>
+  const ProductCard = ({ product }) => {
+    // Handle images properly
+    let displayImage = 'https://via.placeholder.com/400x300?text=No+Image';
+    if (product.images) {
+      if (typeof product.images === 'string' && product.images.trim()) {
+        // If images is a comma-separated string
+        displayImage = product.images.split(',')[0].trim();
+      } else if (Array.isArray(product.images) && product.images.length > 0) {
+        // If images is an array
+        displayImage = product.images[0].image_url || product.images[0];
+      }
+    }
 
-        {product.discount > 0 && (
-          <span className="absolute top-2 left-2 bg-error text-white px-2 py-1 rounded text-xs font-bold">
-            -{product.discount}%
-          </span>
-        )}
-
-        <button className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
-          <Heart className="w-4 h-4 text-gray-600 hover:text-red-500" />
-        </button>
-      </div>
-
-      <div className="p-4">
-        <Link to={`/product/${product.id}`}>
-          <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
-            {product.name}
-          </h3>
-        </Link>
-
-        <div className="flex items-center space-x-1 mb-2">
-          {[...Array(5)].map((_, i) => (
-            <Star
-              key={i}
-              className={`w-4 h-4 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group overflow-hidden">
+        <div className="relative">
+          <Link to={`/product/${product.product_id}`}>
+            <img
+              src={displayImage}
+              alt={product.product_title || 'Product'}
+              className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
             />
-          ))}
-          <span className="text-sm text-gray-500">({product.reviews})</span>
+          </Link>
+
+          <button className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <Heart className="w-4 h-4 text-gray-600 hover:text-red-500" />
+          </button>
         </div>
 
-        <div className="flex items-center space-x-2 text-sm text-gray-500 mb-3">
-          <MapPin className="w-4 h-4" />
-          <span>{product.location}</span>
-        </div>
+        <div className="p-4">
+          <Link to={`/product/${product.product_id}`}>
+            <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
+              {product.product_title || 'Untitled Product'}
+            </h3>
+          </Link>
 
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <span className="text-lg font-bold text-primary-600">
-              Rs. {product.price.toLocaleString()}
-            </span>
-            {product.originalPrice > product.price && (
-              <span className="text-sm text-gray-500 line-through ml-2">
-                Rs. {product.originalPrice.toLocaleString()}
-              </span>
-            )}
+          <div className="flex items-center space-x-1 mb-2">
+            {[...Array(5)].map((_, i) => (
+              <Star
+                key={i}
+                className={`w-4 h-4 ${i < Math.floor(4.5) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+              />
+            ))}
+            <span className="text-sm text-gray-500">({product.inquiry_count || 0})</span>
           </div>
-        </div>
 
-        <button className="w-full bg-gradient-primary text-white py-2 rounded-lg hover:shadow-green transition-all duration-300 flex items-center justify-center space-x-2">
-          <ShoppingCart className="w-4 h-4" />
-          <span>Add to Cart</span>
-        </button>
+          <div className="flex items-center space-x-2 text-sm text-gray-500 mb-3">
+            <MapPin className="w-4 h-4" />
+            <span>{product.location_city_name || 'Location not specified'}</span>
+          </div>
+
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <span className="text-lg font-bold text-primary-600">
+                Rs. {parseFloat(product.price || 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-xs text-gray-500 mb-2">
+            By: {`${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim() || 'Unknown Seller'}
+          </div>
+
+          <button className="w-full bg-gradient-primary text-white py-2 rounded-lg hover:shadow-green transition-all duration-300 flex items-center justify-center space-x-2">
+            <ShoppingCart className="w-4 h-4" />
+            <span>View Details</span>
+          </button>
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-primary-50">
@@ -211,9 +211,14 @@ const ShopPage = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {selectedCategory === 'all' ? 'All Products' : selectedCategory}
+                  {searchQuery ? `Search results for "${searchQuery}"` : 
+                   selectedCategory === 'all' ? 'All Products' : selectedCategory}
                 </h1>
-                <p className="text-gray-600">Found {products.length}+ products</p>
+                <p className="text-gray-600">
+                  Found {totalProducts} product{totalProducts !== 1 ? 's' : ''}
+                  {searchQuery && ` for "${searchQuery}"`}
+                  {selectedCategory !== 'all' && ` in ${selectedCategory}`}
+                </p>
               </div>
 
               <div className="flex items-center space-x-4">
@@ -261,17 +266,28 @@ const ShopPage = () => {
 
             {/* Category Filter */}
             <div className="flex flex-wrap gap-2">
-              {['all', 'Electronics', 'Vehicles', 'Property', 'Grocery', 'Fashion', 'Jobs'].map(category => (
+              <button
+                key="all"
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 border border-gray-300'
+                }`}
+              >
+                All Categories
+              </button>
+              {categories.map(category => (
                 <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
+                  key={category.name}
+                  onClick={() => setSelectedCategory(category.name)}
                   className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === category
+                    selectedCategory === category.name
                       ? 'bg-primary-500 text-white'
                       : 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 border border-gray-300'
                   }`}
                 >
-                  {category === 'all' ? 'All Categories' : category}
+                  {category.name}
                 </button>
               ))}
             </div>
@@ -287,7 +303,7 @@ const ShopPage = () => {
             : 'grid-cols-1'
         }`}>
           {products.map(product => (
-            <ProductCard key={product.id} product={product} />
+            <ProductCard key={product.product_id} product={product} />
           ))}
         </div>
 

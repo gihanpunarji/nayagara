@@ -8,6 +8,15 @@ const api = axios.create({
     }
 });
 
+// Public API instance without authentication
+const publicApi = axios.create({
+    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+    timeout: 10000,
+    headers: {
+        'Content-Type': 'application/json',
+    }
+});
+
 let navigate = null;
 export const setNavigate = (navigateFunction) => {
     navigate = navigateFunction;
@@ -53,3 +62,4 @@ api.interceptors.response.use(
 );
 
 export default api;
+export { publicApi };

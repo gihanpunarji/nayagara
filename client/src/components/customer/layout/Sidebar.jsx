@@ -99,15 +99,21 @@ const Sidebar = ({ mainCategories }) => {
         >
           <h4 className="font-bold text-gray-800 mb-4 text-lg">{mainCategories[hoveredCategory].name}</h4>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {mainCategories[hoveredCategory].subcats.map((subcat, sidx) => (
-              <a
-                key={sidx}
-                href={`/shop?category=${encodeURIComponent(mainCategories[hoveredCategory].name.toLowerCase())}&subcat=${encodeURIComponent(subcat.toLowerCase())}`}
-                className="text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 py-2 px-3 rounded transition-colors"
-              >
-                {subcat}
-              </a>
-            ))}
+            {mainCategories[hoveredCategory].subcategories && mainCategories[hoveredCategory].subcategories.length > 0 ? (
+              mainCategories[hoveredCategory].subcategories.map((subcat, sidx) => (
+                <a
+                  key={sidx}
+                  href={`/shop?category=${encodeURIComponent(mainCategories[hoveredCategory].name.toLowerCase())}&subcat=${encodeURIComponent(subcat.sub_category_name.toLowerCase())}`}
+                  className="text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 py-2 px-3 rounded transition-colors"
+                >
+                  {subcat.sub_category_name}
+                </a>
+              ))
+            ) : (
+              <div className="col-span-2 text-sm text-gray-500 text-center py-4">
+                No subcategories available
+              </div>
+            )}
           </div>
           <img
             src={mainCategories[hoveredCategory].image}

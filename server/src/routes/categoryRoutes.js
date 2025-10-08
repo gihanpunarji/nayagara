@@ -3,7 +3,8 @@ const {
   getAllCategories, 
   getSubCategories, 
   getCategoryFields, 
-  getCategoryStructure 
+  getCategoryStructure,
+  getCategoriesWithSubcategories 
 } = require("../controllers/categoryController");
 const router = express.Router();
 
@@ -18,5 +19,8 @@ router.get("/subcategories/:subCategoryId/fields", getCategoryFields);
 
 // Get complete category structure
 router.get("/category-structure", getCategoryStructure);
+
+// Get categories with subcategories (simplified for frontend)
+router.get("/categories-with-subcategories", getCategoriesWithSubcategories);
 
 module.exports = router;

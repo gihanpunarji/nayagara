@@ -18,110 +18,87 @@ import {
   SortAsc,
   SortDesc
 } from 'lucide-react';
+import api from '../../../api/axios';
 
 const ProductList = () => {
   const [products, setProducts] = useState([]);
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
-  const [sortOrder, setSortOrder] = useState('desc');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const [showSortMenu, setShowSortMenu] = useState(false);
+  const [viewMode, setViewMode] = useState('grid');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [categories, setCategories] = useState([]);
 
-  // Mock data - in real app, this would come from API
-  const mockProducts = [
-    {
-      id: 1,
-      title: 'iPhone 14 Pro Max 256GB Space Black',
-      description: 'Brand new iPhone 14 Pro Max with original warranty',
-      price: 450000,
-      category: 'Electronics',
-      subcategory: 'Mobile Phones',
-      stock: 5,
-      status: 'approved',
-      images: ['https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400'],
-      createdAt: '2024-01-15T10:30:00Z',
-      views: 234,
-      orders: 12
-    },
-    {
-      id: 2,
-      title: 'Toyota Prius 2020 Hybrid',
-      description: 'Low mileage, excellent condition, full service history',
-      price: 8500000,
-      category: 'Vehicles',
-      subcategory: 'Cars',
-      stock: 1,
-      status: 'pending',
-      images: ['https://images.unsplash.com/photo-1549399163-1ba32edc4c84?w=400'],
-      createdAt: '2024-01-14T15:20:00Z',
-      views: 89,
-      orders: 0
-    },
-    {
-      id: 3,
-      title: 'Nike Air Max 270 Black White',
-      description: 'Comfortable running shoes in excellent condition',
-      price: 15000,
-      category: 'Fashion',
-      subcategory: 'Shoes',
-      stock: 0,
-      status: 'approved',
-      images: ['https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400'],
-      createdAt: '2024-01-13T09:15:00Z',
-      views: 156,
-      orders: 8
-    },
-    {
-      id: 4,
-      title: 'MacBook Pro 16" M2 512GB',
-      description: 'Professional laptop for creative work',
-      price: 650000,
-      category: 'Electronics',
-      subcategory: 'Laptops',
-      stock: 3,
-      status: 'approved',
-      images: ['https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400'],
-      createdAt: '2024-01-12T14:45:00Z',
-      views: 312,
-      orders: 5
-    },
-    {
-      id: 5,
-      title: 'Samsung 65" 4K Smart TV',
-      description: 'Crystal clear display with smart features',
-      price: 185000,
-      category: 'Electronics',
-      subcategory: 'TVs',
-      stock: 2,
-      status: 'pending',
-      images: ['https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400'],
-      createdAt: '2024-01-10T16:30:00Z',
-      views: 78,
-      orders: 0
+  // Load products from API with search and filters
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (searchQuery.trim()) params.append('search', searchQuery.trim());
+      if (selectedFilter !== 'all') params.append('status', selectedFilter);
+      if (selectedCategory) params.append('category', selectedCategory);
+      if (sortBy !== 'newest') params.append('sort', sortBy);
+      
+      const queryString = params.toString();
+      const url = `/products/seller${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await api.get(url);
+      
+      if (response.data.success) {
+        const productsData = response.data.data.map(product => ({
+          id: product.product_id,
+          title: product.product_title,
+          description: product.product_description,
+          price: product.price,
+          category: product.category_name || 'Uncategorized',
+          subcategory: product.sub_category_name || 'General',
+          stock: product.stock_quantity,
+          status: product.product_status,
+          images: product.images?.map(img => `http://localhost:5001${img.image_url}`) || ['/placeholder-image.jpg'],
+          createdAt: product.created_at,
+          views: product.view_count || 0,
+          orders: product.inquiry_count || 0,
+          attributes: product.product_attributes
+        }));
+        
+        setProducts(productsData);
+      } else {
+        setError(response.data.message || 'Failed to load products');
+      }
+    } catch (error) {
+      console.error('Error loading products:', error);
+      setError(error.response?.data?.message || 'Failed to load products');
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Load categories from API
+  const loadCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      if (response.data.success) {
+        setCategories(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    }
+  };
+
+  // Calculate status filters based on actual data
+  const getStatusFilters = () => [
+    { key: 'all', label: 'All Products', count: products.length },
+    { key: 'approved', label: 'Approved', count: products.filter(p => p.status === 'approved').length },
+    { key: 'pending', label: 'Pending Approval', count: products.filter(p => p.status === 'pending').length },
+    { key: 'out_of_stock', label: 'Out of Stock', count: products.filter(p => p.stock === 0).length }
   ];
 
-  const statusFilters = [
-    { key: 'all', label: 'All Products', count: mockProducts.length },
-    { key: 'approved', label: 'Approved', count: mockProducts.filter(p => p.status === 'approved').length },
-    { key: 'pending', label: 'Pending Approval', count: mockProducts.filter(p => p.status === 'pending').length },
-    { key: 'out_of_stock', label: 'Out of Stock', count: mockProducts.filter(p => p.stock === 0).length }
-  ];
-
-  const categories = [
-    'Electronics',
-    'Vehicles',
-    'Fashion',
-    'Home & Living',
-    'Beauty & Health',
-    'Sports',
-    'Books & Media',
-    'Services'
-  ];
+  const statusFilters = getStatusFilters();
 
   const sortOptions = [
     { key: 'newest', label: 'Newest First' },
@@ -132,59 +109,15 @@ const ProductList = () => {
     { key: 'best_selling', label: 'Best Selling' }
   ];
 
-  // Initialize products
+  // Initialize data
   useEffect(() => {
-    setProducts(mockProducts);
+    loadCategories();
   }, []);
 
-  // Filter and search products
+  // Reload products when filters change
   useEffect(() => {
-    let filtered = [...products];
-
-    // Apply status filter
-    if (selectedFilter !== 'all') {
-      if (selectedFilter === 'out_of_stock') {
-        filtered = filtered.filter(product => product.stock === 0);
-      } else {
-        filtered = filtered.filter(product => product.status === selectedFilter);
-      }
-    }
-
-    // Apply category filter
-    if (selectedCategory) {
-      filtered = filtered.filter(product => product.category === selectedCategory);
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        product.description.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-    }
-
-    // Apply sorting
-    filtered.sort((a, b) => {
-      switch (sortBy) {
-        case 'newest':
-          return new Date(b.createdAt) - new Date(a.createdAt);
-        case 'oldest':
-          return new Date(a.createdAt) - new Date(b.createdAt);
-        case 'price_high':
-          return b.price - a.price;
-        case 'price_low':
-          return a.price - b.price;
-        case 'most_viewed':
-          return b.views - a.views;
-        case 'best_selling':
-          return b.orders - a.orders;
-        default:
-          return 0;
-      }
-    });
-
-    setFilteredProducts(filtered);
-  }, [products, selectedFilter, selectedCategory, searchQuery, sortBy]);
+    loadProducts();
+  }, [searchQuery, selectedFilter, selectedCategory, sortBy]);
 
   const getStatusColor = (status, stock) => {
     if (stock === 0) return 'text-red-600 bg-red-100';
@@ -204,14 +137,6 @@ const ProductList = () => {
     }
   };
 
-  const toggleProductStatus = (productId) => {
-    setProducts(prev => prev.map(product =>
-      product.id === productId
-        ? { ...product, status: product.status === 'active' ? 'inactive' : 'active' }
-        : product
-    ));
-  };
-
   const formatPrice = (price) => {
     return `Rs. ${price.toLocaleString()}`;
   };
@@ -225,9 +150,12 @@ const ProductList = () => {
       {/* Product Image */}
       <div className="relative aspect-square bg-gray-100">
         <img
-          src={product.images[0]}
+          src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
           alt={product.title}
           className="w-full h-full object-cover"
+          onError={(e) => {
+            e.target.src = '/api/placeholder/400/400';
+          }}
         />
 
         {/* Status Badge */}
@@ -296,9 +224,12 @@ const ProductList = () => {
         {/* Image */}
         <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
           <img
-            src={product.images[0]}
+            src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
             alt={product.title}
             className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = '/api/placeholder/400/400';
+            }}
           />
         </div>
 
@@ -426,7 +357,9 @@ const ProductList = () => {
             >
               <option value="">All Categories</option>
               {categories.map(category => (
-                <option key={category} value={category}>{category}</option>
+                <option key={category.category_id} value={category.category_name}>
+                  {category.category_name}
+                </option>
               ))}
             </select>
             <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none" />
@@ -474,16 +407,34 @@ const ProductList = () => {
 
       {/* Products */}
       <div>
-        {filteredProducts.length === 0 ? (
+        {loading ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Loading Products</h3>
+            <p className="text-gray-600">Please wait while we fetch your products...</p>
+          </div>
+        ) : error ? (
+          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
+            <AlertTriangle className="w-12 h-12 text-red-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Failed to Load Products</h3>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <button
+              onClick={loadProducts}
+              className="inline-flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+            >
+              <span>Try Again</span>
+            </button>
+          </div>
+        ) : products.length === 0 ? (
           <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
             <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               No products found
             </h3>
             <p className="text-gray-600 mb-6">
-              {products.length === 0
-                ? "You haven't added any products yet. Get started by adding your first product."
-                : "No products match your current filters. Try adjusting your search or filters."
+              {searchQuery || selectedFilter !== 'all' || selectedCategory
+                ? "No products match your current search or filters. Try adjusting your criteria."
+                : "You haven't added any products yet. Get started by adding your first product."
               }
             </p>
             <Link
@@ -499,20 +450,27 @@ const ProductList = () => {
             {/* Results Count */}
             <div className="flex items-center justify-between mb-4">
               <p className="text-sm text-gray-600">
-                Showing {filteredProducts.length} of {products.length} products
+                Showing {products.length} products
+                {(searchQuery || selectedFilter !== 'all' || selectedCategory) && (
+                  <span className="text-primary-600 font-medium">
+                    {' '}• {searchQuery && `"${searchQuery}"`} 
+                    {selectedFilter !== 'all' && ` • ${selectedFilter}`} 
+                    {selectedCategory && ` • ${selectedCategory}`}
+                  </span>
+                )}
               </p>
             </div>
 
             {/* Products Grid/List */}
             {viewMode === 'grid' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {filteredProducts.map(product => (
+                {products.map(product => (
                   <ProductCard key={product.id} product={product} />
                 ))}
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredProducts.map(product => (
+                {products.map(product => (
                   <ProductListItem key={product.id} product={product} />
                 ))}
               </div>

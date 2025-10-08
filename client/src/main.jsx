@@ -63,6 +63,17 @@ import AdminProducts from "./components/admin/pages/Products.jsx";
 import AdminOrders from "./components/admin/pages/Orders.jsx";
 import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
 import AdManagement from "./components/admin/pages/AdManagement.jsx";
+import AdminCategories from "./components/admin/pages/Categories.jsx";
+import AdminInventory from "./components/admin/pages/Inventory.jsx";
+import AdminReviewsRatings from "./components/admin/pages/ReviewsRatings.jsx";
+import AdminPromotions from "./components/admin/pages/PromotionsDiscounts.jsx";
+import AdminPayments from "./components/admin/pages/Payments.jsx";
+import AdminShipping from "./components/admin/pages/Shipping.jsx";
+import AdminSupport from "./components/admin/pages/Support.jsx";
+import AdminSettings from "./components/admin/pages/Settings.jsx";
+import AdminNotifications from "./components/admin/pages/Notifications.jsx";
+import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
+import AdminBanners from "./components/admin/pages/BannerSlider.jsx";
 
 // Shared Components
 import NotFound from "./components/shared/error/NotFound.jsx";
@@ -78,13 +89,17 @@ createRoot(document.getElementById("root")).render(
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
+          <Route path="/verify-mobile" element={<SellerMobileVerify />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+
+
           {/* Admin Routes - WITHOUT AuthProvider */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
             path="/admin/dashboard"
             element={
               // <AdminProtectedRoute>
-                <AdminDashboard />
+              <AdminDashboard />
               // </AdminProtectedRoute>
             }
           />
@@ -92,7 +107,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/customers"
             element={
               // <AdminProtectedRoute>
-                <AdminCustomers />
+              <AdminCustomers />
               // </AdminProtectedRoute>
             }
           />
@@ -100,7 +115,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/sellers"
             element={
               // <AdminProtectedRoute>
-                <AdminSellers />
+              <AdminSellers />
               // </AdminProtectedRoute>
             }
           />
@@ -108,7 +123,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/products"
             element={
               // <AdminProtectedRoute>
-                <AdminProducts />
+              <AdminProducts />
               // </AdminProtectedRoute>
             }
           />
@@ -116,7 +131,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/orders"
             element={
               // <AdminProtectedRoute>
-                <AdminOrders />
+              <AdminOrders />
               // </AdminProtectedRoute>
             }
           />
@@ -124,7 +139,103 @@ createRoot(document.getElementById("root")).render(
             path="/admin/analytics"
             element={
               // <AdminProtectedRoute>
-                <AdminAnalytics />
+              <AdminAnalytics />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/advertisements"
+            element={
+              // <AdminProtectedRoute>
+                <AdManagement />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/categories"
+            element={
+              // <AdminProtectedRoute>
+                <AdminCategories />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/inventory"
+            element={
+              // <AdminProtectedRoute>
+                <AdminInventory />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/reviews"
+            element={
+              // <AdminProtectedRoute>
+                <AdminReviewsRatings />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/promotions"
+            element={
+              // <AdminProtectedRoute>
+                <AdminPromotions />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/payments"
+            element={
+              // <AdminProtectedRoute>
+                <AdminPayments />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/shipping"
+            element={
+              // <AdminProtectedRoute>
+                <AdminShipping />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/support"
+            element={
+              // <AdminProtectedRoute>
+                <AdminSupport />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/settings"
+            element={
+              // <AdminProtectedRoute>
+                <AdminSettings />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/notifications"
+            element={
+              // <AdminProtectedRoute>
+                <AdminNotifications />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/returns"
+            element={
+              // <AdminProtectedRoute>
+                <AdminReturns />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/banners"
+            element={
+              // <AdminProtectedRoute>
+                <AdminBanners />
               // </AdminProtectedRoute>
             }
           />
@@ -154,18 +265,7 @@ createRoot(document.getElementById("root")).render(
                     }
                   />
                   <Route path="/forgot-password" element={<ForgotPassword />} />
-                  <Route path="/reset-password" element={<ResetPassword />} />
 
-                  {/* Seller Routes */}
-                  <Route path="/seller-login" element={<SellerLogin />} />
-                  <Route
-                    path="/seller/verify-mobile"
-                    element={<SellerMobileVerify />}
-                  />
-                  <Route
-                    path="/seller/register"
-                    element={<SellerRegistration />}
-                  />
                   <Route
                     path="/cart"
                     element={
@@ -249,7 +349,7 @@ createRoot(document.getElementById("root")).render(
                   <Route
                     path="/chat/:sellerId/:productId"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute requiredRole="customer">
                         <ChatView />
                       </ProtectedRoute>
                     }
@@ -257,7 +357,7 @@ createRoot(document.getElementById("root")).render(
                   <Route
                     path="/messages"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute requiredRole="customer">
                         <PageWrapper>
                           <ChatList />
                         </PageWrapper>
@@ -291,7 +391,7 @@ createRoot(document.getElementById("root")).render(
                   <Route
                     path="/account"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute requiredRole="customer">
                         <PageWrapper>
                           <CustomerAccount />
                         </PageWrapper>
@@ -301,7 +401,7 @@ createRoot(document.getElementById("root")).render(
                   <Route
                     path="/checkout"
                     element={
-                      <ProtectedRoute>
+                      <ProtectedRoute requiredRole="customer">
                         <PageWrapper>
                           <Checkout />
                         </PageWrapper>
@@ -318,18 +418,62 @@ createRoot(document.getElementById("root")).render(
                   />
 
                   {/* Seller Routes */}
-                  <Route path="/seller/login" element={<SellerLogin />} />
-                  <Route path="/seller/dashboard" element={<Dashboard />} />
-                  <Route path="/seller/products" element={<SellerProducts />} />
+                  <Route
+                    path="/seller/login"
+                    element={
+                      <AuthRoute>
+                        <SellerLogin />
+                      </AuthRoute>
+                    }
+                  />
+                  <Route
+                    path="/seller/register"
+                    element={
+                      <AuthRoute>
+                        <SellerRegistration />
+                      </AuthRoute>
+                    }
+                  />
+                  <Route
+                    path="/seller/dashboard"
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <Dashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/seller/products"
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerProducts />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/seller/products/add"
-                    element={<SellerAddProduct />}
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerAddProduct />
+                      </ProtectedRoute>
+                    }
                   />
                   <Route
                     path="/seller/products/edit/:id"
-                    element={<SellerEditProduct />}
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerEditProduct />
+                      </ProtectedRoute>
+                    }
                   />
-                  <Route path="/seller/orders" element={<SellerOrders />} />
+                  <Route
+                    path="/seller/orders"
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerOrders />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/seller/customers"
                     element={<SellerCustomers />}
@@ -339,9 +483,30 @@ createRoot(document.getElementById("root")).render(
                     path="/seller/analytics"
                     element={<SellerAnalytics />}
                   />
-                  <Route path="/seller/messages" element={<SellerMessages />} />
-                  <Route path="/seller/settings" element={<SellerSettings />} />
-                  <Route path="/seller/help" element={<SellerHelp />} />
+                  <Route
+                    path="/seller/messages"
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerMessages />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/seller/settings"
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerSettings />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/seller/help"
+                    element={
+                      <ProtectedRoute requiredRole="seller">
+                        <SellerHelp />
+                      </ProtectedRoute>
+                    }
+                  />
 
                   {/* Error Routes */}
                   <Route path="/error/server" element={<ServerError />} />

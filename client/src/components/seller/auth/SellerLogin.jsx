@@ -7,47 +7,52 @@ import {
   Phone,
   Lock,
   ArrowLeft,
-  Loader2,
 } from "lucide-react";
-import api from "../../../api/axios";
+import { useAuth } from "../../../context/AuthContext";
 
 function SellerLogin() {
   const [emailOrMobile, setEmailOrMobile] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { loginSeller } = useAuth();
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    e.stopPropagation();
+    
+    if (isSubmitting) return;
+    
+    setIsSubmitting(true);
     setError("");
 
     try {
-      const res = await api.post("/auth/seller-login", {
-        emailOrMobile,
-        password,
-      });
+      const res = await loginSeller(emailOrMobile, password);
 
-      if (res.data.success) {
-        localStorage.setItem("token", res.data.token);
-        localStorage.setItem("user", JSON.stringify(res.data.user));
+      if (res.success) {
         navigate("/seller/dashboard");
-        // navigate("/seller/account");
+      } else {
+        // Handle specific error messages
+        if (res.error === "mnv") {
+          navigate("/seller/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
+          return;
+        }
+        
+        // Handle unauthorized role error
+        if (res.error?.includes("not registered as a seller")) {
+          setError("This email is not registered as a seller account. Please use customer login or register as a seller.");
+          return;
+        }
+
+        setError(res.error || "Login failed. Please check your credentials.");
       }
     } catch (err) {
-      const msg = err.response?.data?.message;
-
-      if (msg === "mnv") {
-        navigate("/seller/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
-        return;
-      }
-
-      setError(msg || "Login failed. Please check your credentials.");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
-      setLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -169,17 +174,10 @@ function SellerLogin() {
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-primary text-white py-3 px-4 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-primary text-white py-3 px-4 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Signing In...</span>
-                </>
-              ) : (
-                <span>Sign In</span>
-              )}
+              Sign In
             </button>
           </form>
 

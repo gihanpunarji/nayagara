@@ -4,7 +4,12 @@
       "Bash(git cherry-pick:*)",
       "Bash(find:*)",
       "Bash(npm run build:*)",
+<<<<<<< HEAD
+      "Bash(npm run dev:*)",
+      "Bash(pkill:*)"
+=======
       "Bash(npm run dev:*)"
+>>>>>>> 8ffe91f58c3c35ca3512b3970c1621ff31f0f8ca
     ],
     "deny": [],
     "ask": []

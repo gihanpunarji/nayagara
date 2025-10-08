@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const clearAuth = useCallback(() => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    localStorage.removeItem('user_role');
+    localStorage.removeItem('userRole');
     delete api.defaults.headers.common['Authorization'];
     setUser(null);
     setUserRole(null);
@@ -31,17 +31,18 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       const userData = localStorage.getItem('user');
-      const role = localStorage.getItem('user_role');
+      const storedRole = localStorage.getItem('userRole');
 
-      if (token && userData && role) {
+      if (token && userData) {
         // Verify token is still valid by making a test API call
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         try {
           // For now, assume token is valid if it exists in localStorage
           // In production, you should verify with backend
-          setUser(JSON.parse(userData));
-          setUserRole(role);
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+          setUserRole(storedRole || parsedUser.user_role || 'customer');
         } catch (error) {
           // Token is invalid, clear auth
           clearAuth();
@@ -60,7 +61,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const handleStorageChange = (e) => {
       // Only handle changes from other tabs/windows (the storage event doesn't fire for same-tab changes)
-      if (e.key === 'token' || e.key === 'user' || e.key === 'user_role') {
+      if (e.key === 'token' || e.key === 'user' || e.key === 'userRole') {
         if (!e.newValue) {
           // Item was deleted - logout user
           setUser(null);
@@ -93,63 +94,127 @@ export const AuthProvider = ({ children }) => {
 
   // Customer login
   const loginCustomer = useCallback(async (emailOrMobile, password) => {
-    setLoading(true);
     try {
       const response = await api.post('/auth/login', { emailOrMobile, password });
-      const { user: userData, token } = response.data;
+      
+      // Check if response indicates success
+      if (response.data && response.data.success) {
+        const { user: userData, token } = response.data;
 
-      // Store auth data
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('user_role', 'customer');
+        // Store auth data
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(userData));
+        localStorage.setItem('userRole', 'customer');
 
-      // Set API header
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Set API header
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Update state
-      setUser(userData);
-      setUserRole('customer');
+        // Update state
+        setUser(userData);
+        setUserRole('customer');
 
-      return { success: true, user: userData };
+        return { success: true, user: userData };
+      } else {
+        return {
+          success: false,
+          error: response.data?.message || 'Login failed'
+        };
+      }
     } catch (error) {
+      console.error('Customer login error:', error);
       return {
         success: false,
-        error: error.response?.data?.message || 'Login failed'
+        error: error.response?.data?.message || error.message || 'Login failed'
       };
-    } finally {
-      setLoading(false);
     }
   }, []);
 
   // Customer register
   const registerCustomer = useCallback(async (userData) => {
-    setLoading(true);
     try {
       const response = await api.post('/auth/register', userData);
-      const { user: newUser, token } = response.data;
+      
+      if (response.data && response.data.success) {
+        const { user: newUser, token } = response.data;
 
-      // Store auth data
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(newUser));
-      localStorage.setItem('user_role', 'customer');
+        // Store auth data
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(newUser));
+        localStorage.setItem('userRole', 'customer');
 
-      // Set API header
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+        // Set API header
+        api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
-      // Update state
-      setUser(newUser);
-      setUserRole('customer');
+        // Update state
+        setUser(newUser);
+        setUserRole('customer');
 
-      return { success: true, user: newUser };
+        return { success: true, user: newUser };
+      } else {
+        return {
+          success: false,
+          error: response.data?.message || 'Registration failed'
+        };
+      }
     } catch (error) {
       return {
         success: false,
-        error: error.response?.data?.message || 'Registration failed'
+        error: error.response?.data?.message || error.message || 'Registration failed'
       };
-    } finally {
-      setLoading(false);
     }
   }, []);
+
+  const loginSeller = useCallback(async (emailOrMobile, password) => {
+  try {
+    const response = await api.post('/auth/seller-login', { emailOrMobile, password });
+    const { user: userData, token } = response.data;
+
+    // Save to localStorage
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    localStorage.setItem('userRole', 'seller');
+
+    // Set auth header
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    // Update state
+    setUser(userData);
+    setUserRole('seller');
+
+    return { success: true, user: userData };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Seller login failed',
+    };
+  }
+}, []);
+
+const registerSeller = useCallback(async (userData) => {
+  setLoading(true);
+  try {
+    const response = await api.post('/auth/seller-register', userData);
+    const { user: newUser, token } = response.data;
+
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(newUser));
+    localStorage.setItem('userRole', 'seller');
+
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
+    setUser(newUser);
+    setUserRole('seller');
+
+    return { success: true, user: newUser };
+  } catch (error) {
+    return {
+      success: false,
+      error: error.response?.data?.message || 'Seller registration failed',
+    };
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
   // Logout
   const logout = useCallback(() => {
@@ -165,13 +230,16 @@ export const AuthProvider = ({ children }) => {
     // Authentication status
     isAuthenticated: !!user,
     isCustomer: userRole === 'customer',
+    isSeller: userRole === 'seller',
 
     // Actions
     loginCustomer,
     registerCustomer,
+    registerSeller,
+    loginSeller,
     logout,
     checkAuth
-  }), [user, userRole, loading, loginCustomer, registerCustomer, logout]);
+  }), [user, userRole, loading, loginCustomer, registerCustomer, logout, loginSeller, registerSeller]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

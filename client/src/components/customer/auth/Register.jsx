@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, Loader2, User, Check, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, User, Check, MapPin } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 
 
@@ -23,11 +23,10 @@ function CustomerRegistration() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [availableDistricts, setAvailableDistricts] = useState([]);
-  const [availableCities, setAvailableCities] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const navigate = useNavigate();
-  const { registerCustomer, loading } = useAuth();
+  const { registerCustomer } = useAuth();
 
   const handleChange = (e) => {
     setFormData({
@@ -49,14 +48,6 @@ function CustomerRegistration() {
       setError("Please enter a valid mobile number");
       return false;
     }
-    if (!formData.province || !formData.district || !formData.city) {
-      setError("Please select your province, district, and city");
-      return false;
-    }
-    if (!formData.address) {
-      setError("Please enter your address");
-      return false;
-    }
     if (!formData.password || formData.password.length < 6) {
       setError("Password must be at least 6 characters long");
       return false;
@@ -74,25 +65,34 @@ function CustomerRegistration() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    e.stopPropagation();
 
+    if (isSubmitting) return;
     if (!validateForm()) return;
 
+    setIsSubmitting(true);
     setError("");
 
-    const result = await registerCustomer({
-      mobile: formData.mobile,
-      email: formData.email,
-      password: formData.password,
-      confirmPassword: formData.confirmPassword,
-      firstName: formData.firstName,
-      lastName: formData.lastName,
-      refCode: formData.refCode
-    });
+    try {
+      const result = await registerCustomer({
+        mobile: formData.mobile,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        refCode: formData.refCode
+      });
 
-    if (result.success) {
-      navigate("/");
-    } else {
-      setError(result.error);
+      if (result && result.success) {
+        navigate("/");
+      } else {
+        setError(result?.error || "Registration failed. Please try again.");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -289,7 +289,6 @@ function CustomerRegistration() {
                   value={formData.refCode}
                   onChange={handleChange}
                   placeholder="Enter your referral code here (optional)"
-                  required
                   className="w-full pl-9 pr-3 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors text-sm"
                 />
               </div>
@@ -320,24 +319,17 @@ function CustomerRegistration() {
             </div>
 
             {error && (
-              <div className="bg-error bg-opacity-10 border border-error text-error px-4 py-3 rounded-lg text-sm">
+              <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
               </div>
             )}
 
             <button
               type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-primary text-white py-3 px-4 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+              disabled={isSubmitting}
+              className="w-full bg-gradient-primary text-white py-3 px-4 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Creating Account...</span>
-                </>
-              ) : (
-                <span>Create Account</span>
-              )}
+              Create Account
             </button>
           </form>
 

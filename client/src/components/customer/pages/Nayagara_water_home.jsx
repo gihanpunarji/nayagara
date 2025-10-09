@@ -926,7 +926,7 @@ const VisionMissionSection = memo(function VisionMissionSection() {
                 <p className="text-green-100 text-sm sm:text-base lg:text-lg leading-relaxed">
                   "Our mission is to empower every Sri Lankan to shop with confidence by building the country's most trusted and customer-centric e-commerce platform. To become the online goods and services provider of choice."
                   <br /><br />
-                  "අපගේ මෙහෙවර වන්නේ රටේ වඩාත්ම විශ්වාසදායක සහ පාරිභෝගික කේන්ද්‍රීය විද්‍යුත් වාණිජ්‍ය වේදිකාව ගොඩනැගීම මගින් සෑම ශ්‍රී ලාංකිකයෙකුටම විශ්වාසයෙන් යුතුව සාප්පු සවාරි යාමට බලගැන්වීම අපගේ මෙහෙවරයි. ඔබ කැමතිම මාර්ගගත භාණ්ඩ හා සේවා සපයන්නා බවට පත්වීම."
+                  "අපගේ මෙහෙවර වන්නේ රටේ වඩාත්ම විශ්වාසදායක සහ පාරිභෝගික කේන්ද්‍රීය විද්‍යුත් වාණිජ්‍ය වේදිකාව ගොඩනැගීම මගින් සෑම ශ්‍රී ලාංකිකයෙකුටම විශ්වාසයෙන් යුතුව සාප්පු සවාරි යාමට බලගැන්වීම හා ඔබ කැමතිම මාර්ගගත භාණ්ඩ හා සේවා සපයන්නා බවට පත්වීම."
                 </p>
               </div>
 
@@ -1070,10 +1070,7 @@ const FounderSection = memo(function FounderSection() {
                 </div>
 
                 {/* Cute Badge */}
-                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-100 to-green-100 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full border border-emerald-200">
-                  <span className="text-base sm:text-lg">👨‍💼</span>
-                  <span className="text-emerald-700 font-semibold text-xs sm:text-sm">Founder & CEO</span>
-                </div>
+                
               </div>
 
               {/* Name & Title */}
@@ -1365,7 +1362,7 @@ const ContactSection = memo(function ContactSection() {
 
             {/* Quick Actions */}
             <div className="grid grid-cols-2 gap-3">
-              <a href="tel:+94776613003" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-3 rounded-xl text-center block hover:from-emerald-600 hover:to-green-700 transition-colors">
+              <a href="tel:+94717750039" className="bg-gradient-to-r from-emerald-500 to-green-600 text-white p-3 rounded-xl text-center block hover:from-emerald-600 hover:to-green-700 transition-colors">
                 <div className="text-xl mb-1">📞</div>
                 <div className="font-bold text-sm">Call Now</div>
               </a>

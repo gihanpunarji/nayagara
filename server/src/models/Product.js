@@ -6,6 +6,7 @@ class Product {
     productSlug, 
     productDescription, 
     categoryId, 
+    subcategoryId = null,
     sellerId, 
     price, 
     currencyCode = 'LKR', 
@@ -21,21 +22,46 @@ class Product {
     expiresAt 
   }) {
     const connection = getConnection();
-    const [result] = await connection.execute(
-      `INSERT INTO products (
-        product_title, product_slug, product_description, category_id, seller_id, 
-        price, currency_code, weight_kg, stock_quantity, product_status, 
-        is_featured, is_promoted, location_city_id, meta_title, meta_description, 
-        product_attributes, created_at, updated_at, expires_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        productTitle, productSlug, productDescription, categoryId, sellerId,
-        price, currencyCode, weightKg, stockQuantity, productStatus,
-        isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-        productAttributes, new Date(), new Date(), expiresAt
-      ]
-    );
-    return result;
+    
+    // Check if subcategory_id column exists, if not, create product without it
+    try {
+      const [result] = await connection.execute(
+        `INSERT INTO products (
+          product_title, product_slug, product_description, category_id, subcategory_id, seller_id, 
+          price, currency_code, weight_kg, stock_quantity, product_status, 
+          is_featured, is_promoted, location_city_id, meta_title, meta_description, 
+          product_attributes, created_at, updated_at, expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          productTitle, productSlug, productDescription, categoryId, subcategoryId, sellerId,
+          price, currencyCode, weightKg, stockQuantity, productStatus,
+          isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+          productAttributes, new Date(), new Date(), expiresAt
+        ]
+      );
+      return result;
+    } catch (error) {
+      // If subcategory_id column doesn't exist, fall back to original schema
+      if (error.code === 'ER_BAD_FIELD_ERROR') {
+        console.log('Subcategory field not found, using original schema...');
+        const [result] = await connection.execute(
+          `INSERT INTO products (
+            product_title, product_slug, product_description, category_id, seller_id, 
+            price, currency_code, weight_kg, stock_quantity, product_status, 
+            is_featured, is_promoted, location_city_id, meta_title, meta_description, 
+            product_attributes, created_at, updated_at, expires_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            productTitle, productSlug, productDescription, categoryId, sellerId,
+            price, currencyCode, weightKg, stockQuantity, productStatus,
+            isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+            productAttributes, new Date(), new Date(), expiresAt
+          ]
+        );
+        return result;
+      }
+      throw error;
+    }
   }
 
   static async findById(productId) {

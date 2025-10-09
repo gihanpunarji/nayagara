@@ -323,15 +323,24 @@ const ProductView = () => {
               {/* Product Specifications */}
               {processedProduct.categoryAttributes && processedProduct.categoryAttributes.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Specifications</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Product Details</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {processedProduct.categoryAttributes.map((attr, index) => (
-                      <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700">{attr.field_label}</span>
-                        <span className="text-sm text-gray-900 font-semibold">{attr.display_value}</span>
-                      </div>
-                    ))}
+                    {processedProduct.categoryAttributes
+                      .filter(attr => attr.display_value && attr.display_value.trim() !== '' && attr.display_value !== 'null' && attr.display_value !== 'undefined')
+                      .map((attr, index) => (
+                        <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm font-medium text-gray-700">{attr.field_label}</span>
+                          <span className="text-sm text-gray-900 font-semibold">{attr.display_value}</span>
+                        </div>
+                      ))}
                   </div>
+                  {processedProduct.categoryAttributes.filter(attr => attr.display_value && attr.display_value.trim() !== '' && attr.display_value !== 'null' && attr.display_value !== 'undefined').length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      <div className="text-4xl mb-2">📋</div>
+                      <p className="text-sm">No additional specifications available.</p>
+                      <p className="text-xs mt-1">Check the product description for more details.</p>
+                    </div>
+                  )}
                 </div>
               )}
 

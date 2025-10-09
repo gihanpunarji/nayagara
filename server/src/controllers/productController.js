@@ -60,7 +60,8 @@ const createProduct = async (req, res) => {
       productTitle: title,
       productSlug: productSlug,
       productDescription: description,
-      categoryId: subcategory, // Using subcategory as the category_id
+      categoryId: category, // Using main category as the category_id
+      subcategoryId: subcategory, // Store subcategory separately
       sellerId: sellerId,
       price: parseFloat(price),
       currencyCode: 'LKR',
@@ -447,6 +448,7 @@ const getPublicProducts = async (req, res) => {
       limit = 12,
       search,
       category,
+      subcategory,
       sort = 'newest',
       featured = false
     } = req.query;
@@ -463,6 +465,7 @@ const getPublicProducts = async (req, res) => {
       SELECT p.*, 
              c.category_name,
              c.category_slug,
+             sc.sub_category_name,
              u.first_name as seller_first_name,
              u.last_name as seller_last_name,
              c2.city_name as location_city_name,
@@ -470,6 +473,7 @@ const getPublicProducts = async (req, res) => {
              GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
       LEFT JOIN users u ON p.seller_id = u.user_id
       LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
       LEFT JOIN districts d ON c2.district_id = d.district_id
@@ -488,9 +492,15 @@ const getPublicProducts = async (req, res) => {
     }
 
     // Add category filter
-    if (category && category.trim()) {
-      query += ` AND c.category_name = ?`;
-      queryParams.push(category.trim());
+    if (category && category.trim() && category !== 'all') {
+      query += ` AND (c.category_slug = ? OR c.category_name = ?)`;
+      queryParams.push(category.trim(), category.trim());
+    }
+
+    // Add subcategory filter
+    if (subcategory && subcategory.trim()) {
+      query += ` AND sc.sub_category_id = ?`;
+      queryParams.push(parseInt(subcategory.trim()));
     }
 
     // Add featured filter

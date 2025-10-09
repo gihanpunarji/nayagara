@@ -595,17 +595,19 @@ const getPublicProductById = async (req, res) => {
         p.*,
         c.category_name,
         c.category_slug,
+        sc.sub_category_name,
         u.first_name as seller_first_name,
         u.last_name as seller_last_name,
-        u.profile_picture as seller_avatar,
-        u.phone_number as seller_phone,
-        u.email as seller_email,
-        loc.city_name as location_city_name,
-        loc.district_name as location_district_name,
+        u.profile_image as seller_avatar,
+        u.user_mobile as seller_phone,
+        u.user_email as seller_email,
+        c2.city_name as location_city_name,
+        d.district_name as location_district_name,
         GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
       FROM 
         products p
-        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
+        LEFT JOIN categories c ON sc.categories_category_id = c.category_id
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
@@ -627,10 +629,61 @@ const getPublicProductById = async (req, res) => {
     
     const product = results[0];
     
+    // Get category fields for this product's subcategory to provide field metadata
+    let categoryFields = [];
+    if (product.category_id) {
+      const fieldsQuery = `
+        SELECT field_name, field_label, field_type, field_options 
+        FROM category_fields 
+        WHERE sub_categories_sub_category_id = ?
+        ORDER BY field_id
+      `;
+      const [fieldsResults] = await connection.execute(fieldsQuery, [product.category_id]);
+      categoryFields = fieldsResults;
+    }
+    
     // Process images
     const images = product.images 
       ? product.images.split(',').map(url => ({ image_url: url.trim() }))
       : [];
+    
+    // Parse and enhance product attributes with field metadata
+    let productAttributes = {};
+    try {
+      productAttributes = product.product_attributes ? JSON.parse(product.product_attributes) : {};
+    } catch (error) {
+      console.error('Error parsing product attributes:', error);
+      productAttributes = {};
+    }
+    
+    // Enhance attributes with field metadata
+    const enhancedAttributes = categoryFields.map(field => {
+      const value = productAttributes[field.field_name] || '';
+      let displayValue = value;
+      
+      // Format display value based on field type
+      if (field.field_type === 'select' && field.field_options) {
+        try {
+          const options = JSON.parse(field.field_options);
+          displayValue = options.includes(value) ? value : value;
+        } catch (e) {
+          displayValue = value;
+        }
+      } else if (field.field_type === 'boolean') {
+        displayValue = value === '1' || value === 'true' || value === true ? 'Yes' : 'No';
+      } else if (field.field_type === 'number' && value) {
+        displayValue = parseFloat(value).toLocaleString();
+      }
+      
+      return {
+        field_name: field.field_name,
+        field_label: field.field_label,
+        field_type: field.field_type,
+        value: value,
+        display_value: displayValue,
+        has_value: value !== '' && value !== null && value !== undefined
+      };
+    }).filter(attr => attr.has_value); // Only include attributes that have values
     
     // Format the response
     const formattedProduct = {
@@ -639,7 +692,9 @@ const getPublicProductById = async (req, res) => {
       seller_name: `${product.seller_first_name} ${product.seller_last_name}`,
       price: parseFloat(product.price) || 0,
       created_at: product.created_at,
-      updated_at: product.updated_at
+      updated_at: product.updated_at,
+      category_attributes: enhancedAttributes,
+      raw_product_attributes: productAttributes // Keep raw attributes for backwards compatibility
     };
     
     // Remove individual seller name fields

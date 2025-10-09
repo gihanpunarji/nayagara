@@ -141,6 +141,11 @@ const ShopPage = () => {
         // If images is an array
         displayImage = product.images[0].image_url || product.images[0];
       }
+      
+      // If the URL starts with /, prepend the backend base URL
+      if (displayImage.startsWith('/')) {
+        displayImage = `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${displayImage}`;
+      }
     }
 
     return (

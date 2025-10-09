@@ -83,15 +83,22 @@ const ProductView = () => {
     discount: 0, // No discount calculation without original price
     rating: 4.5, // Default rating - you can implement actual ratings later
     reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
-    images: product.images && product.images.trim() 
-      ? product.images.split(',').map(url => url.trim()) 
+    images: Array.isArray(product.images) && product.images.length > 0
+      ? product.images.map(img => {
+          const imageUrl = img.image_url || img;
+          // If the URL starts with /, prepend the backend base URL
+          return imageUrl.startsWith('/') 
+            ? `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imageUrl}`
+            : imageUrl;
+        }).filter(Boolean)
       : ['https://via.placeholder.com/800x600?text=No+Image'],
     category: product.category_name || 'Unknown',
-    subCategory: 'General', // No subcategory in current schema
+    subCategory: product.sub_category_name || 'General',
     brand: product.product_attributes?.brand || 'Unknown',
     condition: 'New', // Default condition
     warranty: product.product_attributes?.warranty ? `${product.product_attributes.warranty} months` : 'No warranty specified',
     location: product.location_city_name || 'Location not specified',
+    categoryAttributes: product.category_attributes || [], // Dynamic fields from backend
     seller: {
       name: product.seller_name || 'Unknown Seller',
       rating: 4.5, // Default seller rating
@@ -221,11 +228,11 @@ const ProductView = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Image Gallery */}
             <div className="space-y-4">
-              <div className="relative bg-gray-50 rounded-xl overflow-hidden aspect-square">
+              <div className="relative bg-gray-50 rounded-xl overflow-hidden h-80 sm:h-96 lg:h-80 xl:h-96">
                 <img
                   src={processedProduct.images[currentImageIndex]}
                   alt={processedProduct.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
 
                 {/* Navigation Arrows */}
@@ -311,15 +318,17 @@ const ProductView = () => {
                 )}
               </div>
 
-              {/* Key Features */}
-              {processedProduct.features.length > 0 && (
+              
+
+              {/* Product Specifications */}
+              {processedProduct.categoryAttributes && processedProduct.categoryAttributes.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Key Features</h3>
-                  <div className="grid grid-cols-1 gap-2">
-                    {processedProduct.features.map((feature, index) => (
-                      <div key={index} className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-primary-600 rounded-full flex-shrink-0"></div>
-                        <span className="text-sm text-gray-700">{feature}</span>
+                  <h3 className="font-semibold text-gray-900 mb-3">Specifications</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {processedProduct.categoryAttributes.map((attr, index) => (
+                      <div key={index} className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg">
+                        <span className="text-sm font-medium text-gray-700">{attr.field_label}</span>
+                        <span className="text-sm text-gray-900 font-semibold">{attr.display_value}</span>
                       </div>
                     ))}
                   </div>

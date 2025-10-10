@@ -135,9 +135,44 @@ const getCategoryStructure = async (req, res) => {
   }
 };
 
+// Get categories with subcategories (simplified for frontend display)
+const getCategoriesWithSubcategories = async (req, res) => {
+  try {
+    const categories = await Category.getAllCategories();
+    
+    const categoriesWithSubcategories = await Promise.all(
+      categories.map(async (category) => {
+        const subCategories = await SubCategory.findByCategoryId(category.category_id);
+        
+        return {
+          ...category,
+          subcategories: subCategories.map(sub => ({
+            sub_category_id: sub.sub_category_id,
+            sub_category_name: sub.sub_category_name,
+            categories_category_id: sub.categories_category_id
+          }))
+        };
+      })
+    );
+    
+    res.json({
+      success: true,
+      message: "Categories with subcategories fetched successfully",
+      data: categoriesWithSubcategories
+    });
+  } catch (error) {
+    console.error("Get categories with subcategories error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 module.exports = { 
   getAllCategories, 
   getSubCategories, 
   getCategoryFields, 
-  getCategoryStructure 
+  getCategoryStructure,
+  getCategoriesWithSubcategories 
 };

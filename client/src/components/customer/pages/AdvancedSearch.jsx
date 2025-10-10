@@ -4,9 +4,11 @@ import {
   Car, Home, Smartphone, Package, X, ChevronDown, ChevronUp,
   Sliders, Grid, List, SlidersHorizontal
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { publicApi } from '../../../api/axios';
 
 const AdvancedSearch = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [location, setLocation] = useState('all');
@@ -14,6 +16,8 @@ const AdvancedSearch = () => {
   const [showFilters, setShowFilters] = useState(true);
   const [dynamicFilters, setDynamicFilters] = useState({});
   const [viewMode, setViewMode] = useState('grid');
+  const [categories, setCategories] = useState([]);
+  const [districts, setDistricts] = useState([]);
 
   // Category-specific filter configurations
   const categoryFilters = {
@@ -151,13 +155,32 @@ const AdvancedSearch = () => {
     }
   };
 
-  // Sri Lankan districts
-  const districts = [
-    'All Districts', 'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
-    'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Vavuniya', 'Mullaitivu', 'Batticaloa',
-    'Ampara', 'Trincomalee', 'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa',
-    'Badulla', 'Moneragala', 'Ratnapura', 'Kegalle'
-  ];
+  // Fetch categories and districts on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch categories
+        const categoriesRes = await publicApi.get('/categories-with-subcategories');
+        setCategories(categoriesRes.data.data || []);
+
+        // Fetch districts
+        const districtsRes = await publicApi.get('/address/fetchData');
+        const districtNames = districtsRes.data.data.map(district => district.district_name);
+        setDistricts(['All Districts', ...districtNames]);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        // Fallback districts
+        setDistricts([
+          'All Districts', 'Colombo', 'Gampaha', 'Kalutara', 'Kandy', 'Matale', 'Nuwara Eliya',
+          'Galle', 'Matara', 'Hambantota', 'Jaffna', 'Vavuniya', 'Mullaitivu', 'Batticaloa',
+          'Ampara', 'Trincomalee', 'Kurunegala', 'Puttalam', 'Anuradhapura', 'Polonnaruwa',
+          'Badulla', 'Moneragala', 'Ratnapura', 'Kegalle'
+        ]);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const FilterComponent = ({ filterId, filterConfig, value, onChange }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -295,6 +318,43 @@ const AdvancedSearch = () => {
     return categoryFilters[selectedCategory] || null;
   };
 
+  const handleSearch = () => {
+    const params = new URLSearchParams();
+    
+    if (searchQuery.trim()) {
+      params.append('search', searchQuery.trim());
+    }
+    
+    if (selectedCategory && selectedCategory !== 'all') {
+      params.append('category', selectedCategory);
+    }
+    
+    if (location && location !== 'all') {
+      params.append('district', location);
+    }
+    
+    if (priceRange.min) {
+      params.append('priceMin', priceRange.min);
+    }
+    
+    if (priceRange.max) {
+      params.append('priceMax', priceRange.max);
+    }
+    
+    // Add dynamic filters
+    Object.keys(dynamicFilters).forEach(key => {
+      if (dynamicFilters[key]) {
+        if (Array.isArray(dynamicFilters[key]) && dynamicFilters[key].length > 0) {
+          params.append(key, dynamicFilters[key].join(','));
+        } else if (dynamicFilters[key] !== '' && dynamicFilters[key] !== 'All' && dynamicFilters[key] !== 'Any') {
+          params.append(key, dynamicFilters[key]);
+        }
+      }
+    });
+    
+    navigate(`/shop?${params.toString()}`);
+  };
+
   return (
     <div className="min-h-screen bg-primary-50">
       {/* Header */}
@@ -310,16 +370,17 @@ const AdvancedSearch = () => {
                 placeholder="Search products, services, jobs..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
                 className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-2 border-gray-300 rounded-lg sm:rounded-xl focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-base sm:text-lg"
               />
             </div>
-            <Link
-              to={`/shop?q=${encodeURIComponent(searchQuery)}&category=${selectedCategory}&location=${location}&filters=${encodeURIComponent(JSON.stringify(dynamicFilters))}`}
+            <button
+              onClick={handleSearch}
               className="px-6 sm:px-8 py-2.5 sm:py-3 bg-gradient-primary text-white rounded-lg sm:rounded-xl hover:shadow-green transition-all duration-300 flex items-center justify-center space-x-2 font-bold text-sm sm:text-base"
             >
               <Search className="w-4 h-4 sm:w-5 sm:h-5" />
               <span>Search</span>
-            </Link>
+            </button>
           </div>
         </div>
       </div>
@@ -364,10 +425,11 @@ const AdvancedSearch = () => {
                 <div className="grid grid-cols-1 gap-2">
                   {[
                     { id: 'all', name: 'All Categories', icon: <Package className="w-4 h-4" /> },
-                    { id: 'vehicles', name: 'Vehicles', icon: <Car className="w-4 h-4" /> },
-                    { id: 'electronics', name: 'Electronics', icon: <Smartphone className="w-4 h-4" /> },
-                    { id: 'property', name: 'Property', icon: <Home className="w-4 h-4" /> },
-                    { id: 'jobs', name: 'Jobs', icon: <Package className="w-4 h-4" /> }
+                    ...categories.map(cat => ({
+                      id: cat.slug || cat.name.toLowerCase(),
+                      name: cat.name,
+                      icon: cat.icon || <Package className="w-4 h-4" />
+                    }))
                   ].map(category => (
                     <button
                       key={category.id}

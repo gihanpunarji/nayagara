@@ -1,16 +1,57 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Menu,
   X,
-  LogOut
+  LogOut,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
+import api from '../../../api/axios';
 
-const SellerHeader = ({ onMenuToggle, showMobileMenu, sellerName = "Supun" }) => {
+const SellerHeader = ({ onMenuToggle, showMobileMenu }) => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [sellerInfo, setSellerInfo] = useState({
+    name: 'Loading...',
+    firstName: '',
+    profileImage: null
+  });
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { logout } = useAuth();
+
+  // Fetch seller info from existing profile endpoint
+  const fetchSellerInfo = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/seller/profile');
+      
+      if (response.data.success) {
+        const userData = response.data.user;
+        setSellerInfo({
+          name: `${userData.first_name || ''} ${userData.last_name || ''}`.trim(),
+          firstName: userData.first_name || 'Seller',
+          lastName: userData.last_name || '',
+          email: userData.email,
+          profileImage: userData.profile_image || null
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching seller info:', error);
+      setSellerInfo({
+        name: 'Seller',
+        firstName: 'Seller',
+        profileImage: null
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load seller info on component mount
+  useEffect(() => {
+    fetchSellerInfo();
+  }, []);
 
   const handleLogout = () => {
     setShowLogoutConfirm(false);
@@ -54,7 +95,9 @@ const SellerHeader = ({ onMenuToggle, showMobileMenu, sellerName = "Supun" }) =>
             {/* Center - Welcome message */}
             <div className="hidden md:block">
               <h2 className="text-lg font-medium text-gray-800">
-                Hello, <span className="text-primary-600 font-semibold">{sellerName}</span>
+                Hello, <span className="text-primary-600 font-semibold">
+                  {loading ? 'Loading...' : sellerInfo.firstName || sellerInfo.name}
+                </span>
               </h2>
             </div>
 
@@ -62,12 +105,36 @@ const SellerHeader = ({ onMenuToggle, showMobileMenu, sellerName = "Supun" }) =>
             <div className="flex items-center space-x-4">
               {/* Seller Name */}
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-semibold">
-                    {sellerName.charAt(0).toUpperCase()}
-                  </span>
+                {/* Profile Image or Avatar */}
+                <div className="w-8 h-8 rounded-full overflow-hidden">
+                  {sellerInfo.profileImage ? (
+                    <img 
+                      src={`http://localhost:5001${sellerInfo.profileImage}`} 
+                      alt={sellerInfo.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to avatar if image fails to load
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
+                    />
+                  ) : null}
+                  <div 
+                    className={`w-8 h-8 bg-gradient-to-r from-primary-600 to-primary-700 rounded-full flex items-center justify-center ${sellerInfo.profileImage ? 'hidden' : 'flex'}`}
+                  >
+                    {loading ? (
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <span className="text-white text-sm font-semibold">
+                        {sellerInfo.firstName ? sellerInfo.firstName.charAt(0).toUpperCase() : 
+                         sellerInfo.name ? sellerInfo.name.charAt(0).toUpperCase() : 'S'}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <span className="font-medium text-gray-900">{sellerName}</span>
+                <span className="font-medium text-gray-900 hidden sm:block">
+                  {loading ? 'Loading...' : sellerInfo.name}
+                </span>
               </div>
 
               {/* Logout Button */}

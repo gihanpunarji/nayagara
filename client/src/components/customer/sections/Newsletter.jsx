@@ -13,7 +13,7 @@ const Newsletter = () => {
 
   return (
     <section className="bg-gradient-hero text-white py-16 mt-12">
-      <div className="mx-auto px-16 text-center">
+      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="flex items-center justify-center space-x-2 mb-6">
           <Bell className="w-8 h-8 text-accent-yellow animate-bounce-gentle" />
           <h2 className="text-4xl font-heading font-bold">Stay Updated</h2>

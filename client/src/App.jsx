@@ -49,7 +49,7 @@ const DesktopHomePage = ({
       />
 
       {/* Main Container */}
-      <div className="mx-auto px-4 sm:px-8 lg:px-16 py-6">
+      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Sidebar Component */}
           <Sidebar mainCategories={mainCategories} />
@@ -105,25 +105,26 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-  const fetchCategories = async () => {
-    try {
-      const res = await api.get("/categories");
-      const mapped = res.data.map((cat) => ({
-        name: cat.name,
-        icon: categoryMeta[cat.slug]?.icon || "❓",
-        subcats: categoryMeta[cat.slug]?.subcats || [],
-        image: categoryMeta[cat.slug]?.image || "https://via.placeholder.com/300",
-      }));
-      console.log(mapped);
-      setMainCategories(mapped);
-    } catch (err) {
-      console.error("Error fetching categories", err);
-    }
-  };
+  // TEMPORARILY DISABLED TO STOP INFINITE RELOAD
+  // useEffect(() => {
+  // const fetchCategories = async () => {
+  //   try {
+  //     const res = await api.get("/categories");
+  //     const mapped = res.data.map((cat) => ({
+  //       name: cat.name,
+  //       icon: categoryMeta[cat.slug]?.icon || "❓",
+  //       subcats: categoryMeta[cat.slug]?.subcats || [],
+  //       image: categoryMeta[cat.slug]?.image || "https://via.placeholder.com/300",
+  //     }));
+  //     console.log(mapped);
+  //     setMainCategories(mapped);
+  //   } catch (err) {
+  //     console.error("Error fetching categories", err);
+  //   }
+  // };
 
-  fetchCategories();
-}, []);
+  // fetchCategories();
+  // }, []);
 
   const [mainCategories, setMainCategories] = useState([]);
 

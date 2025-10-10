@@ -60,7 +60,8 @@ const createProduct = async (req, res) => {
       productTitle: title,
       productSlug: productSlug,
       productDescription: description,
-      categoryId: subcategory, // Using subcategory as the category_id
+      categoryId: category, // Using main category as the category_id
+      subcategoryId: subcategory, // Store subcategory separately
       sellerId: sellerId,
       price: parseFloat(price),
       currencyCode: 'LKR',
@@ -439,14 +440,298 @@ const updateProduct = async (req, res) => {
   }
 };
 
-const filterProducts = async (req, res) => {
+// Get public products for customer views (no authentication required)
+const getPublicProducts = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 12,
+      search,
+      category,
+      subcategory,
+      sort = 'newest',
+      featured = false
+    } = req.query;
+    
+    const offset = (page - 1) * limit;
+    const { getConnection } = require("../config/database");
+    const connection = getConnection();
+    
+    // First check if any products exist at all
+    const [countResult] = await connection.execute("SELECT COUNT(*) as total FROM products");
+    console.log("Total products in database:", countResult[0].total);
 
+    let query = `
+      SELECT p.*, 
+             c.category_name,
+             c.category_slug,
+             sc.sub_category_name,
+             u.first_name as seller_first_name,
+             u.last_name as seller_last_name,
+             c2.city_name as location_city_name,
+             d.district_name as location_district_name,
+             GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
+      LEFT JOIN users u ON p.seller_id = u.user_id
+      LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
+      LEFT JOIN districts d ON c2.district_id = d.district_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id
+    `;
+    const queryParams = [];
+
+    // Only show products (including empty status and active status)
+    query += ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
+
+    // Add search filter
+    if (search && search.trim()) {
+      query += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      queryParams.push(searchTerm, searchTerm);
+    }
+
+    // Add category filter
+    if (category && category.trim() && category !== 'all') {
+      query += ` AND (c.category_slug = ? OR c.category_name = ?)`;
+      queryParams.push(category.trim(), category.trim());
+    }
+
+    // Add subcategory filter
+    if (subcategory && subcategory.trim()) {
+      query += ` AND sc.sub_category_id = ?`;
+      queryParams.push(parseInt(subcategory.trim()));
+    }
+
+    // Add featured filter
+    if (featured === 'true') {
+      query += ` AND p.is_featured = 1`;
+    }
+
+    // Add GROUP BY for the image concatenation
+    query += ` GROUP BY p.product_id`;
+
+    // Add sorting
+    switch (sort) {
+      case 'oldest':
+        query += ` ORDER BY p.created_at ASC`;
+        break;
+      case 'price_high':
+        query += ` ORDER BY p.price DESC`;
+        break;
+      case 'price_low':
+        query += ` ORDER BY p.price ASC`;
+        break;
+      case 'most_viewed':
+        query += ` ORDER BY p.view_count DESC`;
+        break;
+      case 'best_selling':
+        query += ` ORDER BY p.inquiry_count DESC`;
+        break;
+      case 'featured':
+        query += ` ORDER BY p.is_featured DESC, p.created_at DESC`;
+        break;
+      case 'newest':
+      default:
+        query += ` ORDER BY p.created_at DESC`;
+        break;
+    }
+
+    // Add pagination
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(parseInt(limit), offset);
+
+    const [products] = await connection.execute(query, queryParams);
+
+    // Get images for each product
+    const ProductImage = require("../models/ProductImage");
+    const Product = require("../models/Product");
+    
+    const productsWithImages = await Promise.all(
+      products.map(async (product) => {
+        const images = await ProductImage.findByProductId(product.product_id);
+        return {
+          ...product,
+          product_attributes: Product.parseProductAttributes(product.product_attributes),
+          images: images,
+          seller_name: `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      message: "Products fetched successfully",
+      data: productsWithImages,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total: productsWithImages.length
+      }
+    });
+
+  } catch (error) {
+    console.error("Get public products error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+const filterProducts = async (req, res) => {
+  // This can use the same logic as getPublicProducts for now
+  return getPublicProducts(req, res);
 }
+
+// Get public product by ID (no authentication required)
+const getPublicProductById = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required"
+      });
+    }
+
+    const { getConnection } = require("../config/database");
+    const connection = getConnection();
+    
+    // Query to get product with all related data
+    const query = `
+      SELECT 
+        p.*,
+        c.category_name,
+        c.category_slug,
+        sc.sub_category_name,
+        u.first_name as seller_first_name,
+        u.last_name as seller_last_name,
+        u.profile_image as seller_avatar,
+        u.user_mobile as seller_phone,
+        u.user_email as seller_email,
+        c2.city_name as location_city_name,
+        d.district_name as location_district_name,
+        GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+      FROM 
+        products p
+        LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
+        LEFT JOIN categories c ON sc.categories_category_id = c.category_id
+        LEFT JOIN users u ON p.seller_id = u.user_id
+        LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
+        LEFT JOIN districts d ON c2.district_id = d.district_id
+        LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      WHERE 
+        p.product_id = ? 
+        AND (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)
+      GROUP BY p.product_id
+    `;
+    
+    const [results] = await connection.execute(query, [productId]);
+    
+    if (results.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+    
+    const product = results[0];
+    
+    // Get category fields for this product's subcategory to provide field metadata
+    let categoryFields = [];
+    if (product.category_id) {
+      const fieldsQuery = `
+        SELECT field_name, field_label, field_type, field_options 
+        FROM category_fields 
+        WHERE sub_categories_sub_category_id = ?
+        ORDER BY field_id
+      `;
+      const [fieldsResults] = await connection.execute(fieldsQuery, [product.category_id]);
+      categoryFields = fieldsResults;
+    }
+    
+    // Process images
+    const images = product.images 
+      ? product.images.split(',').map(url => ({ image_url: url.trim() }))
+      : [];
+    
+    // Parse and enhance product attributes with field metadata
+    let productAttributes = {};
+    try {
+      productAttributes = product.product_attributes ? JSON.parse(product.product_attributes) : {};
+    } catch (error) {
+      console.error('Error parsing product attributes:', error);
+      productAttributes = {};
+    }
+    
+    // Enhance attributes with field metadata
+    const enhancedAttributes = categoryFields.map(field => {
+      const value = productAttributes[field.field_name] || '';
+      let displayValue = value;
+      
+      // Format display value based on field type
+      if (field.field_type === 'select' && field.field_options) {
+        try {
+          const options = JSON.parse(field.field_options);
+          displayValue = options.includes(value) ? value : value;
+        } catch (e) {
+          displayValue = value;
+        }
+      } else if (field.field_type === 'boolean') {
+        displayValue = value === '1' || value === 'true' || value === true ? 'Yes' : 'No';
+      } else if (field.field_type === 'number' && value) {
+        displayValue = parseFloat(value).toLocaleString();
+      }
+      
+      return {
+        field_name: field.field_name,
+        field_label: field.field_label,
+        field_type: field.field_type,
+        value: value,
+        display_value: displayValue,
+        has_value: value !== '' && value !== null && value !== undefined
+      };
+    }).filter(attr => attr.has_value); // Only include attributes that have values
+    
+    // Format the response
+    const formattedProduct = {
+      ...product,
+      images,
+      seller_name: `${product.seller_first_name} ${product.seller_last_name}`,
+      price: parseFloat(product.price) || 0,
+      created_at: product.created_at,
+      updated_at: product.updated_at,
+      category_attributes: enhancedAttributes,
+      raw_product_attributes: productAttributes // Keep raw attributes for backwards compatibility
+    };
+    
+    // Remove individual seller name fields
+    delete formattedProduct.seller_first_name;
+    delete formattedProduct.seller_last_name;
+    
+    res.json({
+      success: true,
+      message: "Product fetched successfully",
+      data: formattedProduct
+    });
+    
+  } catch (error) {
+    console.error("Get public product by ID error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
 
 module.exports = {
     createProduct,
     getSellerProducts,
     getProductById,
     updateProduct,
-    filterProducts
+    getPublicProducts,
+    filterProducts,
+    getPublicProductById
 }

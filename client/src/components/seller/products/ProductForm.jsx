@@ -195,14 +195,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       if (!formData.stock) newErrors.stock = 'Stock quantity is required';
       if (!isEdit && formData.images.length === 0) newErrors.images = 'At least one image is required';
 
-      // Validate dynamic fields (only in create mode)
-      if (!isEdit) {
-        categoryFields.forEach(field => {
-          if (field.is_required && !dynamicFields[field.field_name]) {
-            newErrors[field.field_name] = `${field.field_label} is required`;
-          }
-        });
-      }
+      // Dynamic fields are now optional - sellers can include details in description instead
+      // No validation for dynamic fields
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -291,7 +285,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       <div key={field.field_id} className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">
           {field.field_label}
-          {field.is_required && <span className="text-red-500 ml-1">*</span>}
+          <span className="text-gray-500 text-xs ml-1">(Optional)</span>
         </label>
 
         {field.field_type === 'select' ? (
@@ -526,11 +520,22 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <h2 className="text-lg font-semibold text-gray-900">
                 {subCategories.find(sub => sub.sub_category_id == formData.subcategory)?.sub_category_name || 'Category'} Details
               </h2>
-              {isEdit && (
-                <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                  Cannot be changed when editing
+              <div className="flex items-center space-x-2">
+                {isEdit && (
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    Cannot be changed when editing
+                  </span>
+                )}
+                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  All fields optional
                 </span>
-              )}
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700">
+                💡 <strong>Tip:</strong> These fields are optional. You can leave them empty and include all product details in the description instead.
+              </p>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

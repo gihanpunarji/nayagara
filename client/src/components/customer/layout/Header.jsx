@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import AdvancedFilters from './AdvancedFilters';
 import { useAuth } from '../../../context/AuthContext';
+import { useCart } from '../../../context/CartContext';
 
 const Header = ({
   searchQuery,
@@ -17,6 +18,7 @@ const Header = ({
 }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const { itemCount } = useCart();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
 
@@ -44,10 +46,59 @@ const Header = ({
     setShowAdvancedFilters(false);
   };
 
+  const handleSearch = useCallback(() => {
+    if (searchQuery.trim()) {
+      const params = new URLSearchParams();
+      params.append('search', searchQuery.trim());
+      if (selectedCategory && selectedCategory !== 'All Categories') {
+        params.append('category', selectedCategory);
+      }
+      navigate(`/shop?${params.toString()}`);
+    }
+  }, [searchQuery, selectedCategory, navigate]);
+
+  const handleKeyPress = useCallback((e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  }, [handleSearch]);
+
   const handleFiltersApply = (filters) => {
     setActiveFilters(filters);
-    // Here you can implement the actual filtering logic
-    // console.log('Applied filters:', filters);
+    const params = new URLSearchParams();
+    
+    if (searchQuery.trim()) {
+      params.append('search', searchQuery.trim());
+    }
+    
+    if (filters.category && filters.category !== 'All Categories') {
+      params.append('category', filters.category);
+    }
+    
+    if (filters.district && filters.district !== 'All Districts') {
+      params.append('district', filters.district);
+    }
+    
+    if (filters.priceMin) {
+      params.append('priceMin', filters.priceMin);
+    }
+    
+    if (filters.priceMax) {
+      params.append('priceMax', filters.priceMax);
+    }
+    
+    // Add other filter parameters
+    Object.keys(filters).forEach(key => {
+      if (!['category', 'district', 'priceMin', 'priceMax'].includes(key) && filters[key]) {
+        if (Array.isArray(filters[key]) && filters[key].length > 0) {
+          params.append(key, filters[key].join(','));
+        } else if (filters[key] !== '' && !filters[key].startsWith('All')) {
+          params.append(key, filters[key]);
+        }
+      }
+    });
+    
+    navigate(`/shop?${params.toString()}`);
   };
 
   // Count active filters
@@ -76,7 +127,7 @@ const Header = ({
     <>
       {/* Top Bar */}
       <div className="bg-gradient-primary text-white text-sm py-2">
-        <div className="mx-auto px-4 sm:px-8 lg:px-16 flex justify-between items-center">
+        <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2 sm:space-x-4">
             <span className="hidden sm:flex items-center space-x-1">
               <Phone className="w-4 h-4" />
@@ -93,7 +144,7 @@ const Header = ({
 
       {/* Main Header */}
       <header className="bg-white shadow-green-lg sticky top-0 z-[100]">
-        <div className="mx-auto px-4 sm:px-8 lg:px-16">
+        <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Header */}
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
@@ -122,8 +173,12 @@ const Header = ({
                   className="flex-1 h-10 sm:h-12 px-3 sm:px-4 border border-gray-300 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-l-lg"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyPress}
                 />
-                <button className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2">
+                <button 
+                  onClick={handleSearch}
+                  className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2"
+                >
                   <Search className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden md:block font-medium">SEARCH</span>
                 </button>
@@ -173,7 +228,11 @@ const Header = ({
 
               <Link to="/cart" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
               </Link>
 
               <div
@@ -231,4 +290,4 @@ const Header = ({
   );
 };
 
-export default Header;
+export default React.memo(Header);

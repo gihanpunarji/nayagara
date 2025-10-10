@@ -37,7 +37,7 @@ function SellerLogin() {
       } else {
         // Handle specific error messages
         if (res.error === "mnv") {
-          navigate("/seller/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
+          navigate("/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
           return;
         }
         

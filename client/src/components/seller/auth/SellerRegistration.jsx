@@ -146,7 +146,7 @@ function SellerRegistration() {
   const handleOtpVerify = async (e) => {
     e.preventDefault();
     await api.post("/auth/verify-otp", { mobile, email, verificationCode });
-    navigate("/seller-login");
+    navigate("/seller/login");
   };
 
   const handleAccountContinue = (e) => {
@@ -683,7 +683,7 @@ function SellerRegistration() {
           <p>
             Already have an account?{" "}
             <a
-              href="/seller-login"
+              href="/seller/login"
               className="text-primary-600 hover:text-primary-700 font-medium"
             >
               Sign in here

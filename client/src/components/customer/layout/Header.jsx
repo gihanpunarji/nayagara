@@ -3,6 +3,7 @@ import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter, 
 import { Link, useNavigate } from 'react-router-dom';
 import AdvancedFilters from './AdvancedFilters';
 import { useAuth } from '../../../context/AuthContext';
+import { useCart } from '../../../context/CartContext';
 
 const Header = ({
   searchQuery,
@@ -17,6 +18,7 @@ const Header = ({
 }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const { itemCount } = useCart();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
 
@@ -226,7 +228,11 @@ const Header = ({
 
               <Link to="/cart" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                {itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {itemCount > 99 ? '99+' : itemCount}
+                  </span>
+                )}
               </Link>
 
               <div

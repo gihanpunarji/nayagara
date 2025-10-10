@@ -6,7 +6,9 @@ const authRoutes = require("./routes/authRoutes");
 const sellerRoutes = require("./routes/sellerRoutes");
 const productRoutes = require("./routes/productRoutes");
 const addressRoutes = require("./routes/addressRoute");
-const categoryRoutes = require("./routes/categoryRoutes")
+const categoryRoutes = require("./routes/categoryRoutes");
+const cartRoutes = require("./routes/cartRoutes");
+const chatRoutes = require("./routes/chatRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -32,7 +34,9 @@ app.use("/api/auth", authRoutes);
 app.use("/api/seller", sellerRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/address", addressRoutes);
-app.use("/api", categoryRoutes)
+app.use("/api", categoryRoutes);
+app.use("/api/cart", cartRoutes);
+app.use("/api/chat", chatRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running successfully!" });

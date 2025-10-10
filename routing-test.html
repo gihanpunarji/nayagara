@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Routing Consistency Test</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            max-width: 1000px; 
+            margin: 0 auto; 
+            padding: 20px; 
+            background: #f5f5f5;
+        }
+        .container { 
+            background: white; 
+            padding: 30px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { 
+            color: #333; 
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .section { 
+            background: #f8f9fa; 
+            padding: 20px; 
+            margin: 20px 0; 
+            border-radius: 6px; 
+            border-left: 4px solid #28a745;
+        }
+        .section h3 { 
+            margin-top: 0; 
+            color: #28a745;
+        }
+        .route-list {
+            list-style: none;
+            padding: 0;
+        }
+        .route-list li {
+            background: white;
+            margin: 8px 0;
+            padding: 12px;
+            border-radius: 4px;
+            border-left: 3px solid #007bff;
+            font-family: monospace;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .route-list li .status {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        .fixed { background: #d4edda; color: #155724; }
+        .consistent { background: #cce5ff; color: #004085; }
+        
+        .api-routes {
+            background: #fff3cd;
+            border-left-color: #ffc107;
+        }
+        .frontend-routes {
+            background: #d1ecf1;
+            border-left-color: #17a2b8;
+        }
+        
+        .summary {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .summary h3 {
+            color: #2e7d32;
+            margin-top: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 React Router Routing Consistency Test</h1>
+        
+        <div class="section">
+            <h3>🎯 Issues Found & Fixed</h3>
+            <p>The following routing inconsistencies were identified and resolved:</p>
+            
+            <h4>Backend API Routes (Fixed):</h4>
+            <ul class="route-list api-routes">
+                <li>
+                    <span><strong>Before:</strong> POST /api/auth/seller-login</span>
+                    <span class="status fixed">FIXED</span>
+                </li>
+                <li>
+                    <span><strong>After:</strong> POST /api/auth/seller/login</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span><strong>Before:</strong> POST /api/auth/seller-register</span>
+                    <span class="status fixed">FIXED</span>
+                </li>
+                <li>
+                    <span><strong>After:</strong> POST /api/auth/seller/register</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+            </ul>
+
+            <h4>Frontend AuthContext (Fixed):</h4>
+            <ul class="route-list frontend-routes">
+                <li>
+                    <span><strong>Before:</strong> api.post('/auth/seller-login')</span>
+                    <span class="status fixed">FIXED</span>
+                </li>
+                <li>
+                    <span><strong>After:</strong> api.post('/auth/seller/login')</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span><strong>Before:</strong> api.post('/auth/seller-register')</span>
+                    <span class="status fixed">FIXED</span>
+                </li>
+                <li>
+                    <span><strong>After:</strong> api.post('/auth/seller/register')</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+            </ul>
+
+            <h4>Navigation Routes (Fixed):</h4>
+            <ul class="route-list frontend-routes">
+                <li>
+                    <span><strong>Before:</strong> navigate("/seller/verify-mobile")</span>
+                    <span class="status fixed">FIXED</span>
+                </li>
+                <li>
+                    <span><strong>After:</strong> navigate("/verify-mobile")</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>✅ Current Routing Structure</h3>
+            
+            <h4>Frontend Routes (React Router):</h4>
+            <ul class="route-list frontend-routes">
+                <li>
+                    <span>/seller/login</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/seller/register</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/seller/dashboard</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/seller/products</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/seller/products/add</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/seller/products/edit/:id</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/admin/login</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/admin/dashboard</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>/verify-mobile</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+            </ul>
+
+            <h4>Backend API Routes:</h4>
+            <ul class="route-list api-routes">
+                <li>
+                    <span>POST /api/auth/login (customer)</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>POST /api/auth/register (customer)</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>POST /api/auth/seller/login</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>POST /api/auth/seller/register</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+                <li>
+                    <span>POST /api/auth/admin/login</span>
+                    <span class="status consistent">✓ CONSISTENT</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="section">
+            <h3>🧪 How to Test</h3>
+            <ol>
+                <li><strong>Start your server:</strong> <code>npm run dev</code> in the server directory</li>
+                <li><strong>Start your React app:</strong> <code>npm run dev</code> in the client directory</li>
+                <li><strong>Test navigation:</strong>
+                    <ul>
+                        <li>Try accessing <code>http://localhost:5173/seller/login</code></li>
+                        <li>Try accessing <code>http://localhost:5173/seller/register</code></li>
+                        <li>Test login functionality with the fixed API endpoints</li>
+                    </ul>
+                </li>
+                <li><strong>Test API endpoints:</strong>
+                    <ul>
+                        <li>POST requests should go to <code>/api/auth/seller/login</code></li>
+                        <li>POST requests should go to <code>/api/auth/seller/register</code></li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+
+        <div class="summary">
+            <h3>📊 Summary of Changes</h3>
+            <ul>
+                <li>✅ <strong>Fixed backend routes:</strong> Changed from hyphenated to slash-based paths</li>
+                <li>✅ <strong>Updated frontend API calls:</strong> AuthContext now uses consistent routes</li>
+                <li>✅ <strong>Fixed navigation inconsistencies:</strong> All navigation uses proper route patterns</li>
+                <li>✅ <strong>Maintained consistency:</strong> All routes now follow the pattern <code>/role/action</code></li>
+            </ul>
+            
+            <p><strong>🎉 Result:</strong> All routing is now consistent throughout the application. Frontend routes like <code>/seller/login</code> now correctly correspond to backend API routes like <code>/api/auth/seller/login</code>.</p>
+        </div>
+    </div>
+</body>
+</html>

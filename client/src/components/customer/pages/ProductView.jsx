@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import useChat from '../../../hooks/useChat';
 import ChatManager from '../../shared/chat/ChatManager';
 import { useAuth } from '../../../context/AuthContext';
+import { useCart } from '../../../context/CartContext';
 import { publicApi } from '../../../api/axios';
 import {
   ChevronLeft,
@@ -29,6 +30,7 @@ import {
 const ProductView = () => {
   const { id } = useParams();
   const { isAuthenticated } = useAuth();
+  const { addToCart, isInCart, getItemQuantity, loading: cartLoading } = useCart();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedReviewFilter, setSelectedReviewFilter] = useState('all');
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -46,6 +48,24 @@ const ProductView = () => {
     maximizeChat,
     toggleMinimize
   } = useChat();
+
+  // Handle add to cart
+  const handleAddToCart = async () => {
+    if (!product) return;
+    
+    try {
+      await addToCart(product, 1);
+      // You could add a toast notification here
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      // You could add an error toast here
+    }
+  };
+
+  // Get cart info for this product
+  const productId = product?.product_id;
+  const inCart = productId ? isInCart(productId) : false;
+  const cartQuantity = productId ? getItemQuantity(productId) : 0;
 
   // Fetch product data
   useEffect(() => {
@@ -201,21 +221,21 @@ const ProductView = () => {
             Browse Products
           </Link>
         </div>
-      </div>
+      </div> 
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen max-w-[85%] mx-auto bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-4 py-3">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
             <Link to="/" className="hover:text-primary-600">Home</Link>
             <ChevronRight className="w-4 h-4" />
-            <Link to="/category/electronics" className="hover:text-primary-600">{processedProduct.category}</Link>
+            <Link to={`/shop?category=${encodeURIComponent(processedProduct.category?.toLowerCase() || '')}`} className="hover:text-primary-600">{processedProduct.category}</Link>
             <ChevronRight className="w-4 h-4" />
-            <Link to="/category/electronics/smartphones" className="hover:text-primary-600">{processedProduct.subCategory}</Link>
+            <Link to={`/shop?category=${encodeURIComponent(processedProduct.category?.toLowerCase() || '')}&subcategory=${encodeURIComponent(processedProduct.subCategory?.toLowerCase() || '')}`} className="hover:text-primary-600">{processedProduct.subCategory}</Link>
             <ChevronRight className="w-4 h-4" />
             <span className="text-gray-900 truncate">{processedProduct.name}</span>
           </div>
@@ -264,16 +284,16 @@ const ProductView = () => {
               </div>
 
               {/* Thumbnail Images */}
-              <div className="grid grid-cols-4 gap-3">
+              <div className="flex gap-1 overflow-x-auto pb-2">
                 {processedProduct.images.map((image, index) => (
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`aspect-square bg-gray-50 rounded-lg overflow-hidden border-2 transition-colors ${
+                    className={`w-12 h-12 bg-gray-50 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
                       index === currentImageIndex ? 'border-primary-600' : 'border-transparent hover:border-gray-300'
                     }`}
                   >
-                    <img src={image} alt="" className="w-full h-full object-cover" />
+                    <img src={image} alt="" className="w-full h-full object-contain" />
                   </button>
                 ))}
               </div>
@@ -346,8 +366,16 @@ const ProductView = () => {
 
               {/* Actions */}
               <div className="flex flex-col sm:flex-row gap-3">
-                <button className="flex-1 bg-primary-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-primary-700 transition-colors">
-                  Add to Cart
+                <button 
+                  onClick={handleAddToCart}
+                  disabled={cartLoading || (processedProduct?.stock_quantity !== undefined && processedProduct.stock_quantity <= 0)}
+                  className={`flex-1 py-3 px-6 rounded-lg font-medium transition-colors ${
+                    inCart 
+                      ? 'bg-green-600 text-white hover:bg-green-700' 
+                      : 'bg-primary-600 text-white hover:bg-primary-700'
+                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                  {cartLoading ? 'Adding...' : inCart ? `In Cart (${cartQuantity})` : 'Add to Cart'}
                 </button>
                 <button className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                   Buy Now

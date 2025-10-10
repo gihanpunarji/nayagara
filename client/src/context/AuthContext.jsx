@@ -166,7 +166,7 @@ export const AuthProvider = ({ children }) => {
 
   const loginSeller = useCallback(async (emailOrMobile, password) => {
   try {
-    const response = await api.post('/auth/seller-login', { emailOrMobile, password });
+    const response = await api.post('/auth/seller/login', { emailOrMobile, password });
     const { user: userData, token } = response.data;
 
     // Save to localStorage
@@ -193,7 +193,7 @@ export const AuthProvider = ({ children }) => {
 const registerSeller = useCallback(async (userData) => {
   setLoading(true);
   try {
-    const response = await api.post('/auth/seller-register', userData);
+    const response = await api.post('/auth/seller/register', userData);
     const { user: newUser, token } = response.data;
 
     localStorage.setItem('token', token);

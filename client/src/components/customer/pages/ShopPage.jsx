@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { publicApi } from '../../../api/axios';
+import { useCart } from '../../../context/CartContext';
 
 const ShopPage = () => {
   const [searchParams] = useSearchParams();
@@ -147,7 +148,26 @@ const ShopPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMoreProducts]);
 
-  const ProductCard = ({ product }) => {
+  const ProductCard = ({ product, viewMode }) => {
+    const { addToCart, isInCart, getItemQuantity, loading: cartLoading } = useCart();
+    
+    const handleAddToCart = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      try {
+        await addToCart(product, 1);
+        // You could add a toast notification here
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+        // You could add an error toast here
+      }
+    };
+
+    const productId = product.product_id || product.id;
+    const inCart = isInCart(productId);
+    const cartQuantity = getItemQuantity(productId);
+    
     // Handle images properly
     let displayImage = 'https://via.placeholder.com/400x300?text=No+Image';
     if (product.images) {
@@ -166,13 +186,19 @@ const ShopPage = () => {
     }
 
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group overflow-hidden">
-        <div className="relative">
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 group overflow-hidden ${
+        viewMode === 'list' ? 'flex' : ''
+      }`}>
+        <div className={`relative ${
+          viewMode === 'list' ? 'w-48 flex-shrink-0' : ''
+        }`}>
           <Link to={`/product/${product.product_id}`}>
             <img
               src={displayImage}
               alt={product.product_title || 'Product'}
-              className="w-full h-48 sm:h-56 object-cover group-hover:scale-105 transition-transform duration-300"
+              className={`object-contain group-hover:scale-105 transition-transform duration-300 ${
+                viewMode === 'list' ? 'w-full h-48' : 'w-full h-48 sm:h-56'
+              }`}
             />
           </Link>
 
@@ -181,7 +207,7 @@ const ShopPage = () => {
           </button>
         </div>
 
-        <div className="p-4">
+        <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
           <Link to={`/product/${product.product_id}`}>
             <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
               {product.product_title || 'Untitled Product'}
@@ -215,10 +241,30 @@ const ShopPage = () => {
             By: {`${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim() || 'Unknown Seller'}
           </div>
 
-          <button className="w-full bg-gradient-primary text-white py-2 rounded-lg hover:shadow-green transition-all duration-300 flex items-center justify-center space-x-2">
-            <ShoppingCart className="w-4 h-4" />
-            <span>View Details</span>
-          </button>
+          <div className="flex space-x-2">
+            <Link 
+              to={`/product/${productId}`}
+              className="flex-1 bg-gray-100 text-gray-700 py-2 rounded-lg hover:bg-gray-200 transition-all duration-300 flex items-center justify-center space-x-2"
+            >
+              <Eye className="w-4 h-4" />
+              <span>View</span>
+            </Link>
+            
+            <button 
+              onClick={handleAddToCart}
+              disabled={cartLoading || (product.stock_quantity !== undefined && product.stock_quantity <= 0)}
+              className={`flex-1 py-2 rounded-lg transition-all duration-300 flex items-center justify-center space-x-2 ${
+                inCart 
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                  : 'bg-gradient-primary text-white hover:shadow-green'
+              } disabled:opacity-50 disabled:cursor-not-allowed`}
+            >
+              <ShoppingCart className="w-4 h-4" />
+              <span>
+                {cartLoading ? '...' : inCart ? `In Cart (${cartQuantity})` : 'Add to Cart'}
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -228,7 +274,7 @@ const ShopPage = () => {
     <div className="min-h-screen bg-primary-50">
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-4">
             <div className="flex items-center justify-between mb-4">
               <div>
@@ -359,14 +405,14 @@ const ShopPage = () => {
       </div>
 
       {/* Products Grid */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className={`grid gap-6 ${
           viewMode === 'grid'
             ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
             : 'grid-cols-1'
         }`}>
           {products.map(product => (
-            <ProductCard key={product.product_id} product={product} />
+            <ProductCard key={product.product_id} product={product} viewMode={viewMode} />
           ))}
         </div>
 

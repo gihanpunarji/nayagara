@@ -9,37 +9,53 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
 
   // Handle file selection
   const handleFileSelect = useCallback((files) => {
-    const newImages = [];
+    if (!files || files.length === 0) return;
+    
     const remainingSlots = maxImages - images.length;
+    if (remainingSlots <= 0) return;
+    
+    const filesToProcess = Array.from(files).slice(0, remainingSlots).filter(file => file.type.startsWith('image/'));
+    
+    if (filesToProcess.length === 0) return;
 
-    Array.from(files).slice(0, remainingSlots).forEach((file) => {
-      if (file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const imageData = {
-            id: Date.now() + Math.random(),
-            file,
-            url: e.target.result,
-            name: file.name,
-            size: file.size
-          };
-          newImages.push(imageData);
+    const newImages = [];
+    let processedCount = 0;
 
-          if (newImages.length === Math.min(files.length, remainingSlots)) {
-            onUpdate([...images, ...newImages]);
-          }
+    filesToProcess.forEach((file, index) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageData = {
+          id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}_${index}`,
+          file,
+          url: e.target.result,
+          name: file.name,
+          size: file.size
         };
-        reader.readAsDataURL(file);
-      }
+        newImages.push(imageData);
+        processedCount++;
+
+        // Update images when all files are processed
+        if (processedCount === filesToProcess.length) {
+          onUpdate([...images, ...newImages]);
+        }
+      };
+      reader.onerror = (error) => {
+        console.error('Error reading file:', file.name, error);
+        processedCount++;
+        if (processedCount === filesToProcess.length) {
+          onUpdate([...images, ...newImages]);
+        }
+      };
+      reader.readAsDataURL(file);
     });
   }, [images, maxImages, onUpdate]);
 
   // Handle file input change
   const handleInputChange = (e) => {
     const files = e.target.files;
-    if (files.length > 0) {
+    if (files && files.length > 0) {
       handleFileSelect(files);
-      // Reset input
+      // Reset input to allow selecting the same files again
       e.target.value = '';
     }
   };
@@ -128,40 +144,95 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
       {/* Upload Area */}
       {images.length < maxImages && (
         <div
-          className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
+          className={`border-2 border-dashed rounded-xl transition-colors ${
             error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
           }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
-          <div className="space-y-4">
-            <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${
-              error ? 'bg-red-100' : 'bg-primary-100'
-            }`}>
-              <Upload className={`w-6 h-6 ${error ? 'text-red-600' : 'text-primary-600'}`} />
-            </div>
+          {images.length === 0 ? (
+            // Empty state - show upload instructions
+            <div className="p-8 text-center">
+              <div className="space-y-4">
+                <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${
+                  error ? 'bg-red-100' : 'bg-primary-100'
+                }`}>
+                  <Upload className={`w-6 h-6 ${error ? 'text-red-600' : 'text-primary-600'}`} />
+                </div>
 
-            <div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                Upload Product Images
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Drag and drop images here, or click to browse
-              </p>
-              <p className="text-sm text-gray-500">
-                Supports: JPG, PNG, WEBP • Max size: 5MB each • {images.length}/{maxImages} images
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">
+                    Upload Product Images
+                  </h3>
+                  <p className="text-gray-600 mb-4">
+                    Drag and drop images here, or click to browse
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    Supports: JPG, PNG, WEBP • Max size: 5MB each • {images.length}/{maxImages} images
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  <Upload className="w-4 h-4" />
+                  <span>Choose Images</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            // Show preview of uploaded images + add more button
+            <div className="p-4">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-sm font-medium text-gray-900">
+                  Selected Images ({images.length}/{maxImages})
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="inline-flex items-center space-x-2 px-3 py-1 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>Add More</span>
+                </button>
+              </div>
+              
+              {/* Mini preview grid */}
+              <div className="grid grid-cols-6 gap-2">
+                {images.slice(0, 6).map((image, index) => (
+                  <div key={image.id} className="relative">
+                    <div className="aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                      <img
+                        src={image.url}
+                        alt={`Preview ${index + 1}`}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    {index === 0 && (
+                      <div className="absolute -top-1 -left-1">
+                        <span className="flex items-center justify-center w-4 h-4 bg-primary-600 text-white text-xs rounded-full">
+                          1
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {images.length > 6 && (
+                  <div className="aspect-square bg-gray-200 rounded-lg flex items-center justify-center">
+                    <span className="text-xs text-gray-600 font-medium">
+                      +{images.length - 6}
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Click "Add More" to upload additional images or scroll down to manage existing ones
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              className="inline-flex items-center space-x-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-            >
-              <Upload className="w-4 h-4" />
-              <span>Choose Images</span>
-            </button>
-          </div>
+          )}
         </div>
       )}
 

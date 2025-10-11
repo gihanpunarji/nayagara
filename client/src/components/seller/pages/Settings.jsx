@@ -31,7 +31,11 @@ const ProfileSettings = ({
   handleInputChange, 
   handleSaveChanges, 
   handleProfilePictureUpload,
-  saving 
+  saving,
+  businessAddress,
+  adminMobile,
+  bankFormData,
+  handleBankInputChange
 }) => {
   if (loading) {
     return (
@@ -173,7 +177,7 @@ const ProfileSettings = ({
           <div className="lg:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Store Description</label>
             <textarea
-              rows={3}
+              rows={6}
               name="storeDescription"
               value={formData.storeDescription}
               onChange={handleInputChange}
@@ -182,6 +186,91 @@ const ProfileSettings = ({
             />
           </div>
 
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+            <input
+              type="text"
+              value={businessAddress ? `${businessAddress.line1 || ''}${businessAddress.line2 ? ', ' + businessAddress.line2 : ''}${businessAddress.postal_code ? ', ' + businessAddress.postal_code : ''}${businessAddress.city_name ? ', ' + businessAddress.city_name : ''}${businessAddress.district_name ? ', ' + businessAddress.district_name : ''}${businessAddress.province_name ? ', ' + businessAddress.province_name : ''}${businessAddress.country_name ? ', ' + businessAddress.country_name : ''}` : 'No address provided'}
+              readOnly
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-700"
+            />
+            <div className="mt-2">
+              <button
+                type="button"
+                className="text-primary-600 hover:text-primary-700 text-sm font-medium"
+                onClick={() => adminMobile && window.open(`tel:${adminMobile}`, '_self')}
+              >
+                Request Address Change {adminMobile && `(${adminMobile})`}
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Bank Details Section */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Bank Account Details</h3>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+            <input
+              type="text"
+              name="bankName"
+              value={bankFormData.bankName}
+              onChange={handleBankInputChange}
+              placeholder="Enter bank name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+            <input
+              type="text"
+              name="accountNumber"
+              value={bankFormData.accountNumber}
+              onChange={handleBankInputChange}
+              placeholder="Enter account number"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+            <input
+              type="text"
+              name="holderName"
+              value={bankFormData.holderName}
+              onChange={handleBankInputChange}
+              placeholder="Enter account holder name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Bank Code</label>
+            <input
+              type="text"
+              name="bankCode"
+              value={bankFormData.bankCode}
+              onChange={handleBankInputChange}
+              placeholder="Enter bank code"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
+
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Branch Name</label>
+            <input
+              type="text"
+              name="branchName"
+              value={bankFormData.branchName}
+              onChange={handleBankInputChange}
+              placeholder="Enter branch name"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+            />
+          </div>
         </div>
       </div>
 
@@ -199,9 +288,118 @@ const ProfileSettings = ({
   );
 };
 
+// 🟢 FIX: Move PaymentSettings outside to prevent recreation
+const PaymentSettings = ({ loading, error, bankFormData, handleBankInputChange, handleSaveBankDetails, saving }) => {
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading bank details...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+          <p className="text-red-700">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Settings</h2>
+
+        <div className="space-y-6">
+          {/* Bank Account */}
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-4">Bank Account Details</h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                <input
+                  type="text"
+                  name="bankName"
+                  value={bankFormData.bankName}
+                  onChange={handleBankInputChange}
+                  placeholder="Enter bank name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                <input
+                  type="text"
+                  name="accountNumber"
+                  value={bankFormData.accountNumber}
+                  onChange={handleBankInputChange}
+                  placeholder="Enter account number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
+                <input
+                  type="text"
+                  name="holderName"
+                  value={bankFormData.holderName}
+                  onChange={handleBankInputChange}
+                  placeholder="Enter account holder name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Code</label>
+                <input
+                  type="text"
+                  name="bankCode"
+                  value={bankFormData.bankCode}
+                  onChange={handleBankInputChange}
+                  placeholder="Enter bank code"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+              <div className="lg:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Branch Name</label>
+                <input
+                  type="text"
+                  name="branchName"
+                  value={bankFormData.branchName}
+                  onChange={handleBankInputChange}
+                  placeholder="Enter branch name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex justify-end pt-6 border-t border-gray-200">
+        <button 
+          onClick={handleSaveBankDetails}
+          disabled={saving}
+          className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          <Save className="w-4 h-4" />
+          <span>{saving ? 'Saving...' : 'Save Bank Details'}</span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('profile');
   const [profileData, setProfileData] = useState(null);
+  const [businessAddress, setBusinessAddress] = useState(null);
+  const [adminMobile, setAdminMobile] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -213,6 +411,14 @@ const Settings = () => {
     nic: '',
     storeName: '',
     storeDescription: ''
+  });
+
+  const [bankFormData, setBankFormData] = useState({
+    bankName: '',
+    accountNumber: '',
+    holderName: '',
+    bankCode: '',
+    branchName: ''
   });
 
   useEffect(() => {
@@ -237,6 +443,21 @@ const Settings = () => {
           storeDescription: response.data.store?.store_description || ''
         });
         
+        // Set business address and admin mobile
+        setBusinessAddress(response.data.businessAddress);
+        setAdminMobile(response.data.adminMobile);
+        
+        // Bank details are included in the profile response
+        if (response.data.bankDetails) {
+          setBankFormData({
+            bankName: response.data.bankDetails.bank_name || '',
+            accountNumber: response.data.bankDetails.account_number || '',
+            holderName: response.data.bankDetails.holder_name || '',
+            bankCode: response.data.bankDetails.bank_code || '',
+            branchName: response.data.bankDetails.branch_name || ''
+          });
+        }
+        
         setError('');
       } else {
         setError(response.data.message || 'Failed to fetch profile data');
@@ -251,7 +472,17 @@ const Settings = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleBankInputChange = (e) => {
+    const { name, value } = e.target;
+    
+    setBankFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -266,7 +497,6 @@ const Settings = () => {
 
       if (response.data.success) {
         setProfileData(response.data.user);
-        // Show success message or notification here
         console.log('Profile updated successfully');
       } else {
         setError(response.data.message || 'Failed to update profile');
@@ -278,6 +508,37 @@ const Settings = () => {
       setSaving(false);
     }
   };
+
+  const handleSaveBankDetails = async () => {
+    try {
+      setSaving(true);
+      setError('');
+
+      const response = await api.put('/seller/payment', bankFormData);
+
+      if (response.data.success) {
+        // Update bank form data if bank details are returned
+        if (response.data.bankDetails) {
+          setBankFormData({
+            bankName: response.data.bankDetails.bank_name || '',
+            accountNumber: response.data.bankDetails.account_number || '',
+            holderName: response.data.bankDetails.holder_name || '',
+            bankCode: response.data.bankDetails.bank_code || '',
+            branchName: response.data.bankDetails.branch_name || ''
+          });
+        }
+        console.log('Bank details updated successfully');
+      } else {
+        setError(response.data.message || 'Failed to update bank details');
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || 'Failed to update bank details');
+      console.error('Bank details update error:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
 
   const handleProfilePictureUpload = async (event) => {
     const file = event.target.files[0];
@@ -331,115 +592,6 @@ const Settings = () => {
 
 
 
-  const PaymentSettings = () => (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment Settings</h2>
-
-        <div className="space-y-6">
-          {/* Bank Account */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-4">Bank Account Details</h3>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
-                <input
-                  type="text"
-                  defaultValue="Bank of Ceylon"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
-                <input
-                  type="text"
-                  defaultValue="****1234"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Account Holder Name</label>
-                <input
-                  type="text"
-                  defaultValue="Supun Perera"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Branch Code</label>
-                <input
-                  type="text"
-                  defaultValue="001"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Payment Preferences */}
-          <div className="bg-gray-50 rounded-lg p-4">
-            <h3 className="font-semibold text-gray-900 mb-4">Payment Preferences</h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Minimum Withdrawal Amount
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500">
-                  <option>Rs. 10,000</option>
-                  <option>Rs. 25,000</option>
-                  <option>Rs. 50,000</option>
-                  <option>Rs. 100,000</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Auto Withdrawal
-                </label>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="autoWithdrawal"
-                      value="weekly"
-                      className="text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm">Weekly</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="autoWithdrawal"
-                      value="monthly"
-                      className="text-primary-600 focus:ring-primary-500"
-                      defaultChecked
-                    />
-                    <span className="text-sm">Monthly</span>
-                  </label>
-                  <label className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      name="autoWithdrawal"
-                      value="manual"
-                      className="text-primary-600 focus:ring-primary-500"
-                    />
-                    <span className="text-sm">Manual</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex justify-end pt-6 border-t border-gray-200">
-        <button className="flex items-center space-x-2 px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors">
-          <Save className="w-4 h-4" />
-          <span>Save Payment Settings</span>
-        </button>
-      </div>
-    </div>
-  );
 
   const renderContent = () => {
     switch (activeTab) {
@@ -451,9 +603,20 @@ const Settings = () => {
         handleInputChange={handleInputChange} 
         handleSaveChanges={handleSaveChanges} 
         handleProfilePictureUpload={handleProfilePictureUpload}
+        saving={saving}
+        businessAddress={businessAddress}
+        adminMobile={adminMobile}
+        bankFormData={bankFormData}
+        handleBankInputChange={handleBankInputChange}
+      />;
+      case 'payment': return <PaymentSettings 
+        loading={loading} 
+        error={error} 
+        bankFormData={bankFormData} 
+        handleBankInputChange={handleBankInputChange} 
+        handleSaveBankDetails={handleSaveBankDetails} 
         saving={saving} 
       />;
-      case 'payment': return <PaymentSettings />;
       default: return <ProfileSettings 
         loading={loading} 
         error={error} 
@@ -462,7 +625,11 @@ const Settings = () => {
         handleInputChange={handleInputChange} 
         handleSaveChanges={handleSaveChanges} 
         handleProfilePictureUpload={handleProfilePictureUpload}
-        saving={saving} 
+        saving={saving}
+        businessAddress={businessAddress}
+        adminMobile={adminMobile}
+        bankFormData={bankFormData}
+        handleBankInputChange={handleBankInputChange}
       />;
     }
   };

@@ -4,7 +4,7 @@ import { Phone, MapPin, Globe, Facebook, Youtube, Linkedin, Twitter } from 'luci
 const Footer = () => {
   return (
     <footer className="bg-white border-t border-gray-200 pt-16 pb-8">
-      <div className="mx-auto px-16">
+      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Company Info */}
@@ -78,7 +78,7 @@ const Footer = () => {
             <div className="space-y-3 mb-6">
               <div className="flex items-center space-x-3">
                 <Phone className="w-5 h-5 text-primary-500" />
-                <span className="text-gray-600">+94 77 661 3003</span>
+                <span className="text-gray-600">+94 71 775 0039</span>
               </div>
               <div className="flex items-center space-x-3">
                 <MapPin className="w-5 h-5 text-primary-500" />

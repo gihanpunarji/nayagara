@@ -76,81 +76,40 @@ const ChatPopup = ({
 
 
     const initializeChat = async () => {
-
       try {
-
         setLoading(true);
 
-
-
-        // Ensure a token exists before making a request
-
         const token = localStorage.getItem('token');
-
         if (!token) {
-
           console.error('No token found, user is not authenticated.');
-
           setLoading(false);
-
-          return;
-
+          return null;
         }
-
-
-
-        // Start or get existing conversation
 
         const conversationResponse = await api.post('/chat/conversations', {
-
           productId: parseInt(product.id),
-
           subject: `Inquiry about ${product.name || 'product'}`
-
         });
 
-
-
-        console.log('Conversation Response:', conversationResponse.data);
-
-
-
         if (conversationResponse.data.success) {
-
           const { conversation: conv, seller: sellerDetails } = conversationResponse.data;
-
           setConversation(conv);
-
           if (sellerDetails) {
-
             setChatSeller(prevSeller => ({ ...prevSeller, ...sellerDetails }));
-
           }
-
-
-
-          // Load conversation messages
 
           const messagesResponse = await api.get(`/chat/conversations/${conv.conversation_id}/messages`);
-
           if (messagesResponse.data.success) {
-
             setMessages(messagesResponse.data.messages);
-
           }
-
+          return conv;
         }
-
       } catch (error) {
-
         console.error('Error initializing chat:', error);
-
       } finally {
-
         setLoading(false);
-
       }
-
+      return null;
     };
 
 
@@ -168,7 +127,20 @@ const ChatPopup = ({
   };
 
   const handleSendMessage = async () => {
-    if (message.trim() === '' || !conversation || sendingMessage) return;
+    if (message.trim() === '' || sendingMessage) return;
+
+    let currentConversation = conversation;
+
+    // If there is no conversation, initialize it first
+    if (!currentConversation) {
+      const newConv = await initializeChat();
+      if (newConv) {
+        currentConversation = newConv;
+      } else {
+        console.error('Failed to initialize conversation before sending message.');
+        return; // Exit if conversation cannot be initialized
+      }
+    }
 
     setSendingMessage(true);
     const messageText = message.trim();
@@ -180,20 +152,17 @@ const ChatPopup = ({
     }
 
     try {
-      const response = await api.post(`/chat/conversations/${conversation.conversation_id}/messages`, {
+      const response = await api.post(`/chat/conversations/${currentConversation.conversation_id}/messages`, {
         messageText,
         messageType: 'text'
-        
       });
 
       if (response.data.success) {
-        // Add the sent message to the messages list
         const newMessage = response.data.message;
         setMessages(prev => [...prev, newMessage]);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // Restore the message if sending failed
       setMessage(messageText);
     } finally {
       setSendingMessage(false);

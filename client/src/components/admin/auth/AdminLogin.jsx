@@ -161,15 +161,16 @@ const AdminLogin = () => {
       const res = await api.post("/auth/admin/login", loginData);
 
       if (res.data.success) {
-        setCurrentStep(2);
+        setSessionData({ email: loginData.email }); // Store email for display
         await api.post("/auth/admin/send-email", { email: loginData.email });
+        setCurrentStep(2);
         setEmailOtpTimer(300);
         setCanResendEmail(false);
       } else {
         setError(res.data.message || "Login failed");
       }
     } catch (err) {
-      setError(err.response?.data?.message);
+      setError(err.response?.data?.message || "An unexpected error occurred.");
     } finally {
       setLoading(false);
     }
@@ -190,20 +191,18 @@ const AdminLogin = () => {
         code,
         email: loginData.email,
       });
-      //
+      
       if (res.data.success) {
-        const res = await api.post("/auth/admin/email-otp-verify", {
-
-        })
+        // Backend now sends SMS automatically, so we just move to the next step
+        setSessionData(prev => ({ ...prev, phone: res.data.maskedPhone })); // Assuming backend sends masked phone
         setCurrentStep(3);
         setPhoneOtpTimer(300);
         setCanResendPhone(false);
       } else {
-        setError("Verification failed. Please try again.");
-        console.log("failed");
+        setError(res.data.message || "Verification failed. Please try again.");
       }
     } catch (err) {
-      setError(err + "Verification failed. Please try again.");
+      setError(err.response?.data?.message || "Verification failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -219,11 +218,20 @@ const AdminLogin = () => {
       setLoading(true);
       setError("");
       try {
-        const res = await api.post("/auth/admin/email-otp-verify", {
+        const code = phoneOtp.join("");
+        const res = await api.post("/auth/admin/sms-otp-verify", {
+          code,
+          email: loginData.email,
+        });
 
-        })
+        if (res.data.success && res.data.token) {
+          localStorage.setItem("admin_token", res.data.token);
+          navigate("/admin/dashboard");
+        } else {
+          setError(res.data.message || "SMS verification failed.");
+        }
       } catch (err) {
-        setError("Verification failed. Please try again.");
+        setError(err.response?.data?.message || "An unexpected error occurred.");
       } finally {
         setLoading(false);
       }

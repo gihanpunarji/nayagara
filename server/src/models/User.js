@@ -180,8 +180,6 @@ class User {
       "UPDATE users SET mobile_verified = ?, mobile_verification_code = ? WHERE user_email = ? AND user_mobile = ?",
       [1, null, email, mobile]
     );
-    console.log(updateResult);
-
     return updateResult;
   }
 
@@ -194,8 +192,6 @@ class User {
       "UPDATE users SET user_mobile = ?, mobile_verification_code = ? WHERE user_email = ?",
       [newMobile, verificationCode, email]
     );
-
-    console.log(result);
 
     return result.mobile_verification_code;
   }

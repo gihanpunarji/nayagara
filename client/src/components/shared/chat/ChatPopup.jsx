@@ -11,59 +11,153 @@ import {
   Clock,
   CheckCircle,
   Check,
-  MoreVertical
+  MoreVertical,
+  Loader
 } from 'lucide-react';
+import api from '../../../api/axios';
+import { useAuth } from '../../../context/AuthContext';
 
 const ChatPopup = ({
+
   isOpen,
+
   onClose,
+
   seller,
+
   product,
+
   isMinimized,
+
   onToggleMinimize,
+
   onMaximize
+
 }) => {
+
+  const { user, isAuthenticated } = useAuth();
+
   const [message, setMessage] = useState('');
+
   const [messages, setMessages] = useState([]);
+
+  const [conversation, setConversation] = useState(null);
+
+  const [loading, setLoading] = useState(false);
+
+  const [sendingMessage, setSendingMessage] = useState(false);
+
+  const [chatSeller, setChatSeller] = useState(seller);
+
   const messagesEndRef = useRef(null);
+
   const textareaRef = useRef(null);
 
-  // Sample chat messages
-  const sampleMessages = [
-    {
-      id: 1,
-      senderId: seller?.id,
-      senderName: seller?.name,
-      message: `Hi! Thank you for your interest in the ${product?.name}. How can I help you today?`,
-      timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: 2,
-      senderId: 'customer',
-      senderName: 'You',
-      message: 'Hello! I\'m interested in this product. Is it still available?',
-      timestamp: new Date(Date.now() - 240000).toISOString(), // 4 minutes ago
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: 3,
-      senderId: seller?.id,
-      senderName: seller?.name,
-      message: 'Yes, it\'s still available! This is a brand new unit with warranty. Would you like to know more about the specifications?',
-      timestamp: new Date(Date.now() - 180000).toISOString(), // 3 minutes ago
-      isRead: false,
-      type: 'text'
-    }
-  ];
+
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
-      setMessages(sampleMessages);
+
+    setChatSeller(seller);
+
+  }, [seller]);
+
+
+
+  // Initialize chat - get or create conversation and load messages
+
+  useEffect(() => {
+
+    if (!isOpen || !isAuthenticated || !user || !product?.id || !chatSeller?.id) {
+
+      return;
+
     }
-  }, [isOpen, seller, product]);
+
+
+
+    const initializeChat = async () => {
+
+      try {
+
+        setLoading(true);
+
+
+
+        // Ensure a token exists before making a request
+
+        const token = localStorage.getItem('token');
+
+        if (!token) {
+
+          console.error('No token found, user is not authenticated.');
+
+          setLoading(false);
+
+          return;
+
+        }
+
+
+
+        // Start or get existing conversation
+
+        const conversationResponse = await api.post('/chat/conversations', {
+
+          productId: parseInt(product.id),
+
+          subject: `Inquiry about ${product.name || 'product'}`
+
+        });
+
+
+
+        console.log('Conversation Response:', conversationResponse.data);
+
+
+
+        if (conversationResponse.data.success) {
+
+          const { conversation: conv, seller: sellerDetails } = conversationResponse.data;
+
+          setConversation(conv);
+
+          if (sellerDetails) {
+
+            setChatSeller(prevSeller => ({ ...prevSeller, ...sellerDetails }));
+
+          }
+
+
+
+          // Load conversation messages
+
+          const messagesResponse = await api.get(`/chat/conversations/${conv.conversation_id}/messages`);
+
+          if (messagesResponse.data.success) {
+
+            setMessages(messagesResponse.data.messages);
+
+          }
+
+        }
+
+      } catch (error) {
+
+        console.error('Error initializing chat:', error);
+
+      } finally {
+
+        setLoading(false);
+
+      }
+
+    };
+
+
+
+    initializeChat();
+
+  }, [isOpen, isAuthenticated, user, product?.id, chatSeller?.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -73,20 +167,11 @@ const ChatPopup = ({
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = () => {
-    if (message.trim() === '') return;
+  const handleSendMessage = async () => {
+    if (message.trim() === '' || !conversation || sendingMessage) return;
 
-    const newMessage = {
-      id: Date.now(),
-      senderId: 'customer',
-      senderName: 'You',
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      type: 'text'
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+    setSendingMessage(true);
+    const messageText = message.trim();
     setMessage('');
 
     // Auto-resize textarea
@@ -94,19 +179,25 @@ const ChatPopup = ({
       textareaRef.current.style.height = 'auto';
     }
 
-    // Simulate seller response after 2 seconds
-    setTimeout(() => {
-      const sellerResponse = {
-        id: Date.now() + 1,
-        senderId: seller?.id,
-        senderName: seller?.name,
-        message: 'Thank you for your message! Let me check the details for you.',
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        type: 'text'
-      };
-      setMessages(prev => [...prev, sellerResponse]);
-    }, 2000);
+    try {
+      const response = await api.post(`/chat/conversations/${conversation.conversation_id}/messages`, {
+        messageText,
+        messageType: 'text'
+        
+      });
+
+      if (response.data.success) {
+        // Add the sent message to the messages list
+        const newMessage = response.data.message;
+        setMessages(prev => [...prev, newMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Restore the message if sending failed
+      setMessage(messageText);
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -158,11 +249,22 @@ const ChatPopup = ({
             onClick={onMaximize}
           >
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
+              {chatSeller?.image ? (
+                <img
+                  src={chatSeller.image}
+                  alt={chatSeller.name}
+                  className="w-8 h-8 rounded-full object-cover border border-gray-200"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+              ) : null}
+              <div className="w-8 h-8 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center" style={{display: chatSeller?.image ? 'none' : 'flex'}}>
                 <Store className="w-4 h-4 text-white" />
               </div>
               <div>
-                <p className="font-semibold text-sm text-gray-900">{seller?.name}</p>
+                <p className="font-semibold text-sm text-gray-900">{chatSeller?.name}</p>
                 <p className="text-xs text-gray-500">Click to expand</p>
               </div>
             </div>
@@ -184,23 +286,34 @@ const ChatPopup = ({
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
-                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                    {chatSeller?.image ? (
+                      <img
+                        src={chatSeller.image}
+                        alt={chatSeller.name}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-white/20"
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center" style={{display: chatSeller?.image ? 'none' : 'flex'}}>
                       <Store className="w-5 h-5 text-white" />
                     </div>
-                    {seller?.isOnline && (
+                    {chatSeller?.isOnline && (
                       <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-400 rounded-full border-2 border-white"></div>
                     )}
                   </div>
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="font-bold text-white">{seller?.name}</h3>
-                      {seller?.verified && (
+                      <h3 className="font-bold text-white">{chatSeller?.name}</h3>
+                      {chatSeller?.verified && (
                         <Award className="w-4 h-4 text-white" />
                       )}
                     </div>
                     <div className="flex items-center space-x-1 text-sm text-white/80">
                       <Star className="w-3 h-3 text-yellow-300 fill-current" />
-                      <span>{seller?.rating}</span>
+                      <span>{chatSeller?.rating}</span>
                       <span>•</span>
                       <span className="text-green-300">Active now</span>
                     </div>
@@ -227,9 +340,12 @@ const ChatPopup = ({
             <div className="bg-primary-50 border-b border-primary-200 px-4 py-3">
               <div className="flex items-center space-x-3">
                 <img
-                  src={product?.image}
+                  src={product?.images?.[0] || product?.image || 'https://via.placeholder.com/150x150?text=No+Image'}
                   alt={product?.name}
                   className="w-10 h-10 rounded-lg object-cover border border-gray-200"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/150x150?text=No+Image';
+                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-semibold text-gray-900 text-sm truncate">{product?.name}</h4>
@@ -240,42 +356,52 @@ const ChatPopup = ({
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-              {messages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`flex ${msg.senderId === 'customer' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-xs px-3 py-2 rounded-2xl relative ${
-                      msg.senderId === 'customer'
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-900'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-line break-words">{msg.message}</p>
-                    <div className="flex items-center justify-end space-x-1 mt-1">
-                      <span
-                        className={`text-xs ${
-                          msg.senderId === 'customer'
-                            ? 'text-primary-200'
-                            : 'text-gray-500'
+              {loading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader className="w-6 h-6 animate-spin text-primary-600" />
+                  <span className="ml-2 text-gray-600">Loading messages...</span>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isCustomerMessage = msg.sender_type === 'customer' || msg.sender_id === user?.user_id;
+                  return (
+                    <div
+                      key={msg.message_id || msg.id}
+                      className={`flex ${isCustomerMessage ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-xs px-3 py-2 rounded-2xl relative ${
+                          isCustomerMessage
+                            ? 'bg-primary-600 text-white'
+                            : 'bg-gray-100 text-gray-900'
                         }`}
                       >
-                        {formatTime(msg.timestamp)}
-                      </span>
-                      {msg.senderId === 'customer' && (
-                        <div className="text-primary-200">
-                          {msg.isRead ? (
-                            <CheckCircle className="w-3 h-3" />
-                          ) : (
-                            <Check className="w-3 h-3" />
+                        <p className="text-sm whitespace-pre-line break-words">{msg.message_text || msg.message}</p>
+                        <div className="flex items-center justify-end space-x-1 mt-1">
+                          <span
+                            className={`text-xs ${
+                              isCustomerMessage
+                                ? 'text-primary-200'
+                                : 'text-gray-500'
+                            }`}
+                          >
+                            {formatTime(msg.sent_at || msg.timestamp)}
+                          </span>
+                          {isCustomerMessage && (
+                            <div className="text-primary-200">
+                              {msg.is_read || msg.isRead ? (
+                                <CheckCircle className="w-3 h-3" />
+                              ) : (
+                                <Check className="w-3 h-3" />
+                              )}
+                            </div>
                           )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -307,14 +433,18 @@ const ChatPopup = ({
                 </div>
                 <button
                   onClick={handleSendMessage}
-                  disabled={message.trim() === ''}
+                  disabled={message.trim() === '' || sendingMessage}
                   className={`p-2 rounded-full transition-colors flex-shrink-0 ${
-                    message.trim() === ''
+                    message.trim() === '' || sendingMessage
                       ? 'bg-gray-300 cursor-not-allowed'
                       : 'bg-primary-600 hover:bg-primary-700'
                   }`}
                 >
-                  <Send className={`w-4 h-4 ${message.trim() === '' ? 'text-gray-500' : 'text-white'}`} />
+                  {sendingMessage ? (
+                    <Loader className="w-4 h-4 text-gray-500 animate-spin" />
+                  ) : (
+                    <Send className={`w-4 h-4 ${message.trim() === '' ? 'text-gray-500' : 'text-white'}`} />
+                  )}
                 </button>
               </div>
             </div>

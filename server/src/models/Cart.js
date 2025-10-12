@@ -36,7 +36,6 @@ class Cart {
       
       return rows;
     } catch (error) {
-      console.error('Error getting cart items:', error);
       throw error;
     }
   }
@@ -94,7 +93,6 @@ class Cart {
       
       return { success: true, cartId };
     } catch (error) {
-      console.error('Error adding item to cart:', error);
       throw error;
     }
   }
@@ -111,7 +109,6 @@ class Cart {
         WHERE sc.user_id = ? AND sc.product_id = ?
       `, [quantity, userId, productId]);
     } catch (error) {
-      console.error('Error updating quantity:', error);
       throw error;
     }
   }
@@ -134,7 +131,6 @@ class Cart {
         WHERE user_id = ? AND product_id = ?
       `, [userId, productId]);
     } catch (error) {
-      console.error('Error removing item:', error);
       throw error;
     }
   }
@@ -156,7 +152,6 @@ class Cart {
         DELETE FROM shopping_cart WHERE user_id = ?
       `, [userId]);
     } catch (error) {
-      console.error('Error clearing cart:', error);
       throw error;
     }
   }

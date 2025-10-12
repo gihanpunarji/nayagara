@@ -33,7 +33,6 @@ import AboutUs from "./components/customer/pages/AboutUs.jsx";
 import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
 import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
-import ChatList from "./components/customer/pages/ChatList.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 
 // Advertisement Components
@@ -356,16 +355,7 @@ createRoot(document.getElementById("root")).render(
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/messages"
-                    element={
-                      <ProtectedRoute requiredRole="customer">
-                        <PageWrapper>
-                          <ChatList />
-                        </PageWrapper>
-                      </ProtectedRoute>
-                    }
-                  />
+                  
                   <Route
                     path="/search"
                     element={

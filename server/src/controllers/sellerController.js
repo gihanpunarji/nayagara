@@ -9,7 +9,6 @@ const getSellerProfile = async (req, res) => {
     const userId = req.user.user_id;
     
     const user = await User.findById(userId);
-    console.log(user);
     
     
     if (!user) {

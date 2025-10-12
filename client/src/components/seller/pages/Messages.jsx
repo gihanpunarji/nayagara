@@ -16,138 +16,19 @@ import {
   Eye
 } from 'lucide-react';
 import SellerLayout from '../layout/SellerLayout';
+import api from '../../../api/axios';
 
 const Messages = () => {
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
+  const [currentMessages, setCurrentMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
-
-  // Mock conversations data
-  const mockConversations = [
-    {
-      id: 1,
-      customer: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        avatar: null
-      },
-      product: {
-        id: 101,
-        title: 'iPhone 14 Pro Max 256GB Space Black',
-        image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400'
-      },
-      lastMessage: 'Is this phone unlocked and what warranty does it come with?',
-      lastMessageTime: '2024-01-15T14:30:00Z',
-      unreadCount: 2,
-      status: 'active',
-      messages: [
-        {
-          id: 1,
-          sender: 'customer',
-          message: 'Hi, is this iPhone available in stock?',
-          timestamp: '2024-01-15T10:00:00Z',
-          read: true
-        },
-        {
-          id: 2,
-          sender: 'seller',
-          message: 'Yes, we have it in stock. It\'s brand new with original warranty.',
-          timestamp: '2024-01-15T10:15:00Z',
-          read: true
-        },
-        {
-          id: 3,
-          sender: 'customer',
-          message: 'Is this phone unlocked and what warranty does it come with?',
-          timestamp: '2024-01-15T14:30:00Z',
-          read: false
-        }
-      ]
-    },
-    {
-      id: 2,
-      customer: {
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        avatar: null
-      },
-      product: {
-        id: 102,
-        title: 'Toyota Prius 2020 Hybrid',
-        image: 'https://images.unsplash.com/photo-1549399163-1ba32edc4c84?w=400'
-      },
-      lastMessage: 'Thank you for the detailed response!',
-      lastMessageTime: '2024-01-14T16:20:00Z',
-      unreadCount: 0,
-      status: 'completed',
-      messages: [
-        {
-          id: 1,
-          sender: 'customer',
-          message: 'What is the mileage on this Prius?',
-          timestamp: '2024-01-14T15:00:00Z',
-          read: true
-        },
-        {
-          id: 2,
-          sender: 'seller',
-          message: 'The car has 45,000km on the odometer. It has been well maintained with full service history.',
-          timestamp: '2024-01-14T15:30:00Z',
-          read: true
-        },
-        {
-          id: 3,
-          sender: 'customer',
-          message: 'Can I see the service records? Also, are there any known issues?',
-          timestamp: '2024-01-14T16:00:00Z',
-          read: true
-        },
-        {
-          id: 4,
-          sender: 'seller',
-          message: 'Sure! I can share the service records with you. No major issues - just regular maintenance. The hybrid battery was checked recently and is in excellent condition.',
-          timestamp: '2024-01-14T16:10:00Z',
-          read: true
-        },
-        {
-          id: 5,
-          sender: 'customer',
-          message: 'Thank you for the detailed response!',
-          timestamp: '2024-01-14T16:20:00Z',
-          read: true
-        }
-      ]
-    },
-    {
-      id: 3,
-      customer: {
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        avatar: null
-      },
-      product: {
-        id: 103,
-        title: 'MacBook Pro 16" M2 512GB',
-        image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400'
-      },
-      lastMessage: 'Does this laptop support external monitors?',
-      lastMessageTime: '2024-01-13T11:45:00Z',
-      unreadCount: 1,
-      status: 'pending',
-      messages: [
-        {
-          id: 1,
-          sender: 'customer',
-          message: 'Does this laptop support external monitors?',
-          timestamp: '2024-01-13T11:45:00Z',
-          read: false
-        }
-      ]
-    }
-  ];
 
   const statusFilters = [
     { key: 'all', label: 'All Messages', count: 0 },
@@ -157,64 +38,91 @@ const Messages = () => {
   ];
 
   useEffect(() => {
-    setConversations(mockConversations);
-
-    // Update filter counts
-    statusFilters.forEach(filter => {
-      if (filter.key === 'all') {
-        filter.count = mockConversations.length;
-      } else {
-        filter.count = mockConversations.filter(conv => conv.status === filter.key).length;
+    const fetchConversations = async () => {
+      try {
+        setLoading(true);
+        const response = await api.get('/chat/conversations');
+        if (response.data.success) {
+          setConversations(response.data.conversations);
+          if (response.data.conversations.length > 0) {
+            handleConversationSelect(response.data.conversations[0]);
+          }
+        }
+      } catch (err) {
+        setError('Failed to fetch conversations.');
+        console.error(err);
+      } finally {
+        setLoading(false);
       }
-    });
+    };
 
-    // Auto-select first conversation
-    if (mockConversations.length > 0) {
-      setSelectedConversation(mockConversations[0]);
-    }
+    fetchConversations();
   }, []);
 
   useEffect(() => {
+    // Update filter counts
+    statusFilters.forEach(filter => {
+      if (filter.key === 'all') {
+        filter.count = conversations.length;
+      } else {
+        filter.count = conversations.filter(conv => conv.status === filter.key).length;
+      }
+    });
+  }, [conversations]);
+
+  useEffect(() => {
     scrollToBottom();
-  }, [selectedConversation]);
+  }, [currentMessages]);
+
+  const handleConversationSelect = async (conversation) => {
+    setSelectedConversation(conversation);
+    setLoadingMessages(true);
+    try {
+      const response = await api.get(`/chat/conversations/${conversation.conversation_id}/messages`);
+      if (response.data.success) {
+        setCurrentMessages(response.data.messages);
+      }
+    } catch (err) {
+      console.error('Failed to fetch messages for conversation', err);
+      setCurrentMessages([]);
+    } finally {
+      setLoadingMessages(false);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
-    const newMsg = {
-      id: Date.now(),
-      sender: 'seller',
-      message: newMessage.trim(),
-      timestamp: new Date().toISOString(),
-      read: true
-    };
-
-    // Update the conversation
-    const updatedConversations = conversations.map(conv => {
-      if (conv.id === selectedConversation.id) {
-        return {
-          ...conv,
-          messages: [...conv.messages, newMsg],
-          lastMessage: newMessage.trim(),
-          lastMessageTime: newMsg.timestamp,
-          status: 'active'
-        };
-      }
-      return conv;
-    });
-
-    setConversations(updatedConversations);
-
-    // Update selected conversation
-    const updatedSelected = updatedConversations.find(conv => conv.id === selectedConversation.id);
-    setSelectedConversation(updatedSelected);
-
+    const messageText = newMessage.trim();
     setNewMessage('');
-    scrollToBottom();
+
+    try {
+      const response = await api.post(`/chat/conversations/${selectedConversation.conversation_id}/messages`, {
+        messageText,
+        messageType: 'text',
+      });
+
+      if (response.data.success) {
+        const newMsg = response.data.message;
+        setCurrentMessages(prevMessages => [...prevMessages, newMsg]);
+        
+        // Optionally update the last message in the conversation list
+        const updatedConversations = conversations.map(conv => 
+          conv.conversation_id === selectedConversation.conversation_id
+            ? { ...conv, last_message: newMsg.message_text, last_message_at: newMsg.sent_at }
+            : conv
+        );
+        setConversations(updatedConversations);
+
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setNewMessage(messageText); // Restore message on error
+    }
   };
 
   const formatTime = (timestamp) => {
@@ -265,8 +173,8 @@ const Messages = () => {
         {/* Product Image */}
         <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
           <img
-            src={conversation.product.image}
-            alt={conversation.product.title}
+            src={conversation.product_image || 'https://via.placeholder.com/150'}
+            alt={conversation.product_title}
             className="w-full h-full object-cover"
           />
         </div>
@@ -275,29 +183,29 @@ const Messages = () => {
           {/* Customer Info */}
           <div className="flex items-center justify-between mb-1">
             <h3 className="font-semibold text-gray-900 truncate">
-              {conversation.customer.name}
+              {`${conversation.customer_first_name} ${conversation.customer_last_name}`}
             </h3>
-            {conversation.unreadCount > 0 && (
+            {conversation.unread_count > 0 && (
               <span className="bg-primary-600 text-white text-xs px-2 py-1 rounded-full">
-                {conversation.unreadCount}
+                {conversation.unread_count}
               </span>
             )}
           </div>
 
           {/* Product Title */}
           <p className="text-sm text-gray-600 truncate mb-2">
-            {conversation.product.title}
+            {conversation.product_title}
           </p>
 
           {/* Last Message */}
           <p className="text-sm text-gray-700 truncate mb-2">
-            {conversation.lastMessage}
+            {conversation.last_message}
           </p>
 
           {/* Time and Status */}
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500">
-              {formatTime(conversation.lastMessageTime)}
+              {formatTime(conversation.last_message_at)}
             </span>
             <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(conversation.status)}`}>
               {getStatusIcon(conversation.status)}
@@ -312,17 +220,18 @@ const Messages = () => {
   const MessageBubble = ({ message, isOwn }) => (
     <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-4`}>
       <div className={`max-w-xs lg:max-w-md ${isOwn ? 'bg-primary-600 text-white' : 'bg-gray-100 text-gray-900'} rounded-lg px-4 py-2`}>
-        <p className="text-sm">{message.message}</p>
+        <p className="text-sm">{message.message_text}</p>
         <p className={`text-xs mt-1 ${isOwn ? 'text-primary-100' : 'text-gray-500'}`}>
-          {formatTime(message.timestamp)}
+          {formatTime(message.sent_at)}
         </p>
       </div>
     </div>
   );
 
   const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         conv.product.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const customerName = `${conv.customer_first_name} ${conv.customer_last_name}`.toLowerCase();
+    const matchesSearch = customerName.includes(searchQuery.toLowerCase()) ||
+                         conv.product_title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterStatus === 'all' || conv.status === filterStatus;
 
     return matchesSearch && matchesFilter;
@@ -388,10 +297,10 @@ const Messages = () => {
             ) : (
               filteredConversations.map(conversation => (
                 <ConversationItem
-                  key={conversation.id}
+                  key={conversation.conversation_id}
                   conversation={conversation}
-                  isSelected={selectedConversation?.id === conversation.id}
-                  onClick={() => setSelectedConversation(conversation)}
+                  isSelected={selectedConversation?.conversation_id === conversation.conversation_id}
+                  onClick={() => handleConversationSelect(conversation)}
                 />
               ))
             )}
@@ -407,14 +316,14 @@ const Messages = () => {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-primary-600 to-primary-700 rounded-full flex items-center justify-center text-white font-semibold">
-                      {selectedConversation.customer.name.charAt(0)}
+                      {selectedConversation.customer_first_name.charAt(0)}
                     </div>
                     <div>
                       <h3 className="font-semibold text-gray-900">
-                        {selectedConversation.customer.name}
+                        {`${selectedConversation.customer_first_name} ${selectedConversation.customer_last_name}`}
                       </h3>
                       <p className="text-sm text-gray-600">
-                        About: {selectedConversation.product.title}
+                        About: {selectedConversation.product_title}
                       </p>
                     </div>
                   </div>
@@ -438,18 +347,18 @@ const Messages = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
                     <img
-                      src={selectedConversation.product.image}
-                      alt={selectedConversation.product.title}
+                      src={selectedConversation.product_image || 'https://via.placeholder.com/150'}
+                      alt={selectedConversation.product_title}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex-1">
                     <h4 className="font-medium text-gray-900">
-                      {selectedConversation.product.title}
+                      {selectedConversation.product_title}
                     </h4>
                     <div className="flex items-center space-x-2 mt-1">
                       <Package className="w-3 h-3 text-gray-500" />
-                      <span className="text-xs text-gray-600">Product ID: {selectedConversation.product.id}</span>
+                      <span className="text-xs text-gray-600">Product ID: {selectedConversation.product_id}</span>
                     </div>
                   </div>
                 </div>
@@ -458,13 +367,19 @@ const Messages = () => {
               {/* Messages */}
               <div className="flex-1 overflow-y-auto p-4">
                 <div className="space-y-4">
-                  {selectedConversation.messages.map(message => (
-                    <MessageBubble
-                      key={message.id}
-                      message={message}
-                      isOwn={message.sender === 'seller'}
-                    />
-                  ))}
+                  {loadingMessages ? (
+                    <div className="flex items-center justify-center h-full">
+                      <p>Loading messages...</p>
+                    </div>
+                  ) : (
+                    currentMessages.map(message => (
+                      <MessageBubble
+                        key={message.message_id}
+                        message={message}
+                        isOwn={message.sender_type === 'seller'}
+                      />
+                    ))
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               </div>

@@ -10,11 +10,10 @@ import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
 
 const CustomerAccount = () => {
-  const { logout } = useAuth();
-  const storedUsser = localStorage.getItem('user');
-  if(storedUsser == null) {
+  const { logout, user, isAuthenticated } = useAuth();
+  
+  if (!isAuthenticated || !user) {
     return <Navigate to={'/'} replace />
-
   }
 
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -30,18 +29,19 @@ const CustomerAccount = () => {
   const [selectedAdStatus, setSelectedAdStatus] = useState('all');
   const navigate = useNavigate();
 
-  // Mock user data
+  // User data from context with defaults
   const userData = {
-    name: 'Kasun Perera',
-    email: 'kasun.perera@gmail.com',
-    mobile: '+94 77 123 4567',
-    joinDate: 'January 2023',
+    firstName: user.first_name || 'User',
+    lastName: user.last_name || '',
+    email: user.email || '',
+    mobile: user.mobile || '',
+    joinDate: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently',
     profileImage: null,
-    verified: true,
-    walletBalance: 15750,
-    referralCode: 'KP2023',
-    totalReferrals: 12,
-    referralEarnings: 8500
+    verified: user.email_verified || true,
+    walletBalance: user.wallet_balance || 0,
+    referralCode: `USER${user.user_id}`,
+    totalReferrals: 0,
+    referralEarnings: 0
   };
 
   // Mock order data
@@ -282,7 +282,7 @@ const CustomerAccount = () => {
       alert('Please enter a valid amount');
       return;
     }
-    if (parseFloat(withdrawAmount) > user.walletBalance) {
+    if (parseFloat(withdrawAmount) > userData.walletBalance) {
       alert('Insufficient balance');
       return;
     }
@@ -329,7 +329,7 @@ const CustomerAccount = () => {
               <CreditCard className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">Rs. {user.walletBalance.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">Rs. {userData.walletBalance.toLocaleString()}</p>
               <p className="text-sm text-gray-500">Wallet Balance</p>
             </div>
           </div>
@@ -502,7 +502,7 @@ const CustomerAccount = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-green-100 mb-1">Available Balance</p>
-            <h3 className="text-3xl font-bold">Rs. {user.walletBalance.toLocaleString()}</h3>
+            <h3 className="text-3xl font-bold">Rs. {userData.walletBalance.toLocaleString()}</h3>
           </div>
           <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <CreditCard className="w-8 h-8" />
@@ -565,7 +565,7 @@ const CustomerAccount = () => {
             </div>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {user.walletBalance.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {userData.walletBalance.toLocaleString()}</p>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Withdrawal Amount
               </label>
@@ -1089,7 +1089,7 @@ const CustomerAccount = () => {
                 })}
 
                 <button
-                  onClick={() => navigate('/login')}
+                  onClick={handleSignOut}
                   className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg text-red-600 hover:bg-red-50 transition-colors mt-4"
                 >
                   <LogOut className="w-5 h-5" />

@@ -36,6 +36,23 @@ class Admin {
     );
   }
 
+  static async updateMobileCode(email, mobileCode) {
+    const connection = getConnection();
+    await connection.execute(
+      `UPDATE admins SET mobile_code = ? WHERE admin_email = ?`,
+      [mobileCode, email]
+    );
+  }
+
+  static async checkMobileCode(code, email) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      `SELECT admin_email FROM admins WHERE mobile_code = ? AND admin_email = ?`,
+      [code, email]
+    );
+    return rows[0];
+  }
+
   static async getAdminContactMobile() {
     const connection = getConnection();
     const [rows] = await connection.execute(

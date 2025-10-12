@@ -36,7 +36,7 @@ import ChatView from "./components/customer/pages/ChatView.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 
 // Advertisement Components
-// import PostAd from "./components/customer/pages/PostAd.jsx";
+import PostAd from "./components/customer/pages/PostAd.jsx";
 import AdDetails from "./components/customer/pages/AdDetails.jsx";
 import AdListings from "./components/customer/pages/AdListings.jsx";
 
@@ -92,7 +92,6 @@ createRoot(document.getElementById("root")).render(
           <Route path="/verify-mobile" element={<SellerMobileVerify />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
-
           {/* Admin Routes - WITHOUT AuthProvider */}
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route
@@ -147,7 +146,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/advertisements"
             element={
               // <AdminProtectedRoute>
-                <AdManagement />
+              <AdManagement />
               // </AdminProtectedRoute>
             }
           />
@@ -155,7 +154,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/categories"
             element={
               // <AdminProtectedRoute>
-                <AdminCategories />
+              <AdminCategories />
               // </AdminProtectedRoute>
             }
           />
@@ -163,7 +162,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/inventory"
             element={
               // <AdminProtectedRoute>
-                <AdminInventory />
+              <AdminInventory />
               // </AdminProtectedRoute>
             }
           />
@@ -171,7 +170,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/reviews"
             element={
               // <AdminProtectedRoute>
-                <AdminReviewsRatings />
+              <AdminReviewsRatings />
               // </AdminProtectedRoute>
             }
           />
@@ -179,7 +178,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/promotions"
             element={
               // <AdminProtectedRoute>
-                <AdminPromotions />
+              <AdminPromotions />
               // </AdminProtectedRoute>
             }
           />
@@ -187,7 +186,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/payments"
             element={
               // <AdminProtectedRoute>
-                <AdminPayments />
+              <AdminPayments />
               // </AdminProtectedRoute>
             }
           />
@@ -195,7 +194,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/shipping"
             element={
               // <AdminProtectedRoute>
-                <AdminShipping />
+              <AdminShipping />
               // </AdminProtectedRoute>
             }
           />
@@ -203,7 +202,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/support"
             element={
               // <AdminProtectedRoute>
-                <AdminSupport />
+              <AdminSupport />
               // </AdminProtectedRoute>
             }
           />
@@ -211,7 +210,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/settings"
             element={
               // <AdminProtectedRoute>
-                <AdminSettings />
+              <AdminSettings />
               // </AdminProtectedRoute>
             }
           />
@@ -219,7 +218,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/notifications"
             element={
               // <AdminProtectedRoute>
-                <AdminNotifications />
+              <AdminNotifications />
               // </AdminProtectedRoute>
             }
           />
@@ -227,7 +226,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/returns"
             element={
               // <AdminProtectedRoute>
-                <AdminReturns />
+              <AdminReturns />
               // </AdminProtectedRoute>
             }
           />
@@ -235,7 +234,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/banners"
             element={
               // <AdminProtectedRoute>
-                <AdminBanners />
+              <AdminBanners />
               // </AdminProtectedRoute>
             }
           />
@@ -386,6 +385,16 @@ createRoot(document.getElementById("root")).render(
                       <ProtectedRoute requiredRole="customer">
                         <PageWrapper>
                           <CustomerAccount />
+                        </PageWrapper>
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/post-ad"
+                    element={
+                      <ProtectedRoute requiredRole="customer">
+                        <PageWrapper>
+                          <PostAd />
                         </PageWrapper>
                       </ProtectedRoute>
                     }

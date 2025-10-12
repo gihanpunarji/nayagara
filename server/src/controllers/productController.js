@@ -459,7 +459,6 @@ const getPublicProducts = async (req, res) => {
     
     // First check if any products exist at all
     const [countResult] = await connection.execute("SELECT COUNT(*) as total FROM products");
-    console.log("Total products in database:", countResult[0].total);
 
     let query = `
       SELECT p.*, 
@@ -611,6 +610,8 @@ const getPublicProductById = async (req, res) => {
         u.profile_image as seller_avatar,
         u.user_mobile as seller_phone,
         u.user_email as seller_email,
+        u.profile_image as seller_image,
+        s.store_name,
         c2.city_name as location_city_name,
         d.district_name as location_district_name,
         GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
@@ -619,6 +620,7 @@ const getPublicProductById = async (req, res) => {
         LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
         LEFT JOIN categories c ON sc.categories_category_id = c.category_id
         LEFT JOIN users u ON p.seller_id = u.user_id
+        LEFT JOIN store s ON u.user_id = s.user_id
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id

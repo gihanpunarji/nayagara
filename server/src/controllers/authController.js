@@ -16,8 +16,8 @@ const { log } = require("console");
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+const generateToken = (userId, userType) => {
+  return jwt.sign({ userId, userType }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 const register = async (req, res, role = "customer") => {
@@ -71,7 +71,7 @@ const register = async (req, res, role = "customer") => {
       lastName,
       role,
     });
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
 
     const { first_name, last_name, user_role } = user;
 
@@ -146,7 +146,7 @@ const sellerRegister = async (req, res, role = "seller") => {
       role,
       nic,
     });
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
     const userId = user.user_id;
 
     createAddressForSeller({
@@ -221,7 +221,7 @@ const login = async (req, res, role = "customer") => {
       });
     }
 
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
     const { first_name, last_name, user_role } = user;
 
     res.json({
@@ -286,7 +286,7 @@ const sellerLogin = async (req, res, role = "seller") => {
       return res.status(403).json({ success: false, message: "mnv" });
     }
 
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
     const { first_name, last_name, user_role } = user;
 
     res.json({

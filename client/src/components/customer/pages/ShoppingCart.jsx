@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 
 const ShoppingCart = () => {
+  const navigate = useNavigate();
   const { 
     cart: cartItems, 
     updateQuantity, 
@@ -19,8 +20,6 @@ const ShoppingCart = () => {
     isEmpty, 
     loading 
   } = useCart();
-  
-  const navigate = useNavigate();
   
   const [selectedItems, setSelectedItems] = useState(new Set());
   const [promoCode, setPromoCode] = useState('');
@@ -160,7 +159,8 @@ const ShoppingCart = () => {
                             'https://via.placeholder.com/150x150?text=No+Image'
                           }
                           alt={item.name || item.title}
-                          className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-lg bg-gray-50"
+                          className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-lg bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => navigate(`/product/${item.product_id || item.id}`)}
                           onError={(e) => {
                             e.target.src = 'https://via.placeholder.com/150x150?text=No+Image';
                           }}
@@ -170,7 +170,10 @@ const ShoppingCart = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between">
                           <div className="flex-1">
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">
+                            <h3 
+                              className="text-lg font-bold text-gray-900 mb-1 cursor-pointer hover:text-primary-600 transition-colors"
+                              onClick={() => navigate(`/product/${item.product_id || item.id}`)}
+                            >
                               {item.name}
                             </h3>
                             <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">

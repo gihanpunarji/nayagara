@@ -26,7 +26,6 @@ export const CartProvider = ({ children }) => {
         setCart(JSON.parse(savedCart));
       }
     } catch (error) {
-      console.error('Error loading cart from localStorage:', error);
       setCart([]);
     } finally {
       setLoading(false);
@@ -38,7 +37,7 @@ export const CartProvider = ({ children }) => {
     try {
       localStorage.setItem('nayagara_cart', JSON.stringify(cartItems));
     } catch (error) {
-      console.error('Error saving cart to localStorage:', error);
+      // Silent fail for localStorage errors
     }
   }, []);
 
@@ -50,11 +49,8 @@ export const CartProvider = ({ children }) => {
       const response = await api.get('/cart');
       if (response.data.success) {
         setCart(response.data.items || []);
-        console.log("cart from api", response.data.items);
-        
       }
     } catch (error) {
-      console.error('Error loading cart from API:', error);
       loadCartFromLocalStorage();
     } finally {
       setLoading(false);
@@ -69,7 +65,6 @@ export const CartProvider = ({ children }) => {
       await api.post('/cart/add', { productId, quantity });
       return true;
     } catch (error) {
-      console.error('Error adding item to API:', error);
       return false;
     }
   }, [isAuthenticated, user]);
@@ -145,7 +140,7 @@ export const CartProvider = ({ children }) => {
         // Reload cart from API
         await loadCartFromAPI();
       } catch (error) {
-        console.error('Error removing item from API:', error);
+        // Silent fail
       }
     } else {
       // For guest users: remove from localStorage
@@ -171,7 +166,7 @@ export const CartProvider = ({ children }) => {
         // Reload cart from API
         await loadCartFromAPI();
       } catch (error) {
-        console.error('Error updating quantity in API:', error);
+        // Silent fail
       }
     } else {
       // For guest users: update in localStorage
@@ -196,13 +191,44 @@ export const CartProvider = ({ children }) => {
       try {
         await api.delete('/cart');
       } catch (error) {
-        console.error('Error clearing cart from API:', error);
+        // Silent fail
       }
     } else {
       localStorage.removeItem('nayagara_cart');
     }
   }, [isAuthenticated, user]);
 
+  // Merge guest cart with user cart when user logs in
+  const mergeGuestCart = useCallback(async () => {
+    if (!isAuthenticated || !user) return;
+
+    const guestCart = localStorage.getItem('nayagara_cart');
+    if (guestCart) {
+      try {
+        const guestItems = JSON.parse(guestCart);
+        if (guestItems.length > 0) {
+          setLoading(true);
+          // Merge with existing user cart
+          await api.post('/cart/merge', { guestItems });
+          // Clear guest cart from localStorage
+          localStorage.removeItem('nayagara_cart');
+          // Reload cart from API to show merged result
+          await loadCartFromAPI();
+        }
+      } catch (error) {
+        // Silent fail on merge error
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [isAuthenticated, user, loadCartFromAPI]);
+
+  // Call merge when user becomes authenticated
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      mergeGuestCart();
+    }
+  }, [isAuthenticated, user, mergeGuestCart]);
 
   // Load cart from localStorage for guest users or from API for authenticated users
   useEffect(() => {
@@ -243,6 +269,7 @@ export const CartProvider = ({ children }) => {
     updateQuantity,
     clearCart,
     loadCartFromAPI,
+    mergeGuestCart,
 
     // Computed values
     subtotal,

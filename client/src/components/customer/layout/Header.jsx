@@ -1,18 +1,3 @@
-import React, { useState, useEffect } from "react";
-import {
-  Search,
-  ShoppingCart,
-  User,
-  ChevronDown,
-  Phone,
-  Globe,
-  MapPin,
-  Filter,
-  Plus,
-} from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import AdvancedFilters from "./AdvancedFilters";
-import { useAuth } from "../../../context/AuthContext";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,

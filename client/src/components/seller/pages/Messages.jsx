@@ -19,6 +19,7 @@ import SellerLayout from '../layout/SellerLayout';
 import api from '../../../api/axios';
 
 const Messages = () => {
+  const serverUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5001';
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [currentMessages, setCurrentMessages] = useState([]);
@@ -42,6 +43,7 @@ const Messages = () => {
       try {
         setLoading(true);
         const response = await api.get('/chat/conversations');
+        console.log("Fetched conversations:", response.data);
         if (response.data.success) {
           setConversations(response.data.conversations);
           if (response.data.conversations.length > 0) {
@@ -173,7 +175,7 @@ const Messages = () => {
         {/* Product Image */}
         <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
           <img
-            src={conversation.product_image || 'https://via.placeholder.com/150'}
+            src={conversation.product_image ? `${serverUrl}${conversation.product_image}` : 'https://via.placeholder.com/150'}
             alt={conversation.product_title}
             className="w-full h-full object-cover"
           />
@@ -347,7 +349,7 @@ const Messages = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
                     <img
-                      src={selectedConversation.product_image || 'https://via.placeholder.com/150'}
+                      src={selectedConversation.product_image ? `${serverUrl}${selectedConversation.product_image}` : 'https://via.placeholder.com/150'}
                       alt={selectedConversation.product_title}
                       className="w-full h-full object-cover"
                     />

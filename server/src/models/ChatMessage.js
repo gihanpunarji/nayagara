@@ -215,13 +215,9 @@ class ChatMessage {
     try {
       const [conversations] = await connection.execute(`
         SELECT 
-          c.conversation_id,
-          c.product_id,
-          c.subject,
-          c.created_at,
-          c.last_message_at,
+          c.*,
           p.product_title,
-          pi.image_url as product_image,
+          (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = c.product_id AND pi.is_primary = 1 LIMIT 1) as product_image,
           cust.first_name as customer_first_name,
           cust.last_name as customer_last_name,
           cust.user_email as customer_email,
@@ -234,12 +230,8 @@ class ChatMessage {
           users cust ON c.customer_id = cust.user_id
         LEFT JOIN 
           products p ON c.product_id = p.product_id
-        LEFT JOIN 
-          product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
         WHERE 
           c.seller_id = ? AND c.conversation_type = 'customer_seller'
-        GROUP BY 
-          c.conversation_id
         ORDER BY 
           c.last_message_at DESC
         LIMIT ?
@@ -259,31 +251,30 @@ class ChatMessage {
     try {
       const [conversations] = await connection.execute(`
         SELECT 
-          c.conversation_id,
-          c.product_id,
-          c.subject,
-          c.created_at,
-          c.last_message_at,
+          c.*,
           p.product_title,
+          (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = c.product_id AND pi.is_primary = 1 LIMIT 1) as product_image,
           seller.first_name as seller_first_name,
           seller.last_name as seller_last_name,
-          seller.business_name as seller_business_name,
-          seller.email as seller_email,
+          s.store_name as seller_business_name,
+          seller.user_email as seller_email,
           seller.profile_image as seller_profile_image,
-          (SELECT m.message_text FROM messages m 
-           WHERE m.conversation_id = c.conversation_id 
-           ORDER BY m.sent_at DESC LIMIT 1) as last_message,
-          (SELECT COUNT(*) FROM messages m 
-           WHERE m.conversation_id = c.conversation_id 
-           AND m.sender_id != ? AND m.is_read = 0) as unread_count
-        FROM conversations c
-        LEFT JOIN products p ON c.product_id = p.product_id
-        LEFT JOIN users seller ON c.seller_id = seller.user_id
-        LEFT JOIN store s ON seller.user_id = store.seller_id
-        WHERE c.customer_id = ? AND c.conversation_type = 'customer_seller'
-        ORDER BY c.last_message_at DESC
+          (SELECT m.message_text FROM messages m WHERE m.conversation_id = c.conversation_id ORDER BY m.sent_at DESC LIMIT 1) as last_message,
+          (SELECT COUNT(*) FROM messages m WHERE m.conversation_id = c.conversation_id AND m.sender_id != c.customer_id AND m.is_read = 0) as unread_count
+        FROM 
+          conversations c
+        LEFT JOIN 
+          products p ON c.product_id = p.product_id
+        JOIN 
+          users seller ON c.seller_id = seller.user_id
+        LEFT JOIN 
+          store s ON seller.user_id = s.user_id
+        WHERE 
+          c.customer_id = ? AND c.conversation_type = 'customer_seller'
+        ORDER BY 
+          c.last_message_at DESC
         LIMIT ?
-      `, [customerId, customerId, limit]);
+      `, [customerId, limit]);
       
       return conversations;
     } catch (error) {

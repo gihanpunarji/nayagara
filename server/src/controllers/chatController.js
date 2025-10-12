@@ -150,7 +150,7 @@ const sendMessage = async (req, res) => {
     if (!conversation) {
       return res.status(404).json({
         success: false,
-        message: 'Conversation not found or access denied'
+        message: `Conversation not found or access denied for conversationId: ${conversationId} and senderId: ${senderId}`
       });
     }
 

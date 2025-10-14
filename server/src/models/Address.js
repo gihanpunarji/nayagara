@@ -43,7 +43,7 @@ class Address {
     static async updateBusinessAddress({ userId, line1, line2, postalCode, cityId }) {
         const connection = getConnection();
         const [result] = await connection.execute(
-            "UPDATE addresses SET line1 = ?, line2 = ?, postal_code = ?, city_id = ?, updated_at = ? WHERE user_id = ? AND address_type = 'business'",
+            "UPDATE addresses SET line1 = ?, line2 = ?, postalCode = ?, city_id = ?, updated_at = ? WHERE user_id = ? AND address_type = 'business'",
             [line1, line2, postalCode, cityId, new Date(), userId]
         );
         return result.affectedRows;

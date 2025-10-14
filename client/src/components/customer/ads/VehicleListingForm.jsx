@@ -1,6 +1,6 @@
 // import React from 'react';
 
-const VehicleAdForm = ({ subcategory, vehicleData, onChange, errors = {} }) => {
+const VehicleListingForm = ({ subcategory, vehicleData, onChange, errors = {} }) => {
 //   const handleFieldChange = (field, value) => {
 //     onChange({
 //       ...vehicleData,
@@ -325,4 +325,4 @@ const VehicleAdForm = ({ subcategory, vehicleData, onChange, errors = {} }) => {
 //   );
 };
 
-export default VehicleAdForm;
+export default VehicleListingForm;

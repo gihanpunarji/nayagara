@@ -230,6 +230,17 @@ const ProductView = () => {
     openChat(sellerData, processedProduct);
   };
 
+  const handleBuyNow = async () => {
+    if (!product) return;
+    try {
+      await addToCart(product, 1);
+      navigate('/checkout');
+    } catch (error) {
+      console.error("Buy Now error:", error);
+      // Optionally show an error to the user
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -508,7 +519,9 @@ const ProductView = () => {
                     ? `In Cart (${cartQuantity})`
                     : "Add to Cart"}
                 </button>
-                <button className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <button 
+                  onClick={handleBuyNow}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                   Buy Now
                 </button>
                 <button className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">

@@ -292,11 +292,9 @@ const Header = ({
                 className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors"
               >
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
+                <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
               </Link>
 
               <div

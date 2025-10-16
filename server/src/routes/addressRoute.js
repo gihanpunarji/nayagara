@@ -8,3 +8,5 @@ router.get('/districts/:provinceId', getDistrictsByProvince);
 router.get('/cities/:districtId', getCitiesByDistrict);
 
 module.exports = router;
+
+module.exports = router;

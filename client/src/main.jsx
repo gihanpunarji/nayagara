@@ -25,15 +25,13 @@ import ShopPage from "./components/customer/pages/ShopPage.jsx";
 import AdvancedSearch from "./components/customer/pages/AdvancedSearch.jsx";
 import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
 import ProductView from "./components/customer/pages/ProductView.jsx";
-import NewArrivals from "./components/customer/pages/NewArrivals.jsx";
 import FlashSale from "./components/customer/pages/FlashSale.jsx";
-import DailyDeals from "./components/customer/pages/DailyDeals.jsx";
-import TopRated from "./components/customer/pages/TopRated.jsx";
 import AboutUs from "./components/customer/pages/AboutUs.jsx";
 import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
 import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
+import HelpCenter from "./components/customer/pages/HelpCenter.jsx";
 
 // Advertisement Components
 import PostAd from "./components/customer/pages/PostAd.jsx";

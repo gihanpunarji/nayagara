@@ -5,7 +5,7 @@ import MobileMenu from "../layout/MobileMenu";
 function NayagaraHome() {
   const [featuredCategories, setFeaturedCategories] = useState([]);
   const [flashSaleItems, setFlashSaleItems] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
+
   const [carouselIndex, setCarouselIndex] = useState(0);
   const [currentPage, setCurrentPage] = useState('home');
   const [activeNavItem, setActiveNavItem] = useState('home');
@@ -53,22 +53,13 @@ function NayagaraHome() {
       { id: 13, title: "Water Purifier", price: 12000, oldPrice: 15000, image: "/logo.png" },
     ];
 
-    const newA = [
-      { id: 21, title: "Spring Water 1L", price: 120, image: "/logo.png" },
-      { id: 22, title: "Sparkling 0.5L", price: 90, image: "/logo.png" },
-      { id: 23, title: "Filtered 5L", price: 420, image: "/logo.png" },
-      { id: 24, title: "Eco Bottle", price: 350, image: "/logo.png" },
-    ];
-
-    // Put into state
     setFeaturedCategories(cats);
     setFlashSaleItems(flash);
-    setNewArrivals(newA);
   }, []);
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 w-full overflow-x-hidden pb-safe">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 w-full overflow-x-hidden">
       {/* Page Header with Navigation */}
       <SimpleHeader activeNavItem={activeNavItem} setActiveNavItem={setActiveNavItem} scrollToContact={scrollToContact} />
 
@@ -106,8 +97,7 @@ function NayagaraHome() {
       {/* Customer Testimonials */}
       <CustomerTestimonials scrollToContact={scrollToContact} />
 
-      {/* Add padding at bottom for mobile navigation */}
-      <div className="h-20 md:hidden"></div>
+
     </div>
   );
 }
@@ -775,18 +765,7 @@ const CompanyValues = memo(function CompanyValues() {
   );
 });
 
-const NewArrivals = memo(function NewArrivals({ items = [] }) {
-  return (
-    <section className="bg-white p-4 rounded-md shadow-sm">
-      <h3 className="text-xl font-semibold mb-4">New Arrivals</h3>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        {items.map((it) => (
-          <ProductCard key={it.id} product={it} />
-        ))}
-      </div>
-    </section>
-  );
-});
+
 
 const ProductCard = memo(function ProductCard({ product }) {
   return (

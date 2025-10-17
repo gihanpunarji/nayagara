@@ -1,4 +1,5 @@
 const District = require("../models/District");
+const Address = require("../models/Address");
 
 const getAllDistricts = async (req, res) => {
     const districts = await District.getAllDistricts();
@@ -104,9 +105,142 @@ const getCitiesByDistrict = async (req, res) => {
   }
 };
 
+const getUserAddresses = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const addresses = await Address.getUserAddresses(userId);
+
+    res.json({
+      success: true,
+      message: "User addresses fetched successfully",
+      data: addresses,
+    });
+  } catch (error) {
+    console.error("Get user addresses error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+const createUserAddress = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { addressType, line1, line2, postalCode, cityId, isDefault } = req.body;
+
+    if (!line1 || !postalCode || !cityId) {
+      return res.status(400).json({
+        success: false,
+        message: "Line1, postal code, and city are required",
+      });
+    }
+
+    const result = await Address.createUserAddress({
+      userId,
+      addressType,
+      line1,
+      line2,
+      postalCode,
+      cityId,
+      isDefault,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Address created successfully",
+      data: { addressId: result.insertId },
+    });
+  } catch (error) {
+    console.error("Create user address error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+const updateUserAddress = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { addressId } = req.params;
+    const { line1, line2, postalCode, cityId, isDefault } = req.body;
+
+    if (!line1 || !postalCode || !cityId) {
+      return res.status(400).json({
+        success: false,
+        message: "Line1, postal code, and city are required",
+      });
+    }
+
+    const affectedRows = await Address.updateUserAddress({
+      addressId,
+      userId,
+      line1,
+      line2,
+      postalCode,
+      cityId,
+      isDefault,
+    });
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found or unauthorized",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Address updated successfully",
+    });
+  } catch (error) {
+    console.error("Update user address error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
+const deleteUserAddress = async (req, res) => {
+  try {
+    const userId = req.user.user_id;
+    const { addressId } = req.params;
+
+    const affectedRows = await Address.deleteUserAddress(addressId, userId);
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Address not found or unauthorized",
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Address deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete user address error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error",
+      error: error.message,
+    });
+  }
+};
+
 module.exports = {
   getAllDistricts,
   getAllProvinces,
   getDistrictsByProvince,
   getCitiesByDistrict,
+  getUserAddresses,
+  createUserAddress,
+  updateUserAddress,
+  deleteUserAddress,
 };

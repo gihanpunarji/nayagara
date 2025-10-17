@@ -442,7 +442,11 @@ const updateProduct = async (req, res) => {
 
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {
+  const { getConnection } = require("../config/database");
+  const pool = getConnection();
+  let connection;
   try {
+    connection = await pool.getConnection();
     const { 
       page = 1, 
       limit = 12,
@@ -454,8 +458,6 @@ const getPublicProducts = async (req, res) => {
     } = req.query;
     
     const offset = (page - 1) * limit;
-    const { getConnection } = require("../config/database");
-    const connection = getConnection();
     
     // First check if any products exist at all
     const [countResult] = await connection.execute("SELECT COUNT(*) as total FROM products");
@@ -575,6 +577,8 @@ const getPublicProducts = async (req, res) => {
       success: false,
       message: "Internal server error"
     });
+  } finally {
+    if (connection) connection.release();
   }
 };
 
@@ -585,7 +589,11 @@ const filterProducts = async (req, res) => {
 
 // Get public product by ID (no authentication required)
 const getPublicProductById = async (req, res) => {
+  const { getConnection } = require("../config/database");
+  const pool = getConnection();
+  let connection;
   try {
+    connection = await pool.getConnection();
     const { productId } = req.params;
     
     if (!productId) {
@@ -594,9 +602,6 @@ const getPublicProductById = async (req, res) => {
         message: "Product ID is required"
       });
     }
-
-    const { getConnection } = require("../config/database");
-    const connection = getConnection();
     
     // Query to get product with all related data
     const query = `
@@ -725,6 +730,8 @@ const getPublicProductById = async (req, res) => {
       success: false,
       message: "Internal server error"
     });
+  } finally {
+    if (connection) connection.release();
   }
 };
 

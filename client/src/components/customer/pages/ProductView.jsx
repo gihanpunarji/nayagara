@@ -233,11 +233,23 @@ const ProductView = () => {
   const handleBuyNow = async () => {
     if (!product) return;
     try {
-      await addToCart(product, 1);
-      navigate('/checkout');
+      const itemToCheckout = { ...processedProduct, quantity: 1 };
+      const subtotal = itemToCheckout.price;
+      const itemCount = 1;
+      const shipping = 200;
+      const total = subtotal + shipping;
+
+      navigate('/checkout', { 
+        state: { 
+          items: [itemToCheckout], 
+          subtotal, 
+          itemCount, 
+          shipping, 
+          total 
+        } 
+      });
     } catch (error) {
       console.error("Buy Now error:", error);
-      // Optionally show an error to the user
     }
   };
 

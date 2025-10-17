@@ -25,6 +25,23 @@ const ShoppingCart = () => {
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
 
+  const [selection, setSelection] = useState({
+    items: [],
+    subtotal: 0,
+    itemCount: 0,
+    total: 0,
+  });
+
+  useEffect(() => {
+    const selectedCartItems = cartItems.filter(item => selectedItems.has(item.id));
+    const subtotal = selectedCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    const itemCount = selectedCartItems.reduce((sum, item) => sum + item.quantity, 0);
+    const shippingCost = 200;
+    const total = subtotal + shippingCost;
+
+    setSelection({ items: selectedCartItems, subtotal, itemCount, total });
+  }, [selectedItems, cartItems]);
+
   const handleUpdateQuantity = (productId, newQuantity) => {
     if (newQuantity < 1) return;
     updateQuantity(productId, newQuantity);
@@ -289,29 +306,17 @@ const ShoppingCart = () => {
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Subtotal ({selectedCartItems.length} items)</span>
-                  <span>Rs. {subtotal.toLocaleString()}</span>
+                  <span>Subtotal ({selection.itemCount} items)</span>
+                  <span>Rs. {selection.subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? 'Free' : `Rs. ${shippingCost.toLocaleString()}`}</span>
+                  <span>Rs. 200</span>
                 </div>
-                {savings > 0 && (
-                  <div className="flex justify-between text-success">
-                    <span>You Save</span>
-                    <span>-Rs. {savings.toLocaleString()}</span>
-                  </div>
-                )}
-                {discount > 0 && (
-                  <div className="flex justify-between text-success">
-                    <span>Promo Discount</span>
-                    <span>-Rs. {discount.toLocaleString()}</span>
-                  </div>
-                )}
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>Rs. {total.toLocaleString()}</span>
+                    <span>Rs. {selection.total.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -335,8 +340,8 @@ const ShoppingCart = () => {
               </div>
 
               <button
-                onClick={() => navigate('/checkout')}
-                disabled={selectedItems.size === 0}
+                onClick={() => navigate('/checkout', { state: { items: selection.items, subtotal: selection.subtotal, total: selection.total, itemCount: selection.itemCount, shipping: 200 } })}
+                disabled={selection.items.length === 0}
                 className="w-full bg-gradient-primary text-white py-3 px-6 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 <CreditCard className="w-5 h-5" />

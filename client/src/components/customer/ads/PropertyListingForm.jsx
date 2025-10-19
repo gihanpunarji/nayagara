@@ -1,6 +1,6 @@
 import React from 'react';
 
-const PropertyAdForm = ({ subcategory, propertyData, onChange, errors = {} }) => {
+const PropertyListingForm = ({ subcategory, propertyData, onChange, errors = {} }) => {
   // const handleFieldChange = (field, value) => {
   //   onChange({
   //     ...propertyData,
@@ -393,4 +393,4 @@ const PropertyAdForm = ({ subcategory, propertyData, onChange, errors = {} }) =>
   // );
 };
 
-export default PropertyAdForm;
+export default PropertyListingForm;

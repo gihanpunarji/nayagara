@@ -15,40 +15,34 @@ const MobileHome = () => {
   const heroBanners = [
     {
       id: 1,
-      title: 'Super Sale',
-      subtitle: 'Up to 70% OFF',
-      description: 'Electronics & Fashion',
-      image: 'https://images.unsplash.com/photo-1607083206869-4c7672e72a8a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      color: 'from-red-500 to-pink-600',
-      cta: 'Shop Now'
+      title: 'Crystal Clear Water for Your Home',
+      subtitle: 'Advanced Home Water Filters',
+      description: 'Starting from Rs. 10,000',
+      image: '/home_filter.jpg',
+      color: 'from-blue-500 to-cyan-600',
+      cta: 'Shop Home Filters'
     },
     {
       id: 2,
-      title: 'New Arrivals',
-      subtitle: 'Fresh Collection',
-      description: 'Trending products just in',
-      image: 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+      title: 'Pure Water for Your Workplace',
+      subtitle: 'High-Capacity Office Filters',
+      description: 'Ensure a healthy environment for your team',
+      image: '/office_filter.jpg',
       color: 'from-primary-500 to-secondary-600',
-      cta: 'Explore'
+      cta: 'Explore Office Solutions'
     },
     {
       id: 3,
-      title: 'Free Delivery',
-      subtitle: 'Island Wide',
-      description: 'On orders above Rs. 5,000',
-      image: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
-      color: 'from-blue-500 to-cyan-600',
+      title: 'Uncompromising Quality',
+      subtitle: 'Certified & Tested',
+      description: 'Experience the difference with our advanced purification',
+      image: '/quality.jpg',
+      color: 'from-green-500 to-teal-600',
       cta: 'Learn More'
     }
   ];
 
-  // Quick action categories
-  const quickActions = [
-    { name: 'Flash Sale', icon: Zap, color: 'bg-red-500', textColor: 'text-red-600', path: '/flash-sale' },
-    { name: 'New Arrivals', icon: TrendingUp, color: 'bg-blue-500', textColor: 'text-blue-600', path: '/new-arrivals' },
-    { name: 'Daily Deals', icon: Gift, color: 'bg-green-500', textColor: 'text-green-600', path: '/deals' },
-    { name: 'Top Rated', icon: Star, color: 'bg-yellow-500', textColor: 'text-yellow-600', path: '/top-rated' }
-  ];
+
 
   // Fetch featured products
   const fetchFeaturedProducts = async () => {
@@ -140,29 +134,10 @@ const MobileHome = () => {
         </div>
       </div>
 
-      {/* Quick Actions Grid */}
-      <div className="bg-white px-4 py-6">
-        <div className="grid grid-cols-4 gap-4">
-          {quickActions.map((action, index) => {
-            const IconComponent = action.icon;
-            return (
-              <Link
-                key={index}
-                to={action.path}
-                className="flex flex-col items-center space-y-2 p-3 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <div className={`w-12 h-12 ${action.color} rounded-full flex items-center justify-center`}>
-                  <IconComponent className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xs font-medium text-gray-700 text-center">{action.name}</span>
-              </Link>
-            );
-          })}
-        </div>
-      </div>
+
 
       {/* Flash Sale Section */}
-      <div className="bg-gradient-to-r from-red-500 to-pink-600 mx-4 rounded-2xl p-4 mb-6">
+      <div className="bg-gradient-to-r from-green-500 to-emerald-600 mx-4 rounded-2xl p-4 my-6">
         <div className="flex items-center justify-between text-white mb-3">
           <div className="flex items-center space-x-2">
             <Zap className="w-5 h-5" />
@@ -202,7 +177,7 @@ const MobileHome = () => {
       </div>
 
       {/* Featured Products */}
-      <div className="px-4 mb-6">
+      <div className="px-4 mb-4">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-gray-900">Just For You</h3>
           <Link to="/shop" className="flex items-center space-x-1 text-primary-600 text-sm font-medium">
@@ -301,7 +276,7 @@ const MobileHome = () => {
       </div>
 
       {/* Services Banner */}
-      <div className="px-4 mb-6">
+      <div className="px-4 mb-0">
         <div className="bg-primary-50 rounded-2xl p-4">
           <h3 className="font-bold text-gray-900 mb-3">Why Choose Nayagara?</h3>
           <div className="space-y-3">

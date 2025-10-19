@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Car, Home, MapPin, Phone, Camera, CreditCard, Check, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
-import VehicleAdForm from '../ads/VehicleAdForm';
-import PropertyAdForm from '../ads/PropertyAdForm';
+
+const VehicleListingForm = lazy(() => import('../ads/VehicleListingForm'));
+const PropertyListingForm = lazy(() => import('../ads/PropertyListingForm'));
 
 const PostAd = () => {
   const navigate = useNavigate();
@@ -390,23 +391,27 @@ const PostAd = () => {
       {/* Category Specific Fields */}
       {formData.ad_type === 'vehicle' && formData.subcategory && (
         <div className="mt-6 pt-6 border-t border-gray-200">
-          <VehicleAdForm
-            subcategory={formData.subcategory}
-            vehicleData={formData.vehicle_data}
-            onChange={(data) => setFormData(prev => ({ ...prev, vehicle_data: data }))}
-            errors={errors}
-          />
+          <Suspense fallback={<div>Loading form...</div>}>
+            <VehicleListingForm
+              subcategory={formData.subcategory}
+              vehicleData={formData.vehicle_data}
+              onChange={(data) => setFormData(prev => ({ ...prev, vehicle_data: data }))}
+              errors={errors.vehicle_data || {}}
+            />
+          </Suspense>
         </div>
       )}
 
       {formData.ad_type === 'property' && formData.subcategory && (
-        <div className="mt-6 pt-6 border-gray-200">
-          <PropertyAdForm
-            subcategory={formData.subcategory}
-            propertyData={formData.property_data}
-            onChange={(data) => setFormData(prev => ({ ...prev, property_data: data }))}
-            errors={errors}
-          />
+        <div className="mt-6 pt-6 border-t border-gray-200">
+          <Suspense fallback={<div>Loading form...</div>}>
+            <PropertyListingForm
+              subcategory={formData.subcategory}
+              propertyData={formData.property_data}
+              onChange={(data) => setFormData(prev => ({ ...prev, property_data: data }))}
+              errors={errors.property_data || {}}
+            />
+          </Suspense>
         </div>
       )}
     </div>

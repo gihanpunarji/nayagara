@@ -230,6 +230,29 @@ const ProductView = () => {
     openChat(sellerData, processedProduct);
   };
 
+  const handleBuyNow = async () => {
+    if (!product) return;
+    try {
+      const itemToCheckout = { ...processedProduct, quantity: 1 };
+      const subtotal = itemToCheckout.price;
+      const itemCount = 1;
+      const shipping = 200;
+      const total = subtotal + shipping;
+
+      navigate('/checkout', { 
+        state: { 
+          items: [itemToCheckout], 
+          subtotal, 
+          itemCount, 
+          shipping, 
+          total 
+        } 
+      });
+    } catch (error) {
+      console.error("Buy Now error:", error);
+    }
+  };
+
   // Loading state
   if (loading) {
     return (
@@ -280,7 +303,7 @@ const ProductView = () => {
     }`.trim() || "Unknown Seller";
 
   return (
-    <div className="min-h-screen max-w-[85%] mx-auto bg-gray-50">
+    <div className="min-h-screen max-w-7xl mx-auto bg-gray-50">
       {/* Breadcrumb */}
       <div className="bg-white border-b border-gray-200">
         <div className="px-4 py-3">
@@ -384,7 +407,7 @@ const ProductView = () => {
             {/* Product Details */}
             <div className="space-y-6">
               <div>
-                <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                   {processedProduct.name}
                 </h1>
                 <p className="text-gray-600 leading-relaxed">
@@ -422,7 +445,7 @@ const ProductView = () => {
 
               {/* Price */}
               <div className="flex items-center space-x-3">
-                <span className="text-3xl font-bold text-gray-900">
+                <span className="text-2xl sm:text-3xl font-bold text-gray-900">
                   Rs. {processedProduct.price.toLocaleString()}
                 </span>
                 {processedProduct.originalPrice && (
@@ -508,7 +531,9 @@ const ProductView = () => {
                     ? `In Cart (${cartQuantity})`
                     : "Add to Cart"}
                 </button>
-                <button className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors">
+                <button 
+                  onClick={handleBuyNow}
+                  className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-lg font-medium hover:bg-gray-200 transition-colors">
                   Buy Now
                 </button>
                 <button className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
@@ -524,17 +549,17 @@ const ProductView = () => {
           <h3 className="text-lg font-bold text-gray-900 mb-4">
             Seller Information
           </h3>
-          <div className="flex items-start justify-between">
+          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex items-center space-x-4">
               {sellerImageUrl ? (
                 <img
                   src={sellerImageUrl}
                   alt={`${sellerName}'s profile`}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-gray-100"
+                  className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-100 flex-shrink-0"
                 />
               ) : (
-                <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">
-                  <Store className="w-8 h-8 text-white" />
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center flex-shrink-0">
+                  <Store className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
                 </div>
               )}
               <div>
@@ -546,7 +571,7 @@ const ProductView = () => {
                     <Award className="w-5 h-5 text-blue-600" />
                   )}
                 </div>
-                <div className="flex items-center space-x-1 mb-1">
+                <div className="flex items-center flex-wrap space-x-1 mb-1">
                   <div className="flex">
                     {[...Array(5)].map((_, i) => (
                       <Star
@@ -575,7 +600,7 @@ const ProductView = () => {
             </div>
             <button
               onClick={handleOpenChat}
-              className="bg-primary-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center space-x-2"
+              className="w-full md:w-auto bg-primary-600 text-white py-2 px-4 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
             >
               <MessageCircle className="w-4 h-4" />
               <span>Chat Now</span>

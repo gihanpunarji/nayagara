@@ -1,10 +1,13 @@
-import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../../context/AuthContext';
+import LoginPromptModal from '../ui/LoginPromptModal';
 
-const ProtectedRoute = ({ children, requiredRole = null }) => {
+const ProtectedRoute = ({ children, requiredRole = null, promptOnRedirect = false }) => {
   const { isAuthenticated, loading, userRole } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+  const [showPrompt, setShowPrompt] = useState(true);
 
   if (loading) {
     return (
@@ -18,9 +21,17 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   }
 
   if (!isAuthenticated) {
-    // Redirect to appropriate login page based on current path
-    const redirectPath = location.pathname.includes('/seller') ? '/seller/login' : '/login';
-    return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    if (promptOnRedirect) {
+      const handleConfirm = () => {
+        setShowPrompt(false);
+        navigate('/login', { state: { from: location }, replace: true });
+      };
+
+      return <LoginPromptModal isOpen={showPrompt} onConfirm={handleConfirm} />;
+    } else {
+      const redirectPath = location.pathname.includes('/seller') ? '/seller/login' : '/login';
+      return <Navigate to={redirectPath} state={{ from: location }} replace />;
+    }
   }
 
   // Check role-based access

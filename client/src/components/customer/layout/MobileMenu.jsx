@@ -54,9 +54,7 @@ const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavIt
       items: [
         { label: 'Advanced Filters', icon: Filter, action: 'openFilters', highlight: true },
         { label: 'Flash Sale', icon: Zap, path: '/flash-sale', color: 'text-red-600' },
-        { label: 'New Arrivals', icon: TrendingUp, path: '/new-arrivals', color: 'text-blue-600' },
-        { label: 'Top Rated', icon: Star, path: '/top-rated', color: 'text-yellow-600' },
-        { label: 'Daily Deals', icon: Gift, path: '/deals', color: 'text-green-600' },
+        
       ]
     },
     {
@@ -78,7 +76,7 @@ const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavIt
         { label: 'About Us', icon: Info, path: '/about-us' },
         { label: 'Our Business', icon: Building, path: '/our-business' },
         { label: 'Buyer Protection', icon: Shield, path: '/buyer-protection' },
-        { label: 'Help Center', icon: HelpCircle, path: '/help' },
+        { label: 'Help Center', icon: HelpCircle, path: '/help-center' },
       ]
     }
   ];

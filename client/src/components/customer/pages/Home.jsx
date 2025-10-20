@@ -9,7 +9,7 @@ import MobileLayout from "../layout/MobileLayout";
 
 // Import page components
 import HeroSection from "../sections/HeroSection";
-import FlashSale from "../sections/FlashSale";
+import NewArrivals from "../sections/NewArrivals";
 import ProductGrid from "../sections/ProductGrid";
 import ServicesSection from "../sections/ServicesSection";
 import Newsletter from "../sections/Newsletter";
@@ -82,7 +82,7 @@ const DesktopHomePage = ({
             <HeroSection />
 
             {/* Flash Sale Section */}
-            <FlashSale />
+            <NewArrivals />
 
             {/* Product Grid */}
             <ProductGrid />

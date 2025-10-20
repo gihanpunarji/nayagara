@@ -24,7 +24,7 @@ import Checkout from "./components/customer/pages/Checkout.jsx";
 import ShopPage from "./components/customer/pages/ShopPage.jsx";
 import AdvancedSearch from "./components/customer/pages/AdvancedSearch.jsx";
 import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
-import ProductView from "./components/customer/pages/ProductView.jsx";
+import { ProductView } from "./components/customer/pages/ProductView.jsx";
 import NewArrivals from "./components/customer/sections/NewArrivals.jsx";
 import AboutUs from "./components/customer/pages/AboutUs.jsx";
 import OurBusiness from "./components/customer/pages/OurBusiness.jsx";

@@ -177,24 +177,6 @@ const MobileHome = () => {
                   alt={product.name}
                   className="w-full h-32 object-cover"
                 />
-                {/* Badge */}
-                <div className="absolute top-2 left-2">
-                  <span className={`text-white text-xs px-2 py-1 rounded-full font-bold ${getBadgeColor(product.badge)}`}>
-                    {product.badge}
-                  </span>
-                </div>
-                {/* Discount */}
-                <div className="absolute top-2 right-2">
-                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    -{product.discount}%
-                  </span>
-                </div>
-                {/* Quick Actions */}
-                <div className="absolute bottom-2 right-2 flex space-x-1">
-                  <button className="w-7 h-7 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
               </div>
 
               <div className="p-3">

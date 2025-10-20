@@ -301,9 +301,9 @@ const App = () => {
   
 
   const quickLinks = [
-    { name: "Daily Deals", href: "#" },
+
     { name: "New Arrivals", href: "#" },
-    { name: "Best Sellers", href: "#" },
+
    { name: "Nayagara Water", href: "/nayagara-water" },
   ];
 

@@ -15,6 +15,7 @@ import ProductGrid from "./components/customer/sections/ProductGrid";
 import ServicesSection from "./components/customer/sections/ServicesSection";
 import Newsletter from "./components/customer/sections/Newsletter";
 import MobileHome from "./pages/MobileHome";
+import CustomerAccount from "./components/customer/pages/Account";
 
 import api from "./api/axios";
 
@@ -164,7 +165,7 @@ const App = () => {
         {/* Mobile Layout */}
         <div className="md:hidden">
           <MobileLayout user={user}>
-            {children}
+            {location.pathname.startsWith('/account') ? <CustomerAccount /> : children}
           </MobileLayout>
         </div>
       </>

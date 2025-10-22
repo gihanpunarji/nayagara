@@ -20,13 +20,24 @@ import {
   Star,
   Droplets,
   Phone,
-  MessageSquare
+  MessageSquare,
+  Package,
+  Car,
+  MapPin,
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import AdvancedFilters from '../../customer/layout/AdvancedFilters';
 import { useAuth } from '../../../context/AuthContext';
 
-const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, handleNavClick = null, scrollToContact = null }) => {
+const MobileMenu = ({
+  isOpen,
+  onClose,
+  navItems = null,
+  activeNavItem = null,
+  handleNavClick = null,
+  scrollToContact = null,
+  setActiveTab = null,
+}) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const { user, logout } = useAuth();
 
@@ -38,42 +49,27 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
       document.body.style.overflow = 'unset';
     }
 
-    // Cleanup on unmount
     return () => {
       document.body.style.overflow = 'unset';
     };
   }, [isOpen]);
 
-  // Sample categories for filter
   const mainCategories = [
-    { name: 'Electronics' }, { name: 'Vehicles' }, { name: 'Fashion' },
-    { name: 'Home & Living' }, { name: 'Beauty & Health' }, { name: 'Sports' },
-    { name: 'Books & Media' }, { name: 'Services' }
+    { name: 'Electronics' },
+    { name: 'Vehicles' },
+    { name: 'Fashion' },
+    { name: 'Home & Living' },
+    { name: 'Beauty & Health' },
+    { name: 'Sports' },
+    { name: 'Books & Media' },
+    { name: 'Services' },
   ];
 
-  const menuItems = [
-    {
-      category: 'Account',
-      items: user ? [
-        { label: 'My Profile', icon: User, path: '/account/profile' },
-        { label: 'Messages', icon: MessageSquare, path: '/messages' },
-        { label: 'My Orders', icon: Clock, path: '/account/orders' },
-        { label: 'My Wallet', icon: CreditCard, path: '/account/wallet' },
-        { label: 'Notifications', icon: Bell, path: '/account/notifications' },
-      ] : [
-        { label: 'Sign In', icon: User, path: '/login' },
-        { label: 'Register', icon: User, path: '/register' },
-      ]
-    },
-    {
-      category: 'Company',
-      items: [
-        { label: 'About Us', icon: Info, path: '/about-us' },
-        { label: 'Our Business', icon: Building, path: '/our-business' },
-        { label: 'Buyer Protection', icon: Shield, path: '/buyer-protection' },
-        { label: 'Help Center', icon: HelpCircle, path: '/help-center' },
-      ]
-    }
+  const companyMenuItems = [
+    { label: 'About Us', icon: Info, path: '/about-us' },
+    { label: 'Our Business', icon: Building, path: '/our-business' },
+    { label: 'Buyer Protection', icon: Shield, path: '/buyer-protection' },
+    { label: 'Help Center', icon: HelpCircle, path: '/help-center' },
   ];
 
   const handleFiltersApply = (filters) => {
@@ -85,10 +81,6 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
     logout();
     onClose();
   };
-
-  if (user) {
-    menuItems[0].items.push({ label: 'Sign Out', icon: LogOut, action: 'logout' });
-  }
 
   return (
     <>
@@ -102,14 +94,20 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
 
       {/* Menu Panel */}
       <div
-        className={`fixed top-0 right-0 ${navItems ? 'bottom-0' : 'bottom-16'} w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
+        className={`fixed top-0 right-0 ${
+          navItems ? 'bottom-0' : 'bottom-16'
+        } w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header */}
-        <div className={`flex items-center justify-between p-6 border-b border-gray-100 text-white flex-shrink-0 ${
-          navItems ? 'bg-gradient-to-r from-emerald-500 to-green-600' : 'bg-gradient-to-r from-primary-500 to-secondary-500'
-        }`}>
+        <div
+          className={`flex items-center justify-between p-6 border-b border-gray-100 text-white flex-shrink-0 ${
+            navItems
+              ? 'bg-gradient-to-r from-emerald-500 to-green-600'
+              : 'bg-gradient-to-r from-primary-500 to-secondary-500'
+          }`}
+        >
           <div className="flex items-center space-x-3">
             {user ? (
               <img
@@ -119,7 +117,11 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
               />
             ) : (
               <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-                {navItems ? <Droplets className="w-5 h-5 text-white" /> : <Store className="w-5 h-5 text-white" />}
+                {navItems ? (
+                  <Droplets className="w-5 h-5 text-white" />
+                ) : (
+                  <Store className="w-5 h-5 text-white" />
+                )}
               </div>
             )}
             <div>
@@ -138,7 +140,7 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-full transition-colors"
+            className="p-2 hover:bg-white/20 rounded-full transition-colors text-white"
           >
             <X className="w-5 h-5" />
           </button>
@@ -165,12 +167,20 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
                           : 'hover:bg-gray-50 text-gray-700'
                       }`}
                     >
-                      <IconComponent className={`w-4 h-4 ${
-                        activeNavItem === item.id ? 'text-emerald-600' : 'text-gray-500 group-hover:text-emerald-600'
-                      }`} />
-                      <span className={`font-medium ${
-                        activeNavItem === item.id ? 'text-emerald-600' : 'group-hover:text-emerald-600'
-                      }`}>
+                      <IconComponent
+                        className={`w-4 h-4 ${
+                          activeNavItem === item.id
+                            ? 'text-emerald-600'
+                            : 'text-gray-500 group-hover:text-emerald-600'
+                        }`}
+                      />
+                      <span
+                        className={`font-medium ${
+                          activeNavItem === item.id
+                            ? 'text-emerald-600'
+                            : 'group-hover:text-emerald-600'
+                        }`}
+                      >
                         {item.label}
                       </span>
                     </button>
@@ -179,80 +189,158 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
               </div>
             </div>
           ) : (
-            // Default Marketplace Menu
-            menuItems.map((category, categoryIndex) => (
-              <div key={categoryIndex} className="py-4">
-                <h4 className="px-6 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
-                  {category.category}
-                </h4>
-                <div className="mx-4 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
-                  {category.items.map((item, itemIndex) => {
-                    const IconComponent = item.icon;
-
-                    if (item.action === 'logout') {
-                      return (
-                        <button
-                          key={itemIndex}
-                          onClick={handleLogout}
-                          className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 transition-colors group border-t border-gray-100 first:border-t-0"
-                        >
-                          <IconComponent className="w-4 h-4 text-red-600" />
-                          <span className="font-medium text-red-600">{item.label}</span>
-                        </button>
-                      );
-                    }
-
-                    if (item.action === 'openFilters') {
-                      return (
-                        <button
-                          key={itemIndex}
-                          onClick={() => {
-                            setShowAdvancedFilters(true);
-                            onClose();
-                          }}
-                          className={`w-full flex items-center space-x-3 px-4 py-3 text-left transition-colors group border-t border-gray-100 first:border-t-0 ${
-                            item.highlight ? 'bg-primary-50 hover:bg-primary-100' : 'hover:bg-gray-50'
-                          }`}
-                        >
-                          <IconComponent className={`w-4 h-4 ${item.highlight ? 'text-primary-600' : 'text-gray-500 group-hover:text-primary-600'}`} />
-                          <span className={`font-medium ${item.highlight ? 'text-primary-600' : 'text-gray-700 group-hover:text-primary-600'}`}>
-                            {item.label}
-                          </span>
-                          {item.highlight && (
-                            <span className="ml-auto bg-primary-600 text-white text-xs px-2 py-1 rounded-full">
-                              New
-                            </span>
-                          )}
-                        </button>
-                      );
-                    }
-
-                    return (
-                      <Link
-                        key={itemIndex}
-                        to={item.path}
-                        onClick={onClose}
-                        className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
-                      >
-                        <IconComponent className={`w-4 h-4 ${item.color || 'text-gray-500 group-hover:text-primary-600'}`} />
-                        <span className="font-medium text-gray-700 group-hover:text-primary-600">{item.label}</span>
-                      </Link>
-                    );
-                  })}
-                </div>
+            <div className="py-4">
+              <h4 className="px-6 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
+                Account
+              </h4>
+              <div className="mx-4 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                {user ? (
+                  <>
+                    <Link
+                      to="/account"
+                      onClick={() => {
+                        navigate('/account?tab=dashboard');
+                        onClose();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
+                    >
+                      <User className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        Dashboard
+                      </span>
+                    </Link>
+                    <Link
+                      to="/account?tab=orders"
+                      onClick={() => {
+                        navigate('/account?tab=orders');
+                        onClose();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100"
+                    >
+                      <Package className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        My Orders
+                      </span>
+                    </Link>
+                    <Link
+                      to="/account?tab=my-ads"
+                      onClick={() => {
+                        navigate('/account?tab=my-ads');
+                        onClose();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100"
+                    >
+                      <Car className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        My Ads
+                      </span>
+                    </Link>
+                    <Link
+                      to="/account?tab=wallet"
+                      onClick={() => {
+                        navigate('/account?tab=wallet');
+                        onClose();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100"
+                    >
+                      <CreditCard className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        My Wallet
+                      </span>
+                    </Link>
+                    <Link
+                      to="/account?tab=addresses"
+                      onClick={() => {
+                        navigate('/account?tab=addresses');
+                        onClose();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100"
+                    >
+                      <MapPin className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        Addresses
+                      </span>
+                    </Link>
+                    <Link
+                      to="/account?tab=support"
+                      onClick={() => {
+                        navigate('/account?tab=support');
+                        onClose();
+                      }}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100"
+                    >
+                      <HelpCircle className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        Help & Support
+                      </span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 transition-colors group border-t border-gray-100"
+                    >
+                      <LogOut className="w-4 h-4 text-red-600" />
+                      <span className="font-medium text-red-600">Sign Out</span>
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      to="/login"
+                      onClick={onClose}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
+                    >
+                      <User className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        Sign In
+                      </span>
+                    </Link>
+                    <Link
+                      to="/register"
+                      onClick={onClose}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100"
+                    >
+                      <User className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        Register
+                      </span>
+                    </Link>
+                  </>
+                )}
               </div>
-            ))
+
+              {/* Company Section */}
+              <h4 className="px-6 text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 mt-4">
+                Company
+              </h4>
+              <div className="mx-4 bg-white rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+                {companyMenuItems.map((item, index) => {
+                  const IconComponent = item.icon;
+                  return (
+                    <Link
+                      key={index}
+                      to={item.path}
+                      onClick={onClose}
+                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
+                    >
+                      <IconComponent className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
+                      <span className="font-medium text-gray-700 group-hover:text-primary-600">
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           )}
         </div>
 
         {/* Footer */}
         <div className="border-t border-gray-100 p-4 bg-white flex-shrink-0">
           {scrollToContact ? (
-            // Nayagara Water Footer
             <>
               <button
                 onClick={() => {
-                  scrollToContact();
+                  scrollToContact && scrollToContact();
                   onClose();
                 }}
                 className="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm font-medium flex items-center justify-center gap-2"
@@ -261,13 +349,16 @@ const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, ha
                 <span>Order Now</span>
               </button>
               <div className="mt-3 text-center">
-                <p className="text-xs text-gray-500">Pure Water for a Healthier Life</p>
+                <p className="text-xs text-gray-500">
+                  Pure Water for a Healthier Life
+                </p>
               </div>
             </>
           ) : (
-            // Default Footer
             <div className="mt-2 text-center">
-              <p className="text-xs text-gray-500">Join 10,000+ sellers nationwide</p>
+              <p className="text-xs text-gray-500">
+                Join 10,000+ sellers nationwide
+              </p>
             </div>
           )}
         </div>

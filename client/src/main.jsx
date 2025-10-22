@@ -24,8 +24,8 @@ import Checkout from "./components/customer/pages/Checkout.jsx";
 import ShopPage from "./components/customer/pages/ShopPage.jsx";
 import AdvancedSearch from "./components/customer/pages/AdvancedSearch.jsx";
 import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
-import ProductView from "./components/customer/pages/ProductView.jsx";
-import FlashSale from "./components/customer/pages/FlashSale.jsx";
+import { ProductView } from "./components/customer/pages/ProductView.jsx";
+import NewArrivals from "./components/customer/sections/NewArrivals.jsx";
 import AboutUs from "./components/customer/pages/AboutUs.jsx";
 import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
 import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
@@ -288,7 +288,7 @@ createRoot(document.getElementById("root")).render(
                         path="/new-arrivals"
                         element={
                           <PageWrapper>
-                            {/* <NewArrivals /> */}
+                            <NewArrivals />
                           </PageWrapper>
                         }
                       />
@@ -296,7 +296,7 @@ createRoot(document.getElementById("root")).render(
                         path="/flash-sale"
                         element={
                           <PageWrapper>
-                            <FlashSale />
+                            <NewArrivals />
                           </PageWrapper>
                         }
                       />

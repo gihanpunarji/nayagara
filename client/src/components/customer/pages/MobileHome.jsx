@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { publicApi } from '../../../api/axios';
+import NewArrivals from '../sections/NewArrivals';
 
 const MobileHome = () => {
   const [activeSlide, setActiveSlide] = useState(0);
@@ -134,46 +135,9 @@ const MobileHome = () => {
         </div>
       </div>
 
-
-
-      {/* Flash Sale Section */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 mx-4 rounded-2xl p-4 my-6">
-        <div className="flex items-center justify-between text-white mb-3">
-          <div className="flex items-center space-x-2">
-            <Zap className="w-5 h-5" />
-            <h3 className="font-bold">Flash Sale</h3>
-          </div>
-          <span className="text-sm">Ends in 12:34:56</span>
-        </div>
-        <div className="flex space-x-3 overflow-x-auto">
-          {loading ? (
-            // Loading skeleton for flash sale
-            [1, 2].map((item) => (
-              <div key={item} className="bg-white rounded-lg p-3 min-w-[140px] flex-shrink-0 animate-pulse">
-                <div className="w-full h-20 bg-gray-200 rounded-lg mb-2"></div>
-                <div className="h-3 bg-gray-200 rounded mb-1"></div>
-                <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-              </div>
-            ))
-          ) : (
-            featuredProducts.slice(0, 2).map((product) => (
-              <div key={product.id} className="bg-white rounded-lg p-3 min-w-[140px] flex-shrink-0">
-                <img
-                  src={product.image}
-                  alt={product.name}
-                  className="w-full h-20 object-contain rounded-lg mb-2 bg-gray-50"
-                />
-                <p className="text-xs font-medium text-gray-900 truncate">{product.name}</p>
-                <div className="flex items-center space-x-1">
-                  <span className="text-sm font-bold text-red-600">Rs. {product.price?.toLocaleString()}</span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-gray-500 line-through">Rs. {product.originalPrice?.toLocaleString()}</span>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      {/* New Arrivals Section */}
+      <div className="my-6">
+        <NewArrivals />
       </div>
 
       {/* Featured Products */}
@@ -213,24 +177,6 @@ const MobileHome = () => {
                   alt={product.name}
                   className="w-full h-32 object-cover"
                 />
-                {/* Badge */}
-                <div className="absolute top-2 left-2">
-                  <span className={`text-white text-xs px-2 py-1 rounded-full font-bold ${getBadgeColor(product.badge)}`}>
-                    {product.badge}
-                  </span>
-                </div>
-                {/* Discount */}
-                <div className="absolute top-2 right-2">
-                  <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">
-                    -{product.discount}%
-                  </span>
-                </div>
-                {/* Quick Actions */}
-                <div className="absolute bottom-2 right-2 flex space-x-1">
-                  <button className="w-7 h-7 bg-white bg-opacity-90 rounded-full flex items-center justify-center">
-                    <Heart className="w-4 h-4 text-gray-600" />
-                  </button>
-                </div>
               </div>
 
               <div className="p-3">

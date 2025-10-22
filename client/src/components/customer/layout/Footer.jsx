@@ -106,19 +106,7 @@ const Footer = () => {
           </div>
         </div>
         
-        {/* Payment Methods */}
-        <div className="border-t border-gray-200 pt-8 mb-8">
-          <h4 className="font-heading font-bold text-lg mb-4 text-gray-800">Payment Methods</h4>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold">VISA</div>
-            <div className="bg-red-600 text-white px-4 py-2 rounded-lg font-bold">MC</div>
-            <div className="bg-blue-500 text-white px-4 py-2 rounded-lg font-bold">PayPal</div>
-            <div className="bg-primary-600 text-white px-4 py-2 rounded-lg font-bold">HNB</div>
-            <div className="bg-secondary-600 text-white px-4 py-2 rounded-lg font-bold">BOC</div>
-            <div className="bg-accent-orange text-white px-4 py-2 rounded-lg font-bold">Sampath</div>
-            <div className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-bold">Commercial</div>
-          </div>
-        </div>
+       
         
         {/* Bottom Footer */}
         <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center">

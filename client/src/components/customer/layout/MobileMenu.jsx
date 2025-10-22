@@ -19,13 +19,16 @@ import {
   TrendingUp,
   Star,
   Droplets,
-  Phone
+  Phone,
+  MessageSquare
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import AdvancedFilters from '../../customer/layout/AdvancedFilters';
+import { useAuth } from '../../../context/AuthContext';
 
-const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavItem = null, handleNavClick = null, scrollToContact = null }) => {
+const MobileMenu = ({ isOpen, onClose, navItems = null, activeNavItem = null, handleNavClick = null, scrollToContact = null }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const { user, logout } = useAuth();
 
   // Prevent body scroll when menu is open
   useEffect(() => {
@@ -49,14 +52,6 @@ const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavIt
   ];
 
   const menuItems = [
-    {
-      category: 'Quick Access',
-      items: [
-        { label: 'Advanced Filters', icon: Filter, action: 'openFilters', highlight: true },
-        { label: 'Flash Sale', icon: Zap, path: '/flash-sale', color: 'text-red-600' },
-        
-      ]
-    },
     {
       category: 'Account',
       items: user ? [
@@ -86,6 +81,11 @@ const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavIt
     setShowAdvancedFilters(false);
   };
 
+  const handleLogout = () => {
+    logout();
+    onClose();
+  };
+
   if (user) {
     menuItems[0].items.push({ label: 'Sign Out', icon: LogOut, action: 'logout' });
   }
@@ -111,15 +111,26 @@ const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavIt
           navItems ? 'bg-gradient-to-r from-emerald-500 to-green-600' : 'bg-gradient-to-r from-primary-500 to-secondary-500'
         }`}>
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
-              {navItems ? <Droplets className="w-5 h-5 text-white" /> : <Store className="w-5 h-5 text-white" />}
-            </div>
+            {user ? (
+              <img
+                src={`http://localhost:8000/${user.profile_picture}`}
+                alt={user.name}
+                className="w-12 h-12 rounded-full border-2 border-white"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+                {navItems ? <Droplets className="w-5 h-5 text-white" /> : <Store className="w-5 h-5 text-white" />}
+              </div>
+            )}
             <div>
               <h3 className="font-bold text-lg">{navItems ? 'Nayagara Water' : 'Nayagara'}</h3>
               {navItems ? (
                 <p className="text-xs text-white/80">Pure Water Solutions</p>
               ) : user ? (
-                <p className="text-xs text-white/80">Welcome, {user.name}!</p>
+                <div>
+                  <p className="text-sm font-semibold text-white">{user.name}</p>
+                  <p className="text-xs text-white/80">{user.email}</p>
+                </div>
               ) : (
                 <p className="text-xs text-white/80">Explore & Shop</p>
               )}
@@ -182,10 +193,7 @@ const MobileMenu = ({ isOpen, onClose, user = null, navItems = null, activeNavIt
                       return (
                         <button
                           key={itemIndex}
-                          onClick={() => {
-                            // Handle logout
-                            onClose();
-                          }}
+                          onClick={handleLogout}
                           className="w-full flex items-center space-x-3 px-4 py-3 text-left hover:bg-red-50 transition-colors group border-t border-gray-100 first:border-t-0"
                         >
                           <IconComponent className="w-4 h-4 text-red-600" />

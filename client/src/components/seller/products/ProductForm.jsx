@@ -410,7 +410,26 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
             </div>
 
-            {/* Price */}
+            {/* ProductCost*/}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Product Cost (Rs.) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={formData.price}
+                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.price ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
+            </div>
+
+             {/* Price */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
                 Price (Rs.) <span className="text-red-500">*</span>
@@ -446,6 +465,25 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               />
               {errors.stock && <p className="text-red-500 text-sm">{errors.stock}</p>}
             </div>
+
+            {/* Weight */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Product Weight <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={formData.stock}
+                onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.stock ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="0.0"
+                min="0"
+              />
+              {errors.stock && <p className="text-red-500 text-sm">{errors.stock}</p>}
+            </div>
+
           </div>
         </div>
 

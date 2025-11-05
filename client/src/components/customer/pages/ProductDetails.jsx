@@ -655,7 +655,7 @@ const ProductDetails = () => {
 
   return (
     <div className="min-h-screen bg-primary-50">
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 lg:py-6">
+      <div className="max-w-[85%] mx-auto px-3 sm:px-4 lg:px-6 xl:px-8 py-4 lg:py-6">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-8">
           <div className="space-y-3 lg:space-y-4">
             <div className="relative bg-white rounded-xl lg:rounded-2xl overflow-hidden shadow-sm border border-gray-200">

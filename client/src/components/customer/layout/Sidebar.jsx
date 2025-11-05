@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Sidebar = ({ mainCategories }) => {
+  const navigate = useNavigate();
   const [hoveredCategory, setHoveredCategory] = useState(null);
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
   const categoryRefs = useRef([]);
@@ -56,6 +58,14 @@ const Sidebar = ({ mainCategories }) => {
     setHoveredCategory(null);
   };
 
+  const handleCategoryClick = (category) => {
+    navigate(`/shop?category=${encodeURIComponent(category.slug || category.name.toLowerCase())}`);
+  };
+
+  const handleSubcategoryClick = (category, subcategory) => {
+    navigate(`/shop?category=${encodeURIComponent(category.slug || category.name.toLowerCase())}&subcategory=${encodeURIComponent(subcategory.sub_category_id)}`);
+  };
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -71,7 +81,10 @@ const Sidebar = ({ mainCategories }) => {
                 onMouseEnter={() => handleMouseEnter(idx)}
                 onMouseLeave={handleMouseLeave}
               >
-                <div className="flex items-center justify-between p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors">
+                <div 
+                  className="flex items-center justify-between p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors"
+                  onClick={() => handleCategoryClick(category)}
+                >
                   <div className="flex items-center space-x-3">
                     <span className="text-lg">{category.icon}</span>
                     <span className="font-medium text-gray-700 hover:text-primary-600">{category.name}</span>
@@ -99,15 +112,21 @@ const Sidebar = ({ mainCategories }) => {
         >
           <h4 className="font-bold text-gray-800 mb-4 text-lg">{mainCategories[hoveredCategory].name}</h4>
           <div className="grid grid-cols-2 gap-3 mb-4">
-            {mainCategories[hoveredCategory].subcats.map((subcat, sidx) => (
-              <a
-                key={sidx}
-                href={`/shop?category=${encodeURIComponent(mainCategories[hoveredCategory].name.toLowerCase())}&subcat=${encodeURIComponent(subcat.toLowerCase())}`}
-                className="text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 py-2 px-3 rounded transition-colors"
-              >
-                {subcat}
-              </a>
-            ))}
+            {mainCategories[hoveredCategory].subcategories && mainCategories[hoveredCategory].subcategories.length > 0 ? (
+              mainCategories[hoveredCategory].subcategories.map((subcat, sidx) => (
+                <button
+                  key={sidx}
+                  onClick={() => handleSubcategoryClick(mainCategories[hoveredCategory], subcat)}
+                  className="text-sm text-gray-600 hover:text-primary-600 hover:bg-primary-50 py-2 px-3 rounded transition-colors w-full text-left"
+                >
+                  {subcat.sub_category_name}
+                </button>
+              ))
+            ) : (
+              <div className="col-span-2 text-sm text-gray-500 text-center py-4">
+                No subcategories available
+              </div>
+            )}
           </div>
           <img
             src={mainCategories[hoveredCategory].image}
@@ -124,7 +143,10 @@ const Sidebar = ({ mainCategories }) => {
           <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
             {mainCategories.map((category, idx) => (
               <div key={idx} className="flex-shrink-0">
-                <div className="flex flex-col items-center p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors min-w-[80px]">
+                <div 
+                  className="flex flex-col items-center p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors min-w-[80px]"
+                  onClick={() => handleCategoryClick(category)}
+                >
                   <span className="text-2xl mb-2">{category.icon}</span>
                   <span className="text-xs font-medium text-gray-700 text-center leading-tight">{category.name}</span>
                 </div>

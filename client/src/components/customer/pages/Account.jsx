@@ -6,18 +6,29 @@ import {
   Download, MessageCircle, FileText, Headphones, Plus, Minus,
   Car, Home, Settings, Trash2
 } from 'lucide-react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import AccountSidebar from '../layout/AccountSidebar';
+import MobileMenu from '../layout/MobileMenu';
 import { useAuth } from '../../../context/AuthContext';
 
 const CustomerAccount = () => {
-  const { logout } = useAuth();
-  const storedUsser = localStorage.getItem('user');
-  if(storedUsser == null) {
-    return <Navigate to={'/'} replace />
-
+  const { logout, user, isAuthenticated, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div></div>;
   }
 
-  const [activeTab, setActiveTab] = useState('dashboard');
+  if (!isAuthenticated || !user) {
+    return <Navigate to={'/'} replace />
+  }
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('tab') || 'dashboard';
+  });
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
@@ -28,20 +39,28 @@ const CustomerAccount = () => {
   const [myAds, setMyAds] = useState([]);
   const [adsLoading, setAdsLoading] = useState(false);
   const [selectedAdStatus, setSelectedAdStatus] = useState('all');
-  const navigate = useNavigate();
 
-  // Mock user data
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tabFromUrl = params.get('tab');
+    if (tabFromUrl && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+  }, [location.search]);
+
+  // User data from context with defaults
   const userData = {
-    name: 'Kasun Perera',
-    email: 'kasun.perera@gmail.com',
-    mobile: '+94 77 123 4567',
-    joinDate: 'January 2023',
+    firstName: user.first_name || 'User',
+    lastName: user.last_name || '',
+    email: user.email || '',
+    mobile: user.mobile || '',
+    joinDate: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently',
     profileImage: null,
-    verified: true,
-    walletBalance: 15750,
-    referralCode: 'KP2023',
-    totalReferrals: 12,
-    referralEarnings: 8500
+    verified: user.email_verified || true,
+    walletBalance: user.wallet_balance || 0,
+    referralCode: `USER${user.user_id}`,
+    totalReferrals: 0,
+    referralEarnings: 0
   };
 
   // Mock order data
@@ -192,14 +211,7 @@ const CustomerAccount = () => {
     }
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: User },
-    { id: 'orders', label: 'My Orders', icon: Package },
-    { id: 'my-ads', label: 'My Ads', icon: Car },
-    { id: 'wallet', label: 'My Wallet', icon: CreditCard },
-    { id: 'addresses', label: 'Addresses', icon: MapPin },
-    { id: 'support', label: 'Help & Support', icon: HelpCircle }
-  ];
+ 
 
   // Fetch user's advertisements
   useEffect(() => {
@@ -270,19 +282,14 @@ const CustomerAccount = () => {
     }).format(price);
   };
 
-  const handleSignOut = () => {
-    logout();
-    // Clear all localStorage data
-    localStorage.clear();
-    navigate('/');
-  };
+ 
 
   const handleWithdraw = () => {
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
       alert('Please enter a valid amount');
       return;
     }
-    if (parseFloat(withdrawAmount) > user.walletBalance) {
+    if (parseFloat(withdrawAmount) > userData.walletBalance) {
       alert('Insufficient balance');
       return;
     }
@@ -329,7 +336,7 @@ const CustomerAccount = () => {
               <CreditCard className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">Rs. {user.walletBalance.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">Rs. {userData.walletBalance.toLocaleString()}</p>
               <p className="text-sm text-gray-500">Wallet Balance</p>
             </div>
           </div>
@@ -502,7 +509,7 @@ const CustomerAccount = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-green-100 mb-1">Available Balance</p>
-            <h3 className="text-3xl font-bold">Rs. {user.walletBalance.toLocaleString()}</h3>
+            <h3 className="text-3xl font-bold">Rs. {userData.walletBalance.toLocaleString()}</h3>
           </div>
           <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <CreditCard className="w-8 h-8" />
@@ -565,7 +572,7 @@ const CustomerAccount = () => {
             </div>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {user.walletBalance.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {userData.walletBalance.toLocaleString()}</p>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Withdrawal Amount
               </label>
@@ -1055,49 +1062,25 @@ const CustomerAccount = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 sticky top-6">
-              <div className="flex items-center space-x-3 mb-6 pb-6 border-b border-gray-200">
-                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">
-                    {userData.firstName} {userData.lastName}
-                  </h3>
-                  <p className="text-sm text-gray-500">{userData.email}</p>
-                </div>
-              </div>
-
-              <nav className="space-y-2">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${
-                        activeTab === item.id
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-
-                <button
-                  onClick={() => navigate('/login')}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg text-red-600 hover:bg-red-50 transition-colors mt-4"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>Sign Out</span>
-                </button>
-              </nav>
-            </div>
+          <div className="lg:col-span-1 lg:block hidden">
+            <AccountSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden fixed bottom-4 right-4 z-50">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="bg-primary-600 text-white rounded-full p-4 shadow-lg"
+            >
+              <User className="w-6 h-6" />
+            </button>
+          </div>
+
+          <MobileMenu 
+            isOpen={isMobileMenuOpen} 
+            onClose={() => setIsMobileMenuOpen(false)} 
+            setActiveTab={setActiveTab} 
+          />
 
           {/* Main Content */}
           <div className="lg:col-span-3">

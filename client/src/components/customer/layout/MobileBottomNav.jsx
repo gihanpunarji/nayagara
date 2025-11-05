@@ -47,7 +47,7 @@ const MobileBottomNav = ({ cartCount = 0, onMenuToggle }) => {
   return (
     <>
       {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 md:hidden shadow-lg">
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[65] md:hidden shadow-lg">
         <div className="grid grid-cols-5 h-16">
           {navItems.map((item) => {
             const IconComponent = item.icon;

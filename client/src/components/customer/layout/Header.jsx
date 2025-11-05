@@ -1,8 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Search, ShoppingCart, User, ChevronDown, Phone, Globe, MapPin, Filter, Plus } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import AdvancedFilters from './AdvancedFilters';
-import { useAuth } from '../../../context/AuthContext';
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  Search,
+  ShoppingCart,
+  User,
+  ChevronDown,
+  Phone,
+  Globe,
+  MapPin,
+  Filter,
+  Plus,
+} from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import AdvancedFilters from "./AdvancedFilters";
+import { useAuth } from "../../../context/AuthContext";
+import { useCart } from "../../../context/CartContext";
 
 const Header = ({
   searchQuery,
@@ -13,26 +24,34 @@ const Header = ({
   setShowCategories,
   mainCategories,
   quickLinks,
-  serverStatus
+  serverStatus,
 }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout } = useAuth();
+  const { itemCount } = useCart();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
+  const [searchHistory, setSearchHistory] = useState([]);
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem('searchHistory');
+    if (storedHistory) {
+      setSearchHistory(JSON.parse(storedHistory));
+    }
+  }, []);
 
   const handleLogout = () => {
     logout();
-    navigate('/');
+    navigate("/");
   };
 
-    // console.log("Filters "+mainCategories);
-
+  // console.log("Filters "+mainCategories);
 
   const handleAccountClick = () => {
     if (isAuthenticated) {
-      navigate('/account');
+      navigate("/account");
     } else {
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -44,26 +63,102 @@ const Header = ({
     setShowAdvancedFilters(false);
   };
 
+  const handleSearch = useCallback(() => {
+    if (searchQuery.trim()) {
+      const newHistory = [searchQuery.trim(), ...searchHistory.filter(item => item !== searchQuery.trim())].slice(0, 10);
+      setSearchHistory(newHistory);
+      localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+
+      const params = new URLSearchParams();
+      params.append("search", searchQuery.trim());
+      if (selectedCategory && selectedCategory !== "All Categories") {
+        params.append("category", selectedCategory);
+      }
+      navigate(`/shop?${params.toString()}`);
+    }
+  }, [searchQuery, selectedCategory, navigate, searchHistory]);
+
+  const handleHistorySearch = (tag) => {
+    setSearchQuery(tag);
+    const newHistory = [tag, ...searchHistory.filter(item => item !== tag)].slice(0, 10);
+    setSearchHistory(newHistory);
+    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+    navigate(`/shop?search=${tag}`);
+  };
+
+  const handleKeyPress = useCallback(
+    (e) => {
+      if (e.key === "Enter") {
+        handleSearch();
+      }
+    },
+    [handleSearch]
+  );
+
   const handleFiltersApply = (filters) => {
     setActiveFilters(filters);
-    // Here you can implement the actual filtering logic
-    // console.log('Applied filters:', filters);
+    const params = new URLSearchParams();
+
+    if (searchQuery.trim()) {
+      params.append("search", searchQuery.trim());
+    }
+
+    if (filters.category && filters.category !== "All Categories") {
+      params.append("category", filters.category);
+    }
+
+    if (filters.district && filters.district !== "All Districts") {
+      params.append("district", filters.district);
+    }
+
+    if (filters.priceMin) {
+      params.append("priceMin", filters.priceMin);
+    }
+
+    if (filters.priceMax) {
+      params.append("priceMax", filters.priceMax);
+    }
+
+    // Add other filter parameters
+    Object.keys(filters).forEach((key) => {
+      if (
+        !["category", "district", "priceMin", "priceMax"].includes(key) &&
+        filters[key]
+      ) {
+        if (Array.isArray(filters[key]) && filters[key].length > 0) {
+          params.append(key, filters[key].join(","));
+        } else if (filters[key] !== "" && !filters[key].startsWith("All")) {
+          params.append(key, filters[key]);
+        }
+      }
+    });
+
+    navigate(`/shop?${params.toString()}`);
   };
 
   // Count active filters
   const getActiveFilterCount = () => {
     let count = 0;
-    if (activeFilters.category && activeFilters.category !== 'All Categories') count++;
-    if (activeFilters.district && activeFilters.district !== 'All Districts') count++;
+    if (activeFilters.category && activeFilters.category !== "All Categories")
+      count++;
+    if (activeFilters.district && activeFilters.district !== "All Districts")
+      count++;
     if (activeFilters.priceMin) count++;
     if (activeFilters.priceMax) count++;
 
     // Count dynamic filters
-    Object.keys(activeFilters).forEach(key => {
-      if (!['category', 'district', 'priceMin', 'priceMax'].includes(key) && activeFilters[key]) {
+    Object.keys(activeFilters).forEach((key) => {
+      if (
+        !["category", "district", "priceMin", "priceMax"].includes(key) &&
+        activeFilters[key]
+      ) {
         if (Array.isArray(activeFilters[key])) {
           if (activeFilters[key].length > 0) count++;
-        } else if (activeFilters[key] !== '' && activeFilters[key] !== 'All' && !activeFilters[key].startsWith('All ')) {
+        } else if (
+          activeFilters[key] !== "" &&
+          activeFilters[key] !== "All" &&
+          !activeFilters[key].startsWith("All ")
+        ) {
           count++;
         }
       }
@@ -76,24 +171,36 @@ const Header = ({
     <>
       {/* Top Bar */}
       <div className="bg-gradient-primary text-white text-sm py-2">
-        <div className="mx-auto px-4 sm:px-8 lg:px-16 flex justify-between items-center">
+        <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
           <div className="flex items-center space-x-2 sm:space-x-4">
             <span className="hidden sm:flex items-center space-x-1">
               <Phone className="w-4 h-4" />
               <span>+94 11 234 5678</span>
             </span>
-            <span className="text-xs sm:text-sm">Get 50% OFF your first order!</span>
+            <span className="text-xs sm:text-sm">
+              Get 50% OFF your first order!
+            </span>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link to="/seller/register" className="hover:text-primary-200 transition-colors font-medium">Sell on Nayagara</Link>
-            <Link to="/help" className="hidden sm:block hover:text-primary-200 transition-colors">Help</Link>
+            <Link
+              to="/seller/register"
+              className="hover:text-primary-200 transition-colors font-medium"
+            >
+              Sell on Nayagara
+            </Link>
+            <Link
+              to="/help"
+              className="hidden sm:block hover:text-primary-200 transition-colors"
+            >
+              Help
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Main Header */}
       <header className="bg-white shadow-green-lg sticky top-0 z-[100]">
-        <div className="mx-auto px-4 sm:px-8 lg:px-16">
+        <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
           {/* Top Header */}
           <div className="flex items-center justify-between py-4">
             {/* Logo */}
@@ -109,7 +216,9 @@ const Header = ({
                 <h1 className="text-lg sm:text-2xl font-heading font-bold text-primary-700">
                   Nayagara.lk
                 </h1>
-                <p className="hidden sm:block text-xs text-gray-500">Sri Lanka's #1 Online Shopping</p>
+                <p className="hidden sm:block text-xs text-gray-500">
+                  Sri Lanka's #1 Online Shopping
+                </p>
               </div>
             </Link>
 
@@ -122,8 +231,12 @@ const Header = ({
                   className="flex-1 h-10 sm:h-12 px-3 sm:px-4 border border-gray-300 focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 rounded-l-lg"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyPress}
                 />
-                <button className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2">
+                <button
+                  onClick={() => handleSearch()}
+                  className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2"
+                >
                   <Search className="w-4 h-4 sm:w-5 sm:h-5" />
                   <span className="hidden md:block font-medium">SEARCH</span>
                 </button>
@@ -140,11 +253,15 @@ const Header = ({
                   )}
                 </button>
               </div>
-              
+
               {/* Quick Search Tags */}
               <div className="hidden lg:flex space-x-2 mt-2">
-                {['iPhone 15', 'Toyota Prius', 'Gaming Laptop', 'Apartments Colombo'].map((tag, idx) => (
-                  <button key={idx} className="text-xs bg-primary-50 hover:bg-primary-100 px-3 py-1 rounded-full text-primary-700 transition-colors">
+                {searchHistory.slice(0, 4).map((tag, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleHistorySearch(tag)}
+                    className="text-xs bg-primary-50 hover:bg-primary-100 px-3 py-1 rounded-full text-primary-700 transition-colors"
+                  >
                     {tag}
                   </button>
                 ))}
@@ -154,26 +271,30 @@ const Header = ({
             {/* Right Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Post Ad Button - Only show for authenticated users */}
-              {isAuthenticated && (
-                <Link
-                  to="/post-ad"
-                  className="hidden sm:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Post Ad</span>
-                </Link>
-              )}
+              <Link
+                to="/post-ad"
+                className="hidden sm:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                <Plus className="w-4 h-4" />
+                <span>Post Ad</span>
+              </Link>
 
               {/* Mobile Post Ad Button */}
-              {isAuthenticated && (
-                <Link to="/post-ad" className="sm:hidden p-2 text-green-600 hover:text-green-700 transition-colors">
-                  <Plus className="w-5 h-5" />
-                </Link>
-              )}
+              <Link
+                to="/post-ad"
+                className="sm:hidden p-2 text-green-600 hover:text-green-700 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+              </Link>
 
-              <Link to="/cart" className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors">
+              <Link
+                to="/cart"
+                className="relative p-1 sm:p-2 text-gray-600 hover:text-primary-600 transition-colors"
+              >
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
-                <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">3</span>
+                <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {itemCount}
+                </span>
               </Link>
 
               <div
@@ -183,10 +304,12 @@ const Header = ({
                 <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
                 <div className="text-left">
                   <p className="text-xs text-gray-500">
-                    {isAuthenticated ? 'Hello' : 'Hello'}
+                    {isAuthenticated ? "Hello" : "Hello"}
                   </p>
                   <div className="text-sm font-medium text-gray-800">
-                    {isAuthenticated ? user?.firstName || user?.first_name || 'User' : 'Sign In / Register'}
+                    {isAuthenticated
+                      ? user?.firstName || user?.first_name || "User"
+                      : "Sign In / Register"}
                   </div>
                 </div>
               </div>
@@ -197,22 +320,30 @@ const Header = ({
           <div className="border-t border-gray-200 py-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3 sm:space-x-6 overflow-x-auto scrollbar-hide">
-                {quickLinks.map((link, idx) => (
-                  link.href.startsWith('#') ? (
-                    <a key={idx} href={link.href} className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
+                {quickLinks.map((link, idx) =>
+                  link.href.startsWith("#") ? (
+                    <a
+                      key={idx}
+                      href={link.href}
+                      className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap"
+                    >
                       {link.name}
                     </a>
                   ) : (
-                    <Link key={idx} to={link.href} className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap">
+                    <Link
+                      key={idx}
+                      to={link.href}
+                      className="text-gray-700 hover:text-primary-600 font-medium transition-colors text-sm whitespace-nowrap"
+                    >
                       {link.name}
                     </Link>
                   )
-                ))}
+                )}
               </div>
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
                 <span>Deliver to</span>
-                <span className="font-medium text-primary-600">Colombo 07</span>
+                <span className="font-medium text-primary-600">all Island</span>
               </div>
             </div>
           </div>

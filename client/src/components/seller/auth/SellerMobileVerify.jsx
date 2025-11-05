@@ -122,7 +122,7 @@ function SellerMobileVerify() {
 
   const handleBackClick = () => {
     if (step === 1) {
-      navigate("/seller-login");
+      navigate("/seller/login");
     } else {
       setStep(1);
       setError("");

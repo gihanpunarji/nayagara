@@ -1,99 +1,73 @@
 import { useState, useCallback } from 'react';
 
-const useChat = () => {
-  const [activeChats, setActiveChats] = useState(new Map());
+export const useChat = () => {
+  const [activeChats, setActiveChats] = useState([]);
 
-  const openChat = useCallback((sellerId, sellerData, productData) => {
-    const chatKey = `${sellerId}-${productData.id}`;
-
+  const openChat = useCallback((seller, product) => {
+    const chatId = `${seller.id}-${product.id}`;
+    
     setActiveChats(prev => {
-      const newChats = new Map(prev);
-      newChats.set(chatKey, {
-        id: chatKey,
-        sellerId,
-        seller: sellerData,
-        product: productData,
+      const existingChat = prev.find(chat => chat.id === chatId);
+      if (existingChat) {
+        return prev.map(chat => 
+          chat.id === chatId 
+            ? { ...chat, isMinimized: false, isOpen: true }
+            : chat
+        );
+      }
+      
+      const newChat = {
+        id: chatId,
+        seller,
+        product,
         isOpen: true,
-        isMinimized: false,
-        unreadCount: 0,
-        lastActivity: new Date().toISOString()
-      });
-      return newChats;
+        isMinimized: false
+      };
+      
+      return [...prev, newChat];
     });
-
-    return chatKey;
   }, []);
 
   const closeChat = useCallback((chatId) => {
-    setActiveChats(prev => {
-      const newChats = new Map(prev);
-      newChats.delete(chatId);
-      return newChats;
-    });
+    setActiveChats(prev => prev.filter(chat => chat.id !== chatId));
   }, []);
 
   const minimizeChat = useCallback((chatId) => {
-    setActiveChats(prev => {
-      const newChats = new Map(prev);
-      const chat = newChats.get(chatId);
-      if (chat) {
-        newChats.set(chatId, { ...chat, isMinimized: true });
-      }
-      return newChats;
-    });
+    setActiveChats(prev => 
+      prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, isMinimized: true }
+          : chat
+      )
+    );
   }, []);
 
   const maximizeChat = useCallback((chatId) => {
-    setActiveChats(prev => {
-      const newChats = new Map(prev);
-      const chat = newChats.get(chatId);
-      if (chat) {
-        newChats.set(chatId, { ...chat, isMinimized: false });
-      }
-      return newChats;
-    });
+    setActiveChats(prev => 
+      prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, isMinimized: false }
+          : chat
+      )
+    );
   }, []);
 
   const toggleMinimize = useCallback((chatId) => {
-    setActiveChats(prev => {
-      const newChats = new Map(prev);
-      const chat = newChats.get(chatId);
-      if (chat) {
-        newChats.set(chatId, { ...chat, isMinimized: !chat.isMinimized });
-      }
-      return newChats;
-    });
+    setActiveChats(prev => 
+      prev.map(chat => 
+        chat.id === chatId 
+          ? { ...chat, isMinimized: !chat.isMinimized }
+          : chat
+      )
+    );
   }, []);
-
-  const updateUnreadCount = useCallback((chatId, count) => {
-    setActiveChats(prev => {
-      const newChats = new Map(prev);
-      const chat = newChats.get(chatId);
-      if (chat) {
-        newChats.set(chatId, { ...chat, unreadCount: count });
-      }
-      return newChats;
-    });
-  }, []);
-
-  const getActiveChats = useCallback(() => {
-    return Array.from(activeChats.values());
-  }, [activeChats]);
-
-  const getChatById = useCallback((chatId) => {
-    return activeChats.get(chatId);
-  }, [activeChats]);
 
   return {
-    activeChats: getActiveChats(),
+    activeChats,
     openChat,
     closeChat,
     minimizeChat,
     maximizeChat,
-    toggleMinimize,
-    updateUnreadCount,
-    getChatById
+    toggleMinimize
   };
 };
-
-export default useChat;

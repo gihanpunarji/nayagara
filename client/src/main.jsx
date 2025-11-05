@@ -5,6 +5,7 @@ import "./index.css";
 
 // Auth Context and Route Protection
 import { AuthProvider } from "./context/AuthContext.jsx";
+import { CartProvider } from "./context/CartContext.jsx";
 import ProtectedRoute from "./components/shared/auth/ProtectedRoute.jsx";
 import AuthRoute from "./components/shared/auth/AuthRoute.jsx";
 import ErrorBoundary from "./components/shared/error/ErrorBoundary.jsx";
@@ -23,20 +24,17 @@ import Checkout from "./components/customer/pages/Checkout.jsx";
 import ShopPage from "./components/customer/pages/ShopPage.jsx";
 import AdvancedSearch from "./components/customer/pages/AdvancedSearch.jsx";
 import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
-import ProductView from "./components/customer/pages/ProductView.jsx";
-import NewArrivals from "./components/customer/pages/NewArrivals.jsx";
-import FlashSale from "./components/customer/pages/FlashSale.jsx";
-import DailyDeals from "./components/customer/pages/DailyDeals.jsx";
-import TopRated from "./components/customer/pages/TopRated.jsx";
+import { ProductView } from "./components/customer/pages/ProductView.jsx";
+import NewArrivals from "./components/customer/sections/NewArrivals.jsx";
 import AboutUs from "./components/customer/pages/AboutUs.jsx";
 import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
 import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
-import ChatList from "./components/customer/pages/ChatList.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
+import HelpCenter from "./components/customer/pages/HelpCenter.jsx";
 
 // Advertisement Components
-// import PostAd from "./components/customer/pages/PostAd.jsx";
+import PostAd from "./components/customer/pages/PostAd.jsx";
 import AdDetails from "./components/customer/pages/AdDetails.jsx";
 import AdListings from "./components/customer/pages/AdListings.jsx";
 
@@ -83,6 +81,7 @@ import AccessDenied from "./components/shared/error/AccessDenied.jsx";
 import Dashboard from "./components/seller/pages/Dashboard.jsx";
 import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx";
 import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx";
+import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -91,7 +90,6 @@ createRoot(document.getElementById("root")).render(
         <Routes>
           <Route path="/verify-mobile" element={<SellerMobileVerify />} />
           <Route path="/reset-password" element={<ResetPassword />} />
-
 
           {/* Admin Routes - WITHOUT AuthProvider */}
           <Route path="/admin/login" element={<AdminLogin />} />
@@ -147,7 +145,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/advertisements"
             element={
               // <AdminProtectedRoute>
-                <AdManagement />
+              <AdManagement />
               // </AdminProtectedRoute>
             }
           />
@@ -155,7 +153,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/categories"
             element={
               // <AdminProtectedRoute>
-                <AdminCategories />
+              <AdminCategories />
               // </AdminProtectedRoute>
             }
           />
@@ -163,7 +161,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/inventory"
             element={
               // <AdminProtectedRoute>
-                <AdminInventory />
+              <AdminInventory />
               // </AdminProtectedRoute>
             }
           />
@@ -171,7 +169,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/reviews"
             element={
               // <AdminProtectedRoute>
-                <AdminReviewsRatings />
+              <AdminReviewsRatings />
               // </AdminProtectedRoute>
             }
           />
@@ -179,7 +177,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/promotions"
             element={
               // <AdminProtectedRoute>
-                <AdminPromotions />
+              <AdminPromotions />
               // </AdminProtectedRoute>
             }
           />
@@ -187,7 +185,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/payments"
             element={
               // <AdminProtectedRoute>
-                <AdminPayments />
+              <AdminPayments />
               // </AdminProtectedRoute>
             }
           />
@@ -195,7 +193,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/shipping"
             element={
               // <AdminProtectedRoute>
-                <AdminShipping />
+              <AdminShipping />
               // </AdminProtectedRoute>
             }
           />
@@ -203,7 +201,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/support"
             element={
               // <AdminProtectedRoute>
-                <AdminSupport />
+              <AdminSupport />
               // </AdminProtectedRoute>
             }
           />
@@ -211,7 +209,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/settings"
             element={
               // <AdminProtectedRoute>
-                <AdminSettings />
+              <AdminSettings />
               // </AdminProtectedRoute>
             }
           />
@@ -219,7 +217,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/notifications"
             element={
               // <AdminProtectedRoute>
-                <AdminNotifications />
+              <AdminNotifications />
               // </AdminProtectedRoute>
             }
           />
@@ -227,7 +225,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/returns"
             element={
               // <AdminProtectedRoute>
-                <AdminReturns />
+              <AdminReturns />
               // </AdminProtectedRoute>
             }
           />
@@ -235,7 +233,7 @@ createRoot(document.getElementById("root")).render(
             path="/admin/banners"
             element={
               // <AdminProtectedRoute>
-                <AdminBanners />
+              <AdminBanners />
               // </AdminProtectedRoute>
             }
           />
@@ -245,278 +243,288 @@ createRoot(document.getElementById("root")).render(
             path="/*"
             element={
               <AuthProvider>
-                <Routes>
-                  {/* Customer Routes */}
-                  <Route path="/" element={<Home />} />
-                  <Route
-                    path="/login"
-                    element={
-                      <AuthRoute>
-                        <CustomerLogin />
-                      </AuthRoute>
-                    }
-                  />
-                  <Route
-                    path="/register"
-                    element={
-                      <AuthRoute>
-                        <CustomerRegister />
-                      </AuthRoute>
-                    }
-                  />
-                  <Route path="/forgot-password" element={<ForgotPassword />} />
-
-                  <Route
-                    path="/cart"
-                    element={
-                      <PageWrapper>
-                        <ShoppingCart />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/product/:id"
-                    element={
-                      <PageWrapper>
-                        <ProductView />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/new-arrivals"
-                    element={
-                      <PageWrapper>
-                        <NewArrivals />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/flash-sale"
-                    element={
-                      <PageWrapper>
-                        <FlashSale />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/daily-deals"
-                    element={
-                      <PageWrapper>
-                        <DailyDeals />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/deals"
-                    element={
-                      <PageWrapper>
-                        <DailyDeals />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/top-rated"
-                    element={
-                      <PageWrapper>
-                        <TopRated />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/about-us"
-                    element={
-                      <PageWrapper>
-                        <AboutUs />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/our-business"
-                    element={
-                      <PageWrapper>
-                        <OurBusiness />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/buyer-protection"
-                    element={
-                      <PageWrapper>
-                        <BuyerProtection />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/chat/:sellerId/:productId"
-                    element={
-                      <ProtectedRoute requiredRole="customer">
-                        <ChatView />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/messages"
-                    element={
-                      <ProtectedRoute requiredRole="customer">
-                        <PageWrapper>
-                          <ChatList />
-                        </PageWrapper>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/search"
-                    element={
-                      <PageWrapper>
-                        <SearchPage />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/shop"
-                    element={
-                      <PageWrapper>
-                        <ShopPage />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/advanced-search"
-                    element={
-                      <PageWrapper>
-                        <AdvancedSearch />
-                      </PageWrapper>
-                    }
-                  />
-                  <Route
-                    path="/account"
-                    element={
-                      <ProtectedRoute requiredRole="customer">
-                        <PageWrapper>
-                          <CustomerAccount />
-                        </PageWrapper>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/checkout"
-                    element={
-                      <ProtectedRoute requiredRole="customer">
-                        <PageWrapper>
-                          <Checkout />
-                        </PageWrapper>
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/nayagara-water"
-                    element={
-                      <PageWrapper>
-                        <NayagaraWaterHome />
-                      </PageWrapper>
-                    }
-                  />
-
-                  {/* Seller Routes */}
-                  <Route
-                    path="/seller/login"
-                    element={
-                      <AuthRoute>
-                        <SellerLogin />
-                      </AuthRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/register"
-                    element={
-                      <AuthRoute>
-                        <SellerRegistration />
-                      </AuthRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/dashboard"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <Dashboard />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/products"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerProducts />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/products/add"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerAddProduct />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/products/edit/:id"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerEditProduct />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/orders"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerOrders />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/customers"
-                    element={<SellerCustomers />}
-                  />
-                  <Route path="/seller/payments" element={<SellerPayments />} />
-                  <Route
-                    path="/seller/analytics"
-                    element={<SellerAnalytics />}
-                  />
-                  <Route
-                    path="/seller/messages"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerMessages />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/settings"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerSettings />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/seller/help"
-                    element={
-                      <ProtectedRoute requiredRole="seller">
-                        <SellerHelp />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  {/* Error Routes */}
-                  <Route path="/error/server" element={<ServerError />} />
-                  <Route path="/error/network" element={<NetworkError />} />
-                  <Route
-                    path="/error/access-denied"
-                    element={<AccessDenied />}
-                  />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <AxiosInterceptorManager>
+                  <CartProvider>
+                    <Routes>
+                      {/* Customer Routes */}
+                      <Route path="/" element={<Home />} />
+                      <Route
+                        path="/login"
+                        element={
+                          <AuthRoute>
+                            <CustomerLogin />
+                          </AuthRoute>
+                        }
+                      />
+                      <Route
+                        path="/register"
+                        element={
+                          <AuthRoute>
+                            <CustomerRegister />
+                          </AuthRoute>
+                        }
+                      />
+                      <Route
+                        path="/forgot-password"
+                        element={<ForgotPassword />}
+                      />
+                      <Route
+                        path="/cart"
+                        element={
+                          <PageWrapper>
+                            <ShoppingCart />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/product/:id"
+                        element={
+                          <PageWrapper>
+                            <ProductView />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/new-arrivals"
+                        element={
+                          <PageWrapper>
+                            <NewArrivals />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/flash-sale"
+                        element={
+                          <PageWrapper>
+                            <NewArrivals />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/daily-deals"
+                        element={
+                          <PageWrapper>
+                            {/* <DailyDeals /> */}
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/deals"
+                        element={
+                          <PageWrapper>
+                            {/* <DailyDeals /> */}
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/top-rated"
+                        element={
+                          <PageWrapper>
+                            {/* <TopRated /> */}
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/about-us"
+                        element={
+                          <PageWrapper>
+                            <AboutUs />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/our-business"
+                        element={
+                          <PageWrapper>
+                            <OurBusiness />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/buyer-protection"
+                        element={
+                          <PageWrapper>
+                            <BuyerProtection />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/chat/:sellerId/:productId"
+                        element={
+                          <ProtectedRoute requiredRole="customer">
+                            <ChatView />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/search"
+                        element={
+                          <PageWrapper>
+                            <SearchPage />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/shop"
+                        element={
+                          <PageWrapper>
+                            <ShopPage />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/advanced-search"
+                        element={
+                          <PageWrapper>
+                            <AdvancedSearch />
+                          </PageWrapper>
+                        }
+                      />
+                      <Route
+                        path="/account"
+                        element={
+                          <ProtectedRoute requiredRole="customer">
+                            <PageWrapper>
+                              <CustomerAccount />
+                            </PageWrapper>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/post-ad"
+                        element={
+                          <ProtectedRoute requiredRole="customer">
+                            <PageWrapper>
+                              <PostAd />
+                            </PageWrapper>
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/checkout"
+                        element={
+                          <ProtectedRoute
+                            requiredRole="customer"
+                            promptOnRedirect={true}
+                          >
+                            <PageWrapper>
+                              <Checkout />
+                            </PageWrapper>
+                          </ProtectedRoute>
+                        }
+                      />{" "}
+                      <Route
+                        path="/nayagara-water"
+                        element={
+                          <PageWrapper>
+                            <NayagaraWaterHome />
+                          </PageWrapper>
+                        }
+                      />
+                      {/* Seller Routes */}
+                      <Route
+                        path="/seller/login"
+                        element={
+                          <AuthRoute>
+                            <SellerLogin />
+                          </AuthRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/register"
+                        element={
+                          <AuthRoute>
+                            <SellerRegistration />
+                          </AuthRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/dashboard"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <Dashboard />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/products"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerProducts />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/products/add"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerAddProduct />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/products/edit/:id"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerEditProduct />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/orders"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerOrders />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/customers"
+                        element={<SellerCustomers />}
+                      />
+                      <Route
+                        path="/seller/payments"
+                        element={<SellerPayments />}
+                      />
+                      <Route
+                        path="/seller/analytics"
+                        element={<SellerAnalytics />}
+                      />
+                      <Route
+                        path="/seller/messages"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerMessages />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/settings"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerSettings />
+                          </ProtectedRoute>
+                        }
+                      />
+                      <Route
+                        path="/seller/help"
+                        element={
+                          <ProtectedRoute requiredRole="seller">
+                            <SellerHelp />
+                          </ProtectedRoute>
+                        }
+                      />
+                      {/* Error Routes */}
+                      <Route path="/error/server" element={<ServerError />} />
+                      <Route path="/error/network" element={<NetworkError />} />
+                      <Route
+                        path="/error/access-denied"
+                        element={<AccessDenied />}
+                      />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </CartProvider>
+                </AxiosInterceptorManager>
               </AuthProvider>
             }
           />

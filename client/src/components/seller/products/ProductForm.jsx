@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Save, ArrowLeft, Upload, X, GripVertical, Eye, Plus } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ImageUploader from './ImageUploader';
+import api from '../../../api/axios';
 
-const ProductForm = ({ isEdit = false, productData = null }) => {
+const ProductForm = ({ isEdit = false, productData = null, productId = null }) => {
   const navigate = useNavigate();
 
   // Product form state
@@ -23,125 +24,150 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
   const [dynamicFields, setDynamicFields] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Category data from database
+  const [categories, setCategories] = useState([]);
+  const [subCategories, setSubCategories] = useState([]);
+  const [categoryFields, setCategoryFields] = useState([]);
+  const [loading, setLoading] = useState({
+    categories: false,
+    subCategories: false,
+    fields: false
+  });
 
-  // Category definitions with dynamic fields
-  const categories = {
-    'Electronics': {
-      subcategories: ['Mobile Phones', 'Laptops', 'TVs', 'Cameras', 'Audio', 'Gaming'],
-      fields: {
-        'Mobile Phones': [
-          { name: 'brand', label: 'Brand', type: 'select', options: ['Samsung', 'Apple', 'Xiaomi', 'OnePlus', 'Google', 'Other'], required: true },
-          { name: 'model', label: 'Model', type: 'text', required: true },
-          { name: 'storage', label: 'Storage', type: 'select', options: ['64GB', '128GB', '256GB', '512GB', '1TB'], required: true },
-          { name: 'ram', label: 'RAM', type: 'select', options: ['4GB', '6GB', '8GB', '12GB', '16GB'], required: true },
-          { name: 'color', label: 'Color', type: 'text', required: false },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair'], required: true }
-        ],
-        'Laptops': [
-          { name: 'brand', label: 'Brand', type: 'select', options: ['Dell', 'HP', 'Asus', 'Acer', 'Lenovo', 'Apple', 'MSI', 'Other'], required: true },
-          { name: 'processor', label: 'Processor', type: 'text', required: true },
-          { name: 'ram', label: 'RAM', type: 'select', options: ['4GB', '8GB', '16GB', '32GB', '64GB'], required: true },
-          { name: 'storage', label: 'Storage', type: 'text', required: true },
-          { name: 'screenSize', label: 'Screen Size', type: 'select', options: ['13"', '14"', '15.6"', '17"', 'Other'], required: false },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair'], required: true }
-        ]
+  // Load categories on component mount
+  useEffect(() => {
+    loadCategories();
+  }, []);
+
+  // Load categories from API
+  const loadCategories = async () => {
+    try {
+      setLoading(prev => ({ ...prev, categories: true }));
+      const response = await api.get('/categories');
+      
+      if (response.data.success) {
+        setCategories(response.data.data);
+      } else {
+        console.error('Failed to load categories:', response.data.message);
       }
-    },
-    'Vehicles': {
-      subcategories: ['Cars', 'Motorcycles', 'Auto Parts', 'Accessories'],
-      fields: {
-        'Cars': [
-          { name: 'make', label: 'Make', type: 'select', options: ['Toyota', 'Honda', 'Nissan', 'Suzuki', 'Mitsubishi', 'Hyundai', 'BMW', 'Mercedes', 'Other'], required: true },
-          { name: 'model', label: 'Model', type: 'text', required: true },
-          { name: 'year', label: 'Year', type: 'select', options: Array.from({length: 30}, (_, i) => String(2024 - i)), required: true },
-          { name: 'mileage', label: 'Mileage (km)', type: 'number', required: true },
-          { name: 'fuelType', label: 'Fuel Type', type: 'select', options: ['Petrol', 'Diesel', 'Hybrid', 'Electric'], required: true },
-          { name: 'transmission', label: 'Transmission', type: 'select', options: ['Manual', 'Automatic', 'CVT'], required: true },
-          { name: 'engineCapacity', label: 'Engine Capacity (cc)', type: 'number', required: false },
-          { name: 'color', label: 'Color', type: 'text', required: false },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['Brand New', 'Used - Excellent', 'Used - Good', 'Used - Fair'], required: true }
-        ],
-        'Motorcycles': [
-          { name: 'make', label: 'Make', type: 'select', options: ['Honda', 'Yamaha', 'Suzuki', 'Bajaj', 'TVS', 'Royal Enfield', 'Other'], required: true },
-          { name: 'model', label: 'Model', type: 'text', required: true },
-          { name: 'year', label: 'Year', type: 'select', options: Array.from({length: 20}, (_, i) => String(2024 - i)), required: true },
-          { name: 'mileage', label: 'Mileage (km)', type: 'number', required: true },
-          { name: 'engineCapacity', label: 'Engine Capacity (cc)', type: 'select', options: ['100cc', '125cc', '150cc', '200cc', '250cc', '300cc+'], required: true },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['Brand New', 'Used - Excellent', 'Used - Good', 'Used - Fair'], required: true }
-        ]
+    } catch (error) {
+      console.error('Error loading categories:', error);
+    } finally {
+      setLoading(prev => ({ ...prev, categories: false }));
+    }
+  };
+
+  // Load subcategories when category changes
+  const loadSubCategories = async (categoryId) => {
+    try {
+      setLoading(prev => ({ ...prev, subCategories: true }));
+      const response = await api.get(`/categories/${categoryId}/subcategories`);
+      
+      if (response.data.success) {
+        setSubCategories(response.data.data);
+      } else {
+        console.error('Failed to load subcategories:', response.data.message);
+        setSubCategories([]);
       }
-    },
-    'Fashion': {
-      subcategories: ['Men\'s Clothing', 'Women\'s Clothing', 'Shoes', 'Accessories', 'Bags'],
-      fields: {
-        'Men\'s Clothing': [
-          { name: 'size', label: 'Size', type: 'select', options: ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'XXXL'], required: true },
-          { name: 'color', label: 'Color', type: 'text', required: true },
-          { name: 'material', label: 'Material', type: 'text', required: false },
-          { name: 'brand', label: 'Brand', type: 'text', required: false },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['New with Tags', 'New without Tags', 'Used - Like New', 'Used - Good'], required: true }
-        ],
-        'Shoes': [
-          { name: 'size', label: 'Size', type: 'select', options: Array.from({length: 15}, (_, i) => String(35 + i)), required: true },
-          { name: 'brand', label: 'Brand', type: 'text', required: false },
-          { name: 'color', label: 'Color', type: 'text', required: true },
-          { name: 'gender', label: 'Gender', type: 'select', options: ['Men', 'Women', 'Unisex'], required: true },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair'], required: true }
-        ]
+    } catch (error) {
+      console.error('Error loading subcategories:', error);
+      setSubCategories([]);
+    } finally {
+      setLoading(prev => ({ ...prev, subCategories: false }));
+    }
+  };
+
+  // Load category fields when subcategory changes
+  const loadCategoryFields = async (subCategoryId) => {
+    try {
+      setLoading(prev => ({ ...prev, fields: true }));
+      const response = await api.get(`/subcategories/${subCategoryId}/fields`);
+      
+      if (response.data.success) {
+        setCategoryFields(response.data.data);
+        
+        // Initialize dynamic fields
+        const initialFields = {};
+        response.data.data.forEach(field => {
+          initialFields[field.field_name] = '';
+        });
+        setDynamicFields(initialFields);
+      } else {
+        console.error('Failed to load category fields:', response.data.message);
+        setCategoryFields([]);
+        setDynamicFields({});
       }
-    },
-    'Home & Living': {
-      subcategories: ['Furniture', 'Appliances', 'Decor', 'Kitchen', 'Garden'],
-      fields: {
-        'Furniture': [
-          { name: 'material', label: 'Material', type: 'select', options: ['Wood', 'Metal', 'Plastic', 'Glass', 'Fabric', 'Leather', 'Other'], required: false },
-          { name: 'color', label: 'Color', type: 'text', required: false },
-          { name: 'dimensions', label: 'Dimensions (L×W×H)', type: 'text', required: false },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['New', 'Used - Excellent', 'Used - Good', 'Used - Fair'], required: true }
-        ],
-        'Appliances': [
-          { name: 'brand', label: 'Brand', type: 'text', required: false },
-          { name: 'model', label: 'Model', type: 'text', required: false },
-          { name: 'powerConsumption', label: 'Power Consumption', type: 'text', required: false },
-          { name: 'warranty', label: 'Warranty Remaining', type: 'text', required: false },
-          { name: 'condition', label: 'Condition', type: 'select', options: ['New', 'Used - Excellent', 'Used - Good', 'Used - Fair'], required: true }
-        ]
-      }
+    } catch (error) {
+      console.error('Error loading category fields:', error);
+      setCategoryFields([]);
+      setDynamicFields({});
+    } finally {
+      setLoading(prev => ({ ...prev, fields: false }));
     }
   };
 
   // Update form data when editing
   useEffect(() => {
     if (isEdit && productData) {
-      setFormData(productData);
+      setFormData({
+        title: productData.title || '',
+        description: productData.description || '',
+        price: productData.price || '',
+        category: productData.category || '',
+        subcategory: productData.subcategory || '',
+        stock: productData.stock || '',
+        status: productData.status || 'active',
+        images: productData.images || [],
+        weightKg: productData.weightKg || '',
+        locationCityId: productData.locationCityId || '',
+        metaTitle: productData.metaTitle || '',
+        metaDescription: productData.metaDescription || ''
+      });
       setDynamicFields(productData.dynamicFields || {});
+      
+      // Load category data for editing
+      if (productData.category) {
+        loadSubCategories(productData.category);
+      }
+      if (productData.subcategory) {
+        loadCategoryFields(productData.subcategory);
+      }
     }
   }, [isEdit, productData]);
 
   // Handle category change to show relevant fields
-  const handleCategoryChange = (category) => {
+  const handleCategoryChange = (categoryId) => {
+    const selectedCategory = categories.find(cat => cat.category_id == categoryId);
+    
     setFormData(prev => ({
       ...prev,
-      category,
+      category: categoryId,
       subcategory: ''
     }));
+    
+    setSubCategories([]);
+    setCategoryFields([]);
     setDynamicFields({});
+    
+    if (categoryId) {
+      loadSubCategories(categoryId);
+    }
   };
 
   // Handle subcategory change to show dynamic fields
-  const handleSubcategoryChange = (subcategory) => {
+  const handleSubcategoryChange = (subCategoryId) => {
     setFormData(prev => ({
       ...prev,
-      subcategory
+      subcategory: subCategoryId
     }));
 
-    // Reset dynamic fields when subcategory changes
-    const fields = categories[formData.category]?.fields?.[subcategory] || [];
-    const initialFields = {};
-    fields.forEach(field => {
-      initialFields[field.name] = '';
-    });
-    setDynamicFields(initialFields);
+    setCategoryFields([]);
+    setDynamicFields({});
+    
+    if (subCategoryId) {
+      loadCategoryFields(subCategoryId);
+    }
   };
 
   // Handle dynamic field changes
@@ -164,18 +190,13 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
       if (!formData.title) newErrors.title = 'Title is required';
       if (!formData.description) newErrors.description = 'Description is required';
       if (!formData.price) newErrors.price = 'Price is required';
-      if (!formData.category) newErrors.category = 'Category is required';
-      if (!formData.subcategory) newErrors.subcategory = 'Subcategory is required';
+      if (!isEdit && !formData.category) newErrors.category = 'Category is required';
+      if (!isEdit && !formData.subcategory) newErrors.subcategory = 'Subcategory is required';
       if (!formData.stock) newErrors.stock = 'Stock quantity is required';
-      if (formData.images.length === 0) newErrors.images = 'At least one image is required';
+      if (!isEdit && formData.images.length === 0) newErrors.images = 'At least one image is required';
 
-      // Validate dynamic fields
-      const fields = categories[formData.category]?.fields?.[formData.subcategory] || [];
-      fields.forEach(field => {
-        if (field.required && !dynamicFields[field.name]) {
-          newErrors[field.name] = `${field.label} is required`;
-        }
-      });
+      // Dynamic fields are now optional - sellers can include details in description instead
+      // No validation for dynamic fields
 
       if (Object.keys(newErrors).length > 0) {
         setErrors(newErrors);
@@ -183,21 +204,60 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
         return;
       }
 
-      // Submit product data
-      const productData = {
-        ...formData,
-        dynamicFields,
-        status: 'pending' // All products start as pending approval
-      };
+      // Prepare form data for submission
+      const formDataToSubmit = new FormData();
+      
+      // Add basic product data
+      formDataToSubmit.append('title', formData.title);
+      formDataToSubmit.append('description', formData.description);
+      formDataToSubmit.append('price', formData.price);
+      formDataToSubmit.append('stock', formData.stock);
+      
+      // Add optional fields
+      if (formData.weightKg) formDataToSubmit.append('weightKg', formData.weightKg);
+      if (formData.locationCityId) formDataToSubmit.append('locationCityId', formData.locationCityId);
+      if (formData.metaTitle) formDataToSubmit.append('metaTitle', formData.metaTitle);
+      if (formData.metaDescription) formDataToSubmit.append('metaDescription', formData.metaDescription);
+      
+      // Only add category/subcategory for create mode
+      if (!isEdit) {
+        formDataToSubmit.append('category', formData.category);
+        formDataToSubmit.append('subcategory', formData.subcategory);
+      }
+      
+      // Add dynamic fields
+      formDataToSubmit.append('dynamicFields', JSON.stringify(dynamicFields));
+      
+      // Add new images only
+      formData.images.forEach((image, index) => {
+        if (image.file) {
+          formDataToSubmit.append('images', image.file);
+        }
+      });
 
-      // TODO: API call to create/update product
-      console.log('Submitting product:', productData);
+      // Submit to API
+      const url = isEdit ? `/products/${productId}` : '/products';
+      const method = isEdit ? 'put' : 'post';
+      
+      const response = await api[method](url, formDataToSubmit, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
-      // Navigate back to products list
-      navigate('/seller/products');
+      if (response.data.success) {
+        console.log(`Product ${isEdit ? 'updated' : 'created'} successfully:`, response.data.data);
+        // Navigate back to products list
+        navigate('/seller/products');
+      } else {
+        setErrors({ submit: response.data.message || `Failed to ${isEdit ? 'update' : 'create'} product` });
+      }
 
     } catch (error) {
       console.error('Error submitting product:', error);
+      setErrors({ 
+        submit: error.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} product. Please try again.` 
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -209,54 +269,65 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
 
   // Render dynamic fields based on selected category and subcategory
   const renderDynamicFields = () => {
-    if (!formData.category || !formData.subcategory) return null;
+    if (!formData.category || !formData.subcategory || categoryFields.length === 0) {
+      return null;
+    }
 
-    const fields = categories[formData.category]?.fields?.[formData.subcategory] || [];
+    if (loading.fields) {
+      return (
+        <div className="flex justify-center py-4">
+          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+        </div>
+      );
+    }
 
-    return fields.map((field) => (
-      <div key={field.name} className="space-y-1">
+    return categoryFields.map((field) => (
+      <div key={field.field_id} className="space-y-1">
         <label className="block text-sm font-medium text-gray-700">
-          {field.label}
-          {field.required && <span className="text-red-500 ml-1">*</span>}
+          {field.field_label}
+          <span className="text-gray-500 text-xs ml-1">(Optional)</span>
         </label>
 
-        {field.type === 'select' ? (
+        {field.field_type === 'select' ? (
           <select
-            value={dynamicFields[field.name] || ''}
-            onChange={(e) => handleDynamicFieldChange(field.name, e.target.value)}
+            value={dynamicFields[field.field_name] || ''}
+            onChange={(e) => handleDynamicFieldChange(field.field_name, e.target.value)}
+            disabled={isEdit}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors[field.name] ? 'border-red-500' : 'border-gray-300'
-            }`}
+              errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
+            } ${isEdit ? 'bg-gray-100' : ''}`}
           >
-            <option value="">Select {field.label}</option>
-            {field.options.map(option => (
-              <option key={option} value={option}>{option}</option>
+            <option value="">Select {field.field_label}</option>
+            {field.field_options && field.field_options.map((option, index) => (
+              <option key={index} value={option}>{option}</option>
             ))}
           </select>
-        ) : field.type === 'number' ? (
+        ) : field.field_type === 'number' ? (
           <input
             type="number"
-            value={dynamicFields[field.name] || ''}
-            onChange={(e) => handleDynamicFieldChange(field.name, e.target.value)}
+            value={dynamicFields[field.field_name] || ''}
+            onChange={(e) => handleDynamicFieldChange(field.field_name, e.target.value)}
+            disabled={isEdit}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors[field.name] ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder={`Enter ${field.label}`}
+              errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
+            } ${isEdit ? 'bg-gray-100' : ''}`}
+            placeholder={`Enter ${field.field_label}`}
           />
         ) : (
           <input
             type="text"
-            value={dynamicFields[field.name] || ''}
-            onChange={(e) => handleDynamicFieldChange(field.name, e.target.value)}
+            value={dynamicFields[field.field_name] || ''}
+            onChange={(e) => handleDynamicFieldChange(field.field_name, e.target.value)}
+            disabled={isEdit}
             className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors[field.name] ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder={`Enter ${field.label}`}
+              errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
+            } ${isEdit ? 'bg-gray-100' : ''}`}
+            placeholder={`Enter ${field.field_label}`}
           />
         )}
 
-        {errors[field.name] && (
-          <p className="text-red-500 text-sm">{errors[field.name]}</p>
+        {errors[field.field_name] && (
+          <p className="text-red-500 text-sm">{errors[field.field_name]}</p>
         )}
       </div>
     ));
@@ -293,6 +364,13 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Error Message */}
+        {errors.submit && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-red-700">{errors.submit}</p>
+          </div>
+        )}
+
         {/* Basic Information */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Basic Information</h2>
@@ -373,7 +451,14 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
 
         {/* Category Selection */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Category</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-semibold text-gray-900">Category</h2>
+            {isEdit && (
+              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                Cannot be changed when editing
+              </span>
+            )}
+          </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Main Category */}
@@ -384,13 +469,18 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
               <select
                 value={formData.category}
                 onChange={(e) => handleCategoryChange(e.target.value)}
+                disabled={loading.categories || isEdit}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.category ? 'border-red-500' : 'border-gray-300'
-                }`}
+                } ${(loading.categories || isEdit) ? 'bg-gray-100' : ''}`}
               >
-                <option value="">Select Category</option>
-                {Object.keys(categories).map(category => (
-                  <option key={category} value={category}>{category}</option>
+                <option value="">
+                  {loading.categories ? 'Loading categories...' : 'Select Category'}
+                </option>
+                {categories.map(category => (
+                  <option key={category.category_id} value={category.category_id}>
+                    {category.category_name}
+                  </option>
                 ))}
               </select>
               {errors.category && <p className="text-red-500 text-sm">{errors.category}</p>}
@@ -404,14 +494,18 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
               <select
                 value={formData.subcategory}
                 onChange={(e) => handleSubcategoryChange(e.target.value)}
-                disabled={!formData.category}
+                disabled={!formData.category || loading.subCategories || isEdit}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.subcategory ? 'border-red-500' : 'border-gray-300'
-                } ${!formData.category ? 'bg-gray-100' : ''}`}
+                } ${(!formData.category || loading.subCategories || isEdit) ? 'bg-gray-100' : ''}`}
               >
-                <option value="">Select Subcategory</option>
-                {formData.category && categories[formData.category]?.subcategories?.map(sub => (
-                  <option key={sub} value={sub}>{sub}</option>
+                <option value="">
+                  {loading.subCategories ? 'Loading subcategories...' : 'Select Subcategory'}
+                </option>
+                {subCategories.map(subCategory => (
+                  <option key={subCategory.sub_category_id} value={subCategory.sub_category_id}>
+                    {subCategory.sub_category_name}
+                  </option>
                 ))}
               </select>
               {errors.subcategory && <p className="text-red-500 text-sm">{errors.subcategory}</p>}
@@ -422,9 +516,27 @@ const ProductForm = ({ isEdit = false, productData = null }) => {
         {/* Dynamic Fields */}
         {formData.category && formData.subcategory && (
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900 mb-6">
-              {formData.subcategory} Details
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-lg font-semibold text-gray-900">
+                {subCategories.find(sub => sub.sub_category_id == formData.subcategory)?.sub_category_name || 'Category'} Details
+              </h2>
+              <div className="flex items-center space-x-2">
+                {isEdit && (
+                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                    Cannot be changed when editing
+                  </span>
+                )}
+                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                  All fields optional
+                </span>
+              </div>
+            </div>
+
+            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <p className="text-sm text-blue-700">
+                💡 <strong>Tip:</strong> These fields are optional. You can leave them empty and include all product details in the description instead.
+              </p>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {renderDynamicFields()}

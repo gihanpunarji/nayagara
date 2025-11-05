@@ -480,35 +480,81 @@ const ReviewStep = memo(({
 
   return (
     <div className="space-y-6">
-      {/* Order Summary */}
       <div className="bg-white rounded-xl border border-gray-200 p-6">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Order Summary</h3>
 
         <div className="space-y-4">
           {cartItems && cartItems.length > 0 ? cartItems.map((item) => (
-            <div key={item.product_id || item.id} className="flex items-center space-x-4">
+            <div key={item.product_id || item.id || Math.random()} className="flex items-center space-x-4">
               <img
                 src={
-                  item.image ? (
-                    item.image.startsWith('http') ? 
-                      item.image : 
-                      `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.image}`
-                  ) : (
-                    item.images?.[0]?.image_url ? 
-                      `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.images[0].image_url}` :
-                      '/placeholder-product.jpg'
-                  )
+                  // Try different image field variations from different data sources
+                  (() => {
+                    let imageUrl = null;
+                    
+                    // Debug: Log item structure to understand data format
+                    if (!item.image && !item.images?.[0] && !item.product_image_url) {
+                      console.log('Item missing image, available fields:', Object.keys(item));
+                      console.log('Item data:', item);
+                    }
+                    
+                    // Check for direct image URL (cart items)
+                    if (item.image) {
+                      imageUrl = item.image.startsWith('http') ? 
+                        item.image : 
+                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.image}`;
+                    }
+                    // Check for images array (product data)
+                    else if (item.images?.[0]?.image_url) {
+                      const imgUrl = item.images[0].image_url;
+                      imageUrl = imgUrl.startsWith('http') ? 
+                        imgUrl : 
+                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
+                    }
+                    // Check for product_image_url (order items)
+                    else if (item.product_image_url) {
+                      const imgUrl = item.product_image_url;
+                      imageUrl = imgUrl.startsWith('http') ? 
+                        imgUrl : 
+                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
+                    }
+                    // Check for thumbnail (product variations)
+                    else if (item.thumbnail) {
+                      const imgUrl = item.thumbnail;
+                      imageUrl = imgUrl.startsWith('http') ? 
+                        imgUrl : 
+                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
+                    }
+                    // Check for featured_image (product data)
+                    else if (item.featured_image) {
+                      const imgUrl = item.featured_image;
+                      imageUrl = imgUrl.startsWith('http') ? 
+                        imgUrl : 
+                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
+                    }
+                    
+                    return imageUrl || '/placeholder-product.jpg';
+                  })()
                 }
-                alt={item.product_title || item.name}
+                alt={item.product_title || item.name || item.title || 'Product'}
                 className="w-16 h-16 object-cover rounded-lg"
                 onError={(e) => {
                   e.target.src = '/placeholder-product.jpg';
                 }}
               />
               <div className="flex-1">
-                <p className="font-medium text-gray-900">{item.product_title || item.name}</p>
-                <p className="text-sm text-gray-600">Sold by {item.seller_name || item.seller || 'Nayagara'}</p>
-                <p className="text-sm text-gray-600">Qty: {item.quantity}</p>
+                <p className="font-medium text-gray-900">{
+                  item.product_title || 
+                  item.name || 
+                  item.title || 
+                  'Product'
+                }</p>
+                <p className="text-sm text-gray-600">Sold by {
+                  item.seller_name || 
+                  (typeof item.seller === 'string' ? item.seller : item.seller?.name) || 
+                  'Nayagara'
+                }</p>
+                <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
               </div>
               <p className="font-bold text-primary-600">
                 Rs. {((item.price || 0) * (item.quantity || 1)).toLocaleString()}
@@ -635,7 +681,7 @@ const Checkout = () => {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
 
-  const { items: cartItems = [], subtotal = 0, total = 0, itemCount = 0, shipping: shippingCost = 200 } = location.state || {};
+  const { items: cartItems = [], subtotal = 0, total = 0, itemCount = 0, shipping: shippingCost = 0 } = location.state || {};
 
   useEffect(() => {
     if (!cartItems || cartItems.length === 0) {

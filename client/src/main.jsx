@@ -72,6 +72,7 @@ import AdminSettings from "./components/admin/pages/Settings.jsx";
 import AdminNotifications from "./components/admin/pages/Notifications.jsx";
 import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
 import AdminBanners from "./components/admin/pages/BannerSlider.jsx";
+import Referral from "./components/admin/pages/Referral.jsx";
 
 // Shared Components
 import NotFound from "./components/shared/error/NotFound.jsx";
@@ -234,6 +235,14 @@ createRoot(document.getElementById("root")).render(
             element={
               // <AdminProtectedRoute>
               <AdminBanners />
+              // </AdminProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin/referrals"
+            element={
+              // <AdminProtectedRoute>
+              <Referral />
               // </AdminProtectedRoute>
             }
           />

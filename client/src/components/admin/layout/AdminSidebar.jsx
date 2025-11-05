@@ -118,6 +118,12 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           badge: null
         },
         {
+          icon: TrendingUp,
+          label: 'Referrals',
+          path: '/admin/referrals',
+          badge: null
+        },
+        {
           icon: CreditCard,
           label: 'Payments',
           path: '/admin/payments',

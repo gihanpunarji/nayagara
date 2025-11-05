@@ -4,20 +4,27 @@ import {
   LogOut, ChevronRight, Star, Truck, Clock, Shield, Eye,
   Edit, Copy, X, Check, AlertCircle, Phone, Mail, Calendar,
   Download, MessageCircle, FileText, Headphones, Plus, Minus,
-  Car, Home, Settings, Trash2
+  Car, Home, Settings, Trash2, Save
 } from 'lucide-react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import AccountSidebar from '../layout/AccountSidebar';
+import MobileMenu from '../layout/MobileMenu';
 import { useAuth } from '../../../context/AuthContext';
+import api from '../../../api/axios';
 
 const CustomerAccount = () => {
-  const { logout, user, isAuthenticated } = useAuth();
+  const { logout, user, isAuthenticated, loading } = useAuth();
   
+  if (loading) {
+    return <div className="flex justify-center items-center min-h-screen"><div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div></div>;
+  }
+
   if (!isAuthenticated || !user) {
     return <Navigate to={'/'} replace />
   }
+  const location = useLocation();
 
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
   const [withdrawAmount, setWithdrawAmount] = useState('');
   const [editingAddress, setEditingAddress] = useState(null);
@@ -27,6 +34,31 @@ const CustomerAccount = () => {
   const [myAds, setMyAds] = useState([]);
   const [adsLoading, setAdsLoading] = useState(false);
   const [selectedAdStatus, setSelectedAdStatus] = useState('all');
+  
+  // Address management states
+  const [provinces, setProvinces] = useState([]);
+  const [districts, setDistricts] = useState([]);
+  const [cities, setCities] = useState([]);
+  const [userAddresses, setUserAddresses] = useState([]);
+  const [loadingAddresses, setLoadingAddresses] = useState(false);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
+  const [addressForm, setAddressForm] = useState({
+    address_type: 'billing',
+    line1: '',
+    line2: '',
+    postal_code: '',
+    province_id: '',
+    district_id: '',
+    city_id: '',
+    is_default: false
+  });
+
+  // Order management states
+  const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState(new Set());
+  
   const navigate = useNavigate();
 
   // User data from context with defaults
@@ -44,114 +76,146 @@ const CustomerAccount = () => {
     referralEarnings: 0
   };
 
-  // Mock order data
-  const orders = [
-    {
-      id: 'ORD-2024-001',
-      date: '2024-01-20',
-      status: 'delivered',
-      total: 385000,
-      items: [
-        {
-          name: 'iPhone 15 Pro Max 256GB',
-          image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-          price: 385000,
-          quantity: 1,
-          seller: 'TechZone Lanka'
-        }
-      ],
-      shippingAddress: 'No. 123, Main Street, Colombo 07',
-      trackingNumber: 'TRK123456789'
-    },
-    {
-      id: 'ORD-2024-002',
-      date: '2024-01-18',
-      status: 'shipped',
-      total: 429750,
-      items: [
-        {
-          name: 'Gaming Laptop RTX 4070',
-          image: 'https://images.unsplash.com/photo-1603302576837-37561b2e2302?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-          price: 425000,
-          quantity: 1,
-          seller: 'Gamer Hub'
-        },
-        {
-          name: 'Premium Basmati Rice 25kg',
-          image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-          price: 4750,
-          quantity: 1,
-          seller: 'Fresh Mart'
-        }
-      ],
-      shippingAddress: 'No. 456, Lake Road, Nugegoda',
-      trackingNumber: 'TRK987654321'
-    },
-    {
-      id: 'ORD-2024-003',
-      date: '2024-01-15',
-      status: 'processed',
-      total: 75000,
-      items: [
-        {
-          name: 'Wireless Headphones',
-          image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-          price: 75000,
-          quantity: 1,
-          seller: 'Audio Zone'
-        }
-      ],
-      shippingAddress: 'No. 789, Temple Road, Kandy',
-      trackingNumber: 'TRK456789123'
-    },
-    {
-      id: 'ORD-2024-004',
-      date: '2024-01-12',
-      status: 'paid',
-      total: 125000,
-      items: [
-        {
-          name: 'Smart Watch',
-          image: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-          price: 125000,
-          quantity: 1,
-          seller: 'Tech Hub'
-        }
-      ],
-      shippingAddress: 'No. 321, Park Street, Galle',
-      trackingNumber: 'TRK789123456'
-    }
-  ];
 
-  // Address data
-  const [addresses, setAddresses] = useState({
-    billing: {
-      line1: '123 Main Street',
-      line2: 'Apartment 4B',
-      country: 'Sri Lanka',
-      province: 'western',
-      district: 'colombo',
-      city: 'Colombo 07',
-      postal: '00700'
-    },
-    shipping: {
-      line1: '456 Lake Road',
-      line2: '',
-      country: 'Sri Lanka',
-      province: 'western',
-      district: 'gampaha',
-      city: 'Nugegoda',
-      postal: '10250'
+  // Fetch functions for address data
+  const fetchProvinces = async () => {
+    try {
+      const response = await api.get('/address/provinces');
+      if (response.data.success) {
+        setProvinces(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching provinces:', error);
     }
-  });
+  };
+
+  const fetchDistricts = async (provinceId) => {
+    try {
+      const response = await api.get(`/address/districts/${provinceId}`);
+      if (response.data.success) {
+        setDistricts(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching districts:', error);
+      setDistricts([]);
+    }
+  };
+
+  const fetchCities = async (districtId) => {
+    try {
+      const response = await api.get(`/address/cities/${districtId}`);
+      if (response.data.success) {
+        setCities(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching cities:', error);
+      setCities([]);
+    }
+  };
+
+  const fetchUserAddresses = async () => {
+    if (!isAuthenticated) return;
+    
+    setLoadingAddresses(true);
+    try {
+      const response = await api.get('/address/user');
+      if (response.data.success) {
+        setUserAddresses(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user addresses:', error);
+    } finally {
+      setLoadingAddresses(false);
+    }
+  };
+
+  const createAddress = async (addressData) => {
+    setSavingAddress(true);
+    try {
+      const response = await api.post('/address/user', addressData);
+      if (response.data.success) {
+        await fetchUserAddresses(); // Refresh the addresses list
+        return true;
+      }
+    } catch (error) {
+      console.error('Error creating address:', error);
+      alert('Failed to create address. Please try again.');
+    } finally {
+      setSavingAddress(false);
+    }
+    return false;
+  };
+
+  const updateAddress = async (addressId, addressData) => {
+    setSavingAddress(true);
+    try {
+      const response = await api.put(`/address/user/${addressId}`, addressData);
+      if (response.data.success) {
+        await fetchUserAddresses(); // Refresh the addresses list
+        return true;
+      }
+    } catch (error) {
+      console.error('Error updating address:', error);
+      alert('Failed to update address. Please try again.');
+    } finally {
+      setSavingAddress(false);
+    }
+    return false;
+  };
+
+  const deleteAddress = async (addressId) => {
+    if (!confirm('Are you sure you want to delete this address?')) return;
+    
+    try {
+      const response = await api.delete(`/address/user/${addressId}`);
+      if (response.data.success) {
+        await fetchUserAddresses(); // Refresh the addresses list
+        alert('Address deleted successfully!');
+      }
+    } catch (error) {
+      console.error('Error deleting address:', error);
+      alert('Failed to delete address. Please try again.');
+    }
+  };
+
+  // Fetch user orders
+  const fetchUserOrders = async () => {
+    if (!isAuthenticated) return;
+    
+    setLoadingOrders(true);
+    try {
+      const response = await api.get('/orders/user');
+      if (response.data.success) {
+        setOrders(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user orders:', error);
+    } finally {
+      setLoadingOrders(false);
+    }
+  };
+
+  const toggleOrderExpansion = (orderId) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) {
+        newSet.delete(orderId);
+      } else {
+        newSet.add(orderId);
+      }
+      return newSet;
+    });
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-800';
       case 'shipped': return 'bg-blue-100 text-blue-800';
-      case 'processed': return 'bg-yellow-100 text-yellow-800';
-      case 'paid': return 'bg-purple-100 text-purple-800';
+      case 'processing': return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed': return 'bg-purple-100 text-purple-800';
+      case 'pending': return 'bg-orange-100 text-orange-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
+      case 'refunded': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
     }
   };
@@ -159,15 +223,16 @@ const CustomerAccount = () => {
   // Filter orders based on status
   const filteredOrders = orderStatusFilter === 'all'
     ? orders
-    : orders.filter(order => order.status === orderStatusFilter);
+    : orders.filter(order => order.order_status === orderStatusFilter);
 
   // Order status filter options
   const orderStatusFilters = [
     { id: 'all', label: 'All Orders', count: orders.length },
-    { id: 'paid', label: 'Paid', count: orders.filter(o => o.status === 'paid').length },
-    { id: 'processed', label: 'Processed', count: orders.filter(o => o.status === 'processed').length },
-    { id: 'shipped', label: 'Shipped', count: orders.filter(o => o.status === 'shipped').length },
-    { id: 'delivered', label: 'Delivered', count: orders.filter(o => o.status === 'delivered').length },
+    { id: 'pending', label: 'Pending', count: orders.filter(o => o.order_status === 'pending').length },
+    { id: 'confirmed', label: 'Confirmed', count: orders.filter(o => o.order_status === 'confirmed').length },
+    { id: 'processing', label: 'Processing', count: orders.filter(o => o.order_status === 'processing').length },
+    { id: 'shipped', label: 'Shipped', count: orders.filter(o => o.order_status === 'shipped').length },
+    { id: 'delivered', label: 'Delivered', count: orders.filter(o => o.order_status === 'delivered').length },
   ];
 
   // Save phone number function
@@ -192,14 +257,15 @@ const CustomerAccount = () => {
     }
   };
 
-  const menuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: User },
-    { id: 'orders', label: 'My Orders', icon: Package },
-    { id: 'my-ads', label: 'My Ads', icon: Car },
-    { id: 'wallet', label: 'My Wallet', icon: CreditCard },
-    { id: 'addresses', label: 'Addresses', icon: MapPin },
-    { id: 'support', label: 'Help & Support', icon: HelpCircle }
-  ];
+ 
+
+  // Fetch provinces on component mount and orders for dashboard
+  useEffect(() => {
+    fetchProvinces();
+    if (isAuthenticated) {
+      fetchUserOrders();
+    }
+  }, [isAuthenticated]);
 
   // Fetch user's advertisements
   useEffect(() => {
@@ -207,6 +273,20 @@ const CustomerAccount = () => {
       fetchMyAds();
     }
   }, [activeTab]);
+
+  // Fetch user addresses when addresses tab is active
+  useEffect(() => {
+    if (activeTab === 'addresses' && isAuthenticated) {
+      fetchUserAddresses();
+    }
+  }, [activeTab, isAuthenticated]);
+
+  // Fetch user orders when orders tab is active
+  useEffect(() => {
+    if (activeTab === 'orders' && isAuthenticated) {
+      fetchUserOrders();
+    }
+  }, [activeTab, isAuthenticated]);
 
   const fetchMyAds = async () => {
     setAdsLoading(true);
@@ -270,12 +350,7 @@ const CustomerAccount = () => {
     }).format(price);
   };
 
-  const handleSignOut = () => {
-    logout();
-    // Clear all localStorage data
-    localStorage.clear();
-    navigate('/');
-  };
+ 
 
   const handleWithdraw = () => {
     if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
@@ -360,25 +435,39 @@ const CustomerAccount = () => {
           </button>
         </div>
         <div className="space-y-3">
-          {orders.slice(0, 3).map((order) => (
-            <div key={order.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                  <Package className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{order.id}</p>
-                  <p className="text-sm text-gray-500">{order.date}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="font-bold text-gray-900">Rs. {order.total.toLocaleString()}</p>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.status)}`}>
-                  {order.status}
-                </span>
-              </div>
+          {loadingOrders ? (
+            <div className="text-center py-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+              <p className="text-gray-500 text-sm mt-2">Loading orders...</p>
             </div>
-          ))}
+          ) : orders.length === 0 ? (
+            <div className="text-center py-8">
+              <Package className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-gray-500">No orders yet</p>
+            </div>
+          ) : (
+            orders.slice(0, 3).map((order) => (
+              <div key={order.order_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                    <Package className="w-6 h-6 text-primary-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{order.order_number}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(order.order_datetime).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-gray-900">Rs. {parseFloat(order.total_amount).toLocaleString()}</p>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}`}>
+                    {order.order_status}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>
@@ -390,100 +479,205 @@ const CustomerAccount = () => {
         <h2 className="text-2xl font-bold text-gray-900">My Orders</h2>
       </div>
 
-      {selectedOrder ? (
-        // Order Details View
-        <div className="bg-white rounded-2xl border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-gray-900">Order Details</h3>
-                <p className="text-gray-500">{selectedOrder.id}</p>
-              </div>
-              <button
-                onClick={() => setSelectedOrder(null)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
-            </div>
-          </div>
+      {/* Order Status Filters */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <div className="flex flex-wrap gap-2">
+          {orderStatusFilters.map(filter => (
+            <button
+              key={filter.id}
+              onClick={() => setOrderStatusFilter(filter.id)}
+              className={`px-4 py-2 text-sm rounded-full transition-colors ${
+                orderStatusFilter === filter.id
+                  ? 'bg-primary-600 text-white'
+                  : 'text-gray-600 hover:bg-gray-100'
+              }`}
+            >
+              {filter.label} ({filter.count})
+            </button>
+          ))}
+        </div>
+      </div>
 
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-              <div>
-                <h4 className="font-bold text-gray-900 mb-2">Order Information</h4>
-                <div className="space-y-2 text-sm">
-                  <p><span className="font-medium">Order Date:</span> {selectedOrder.date}</p>
-                  <p><span className="font-medium">Status:</span>
-                    <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedOrder.status)}`}>
-                      {selectedOrder.status}
-                    </span>
-                  </p>
-                  <p><span className="font-medium">Tracking:</span> {selectedOrder.trackingNumber}</p>
-                  <p><span className="font-medium">Total:</span> Rs. {selectedOrder.total.toLocaleString()}</p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="font-bold text-gray-900 mb-2">Shipping Address</h4>
-                <p className="text-sm text-gray-600">{selectedOrder.shippingAddress}</p>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="font-bold text-gray-900 mb-4">Order Items</h4>
-              <div className="space-y-4">
-                {selectedOrder.items.map((item, index) => (
-                  <div key={index} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-                    <img
-                      src={item.image}
-                      alt={item.name}
-                      className="w-16 h-16 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <h5 className="font-medium text-gray-900">{item.name}</h5>
-                      <p className="text-sm text-gray-500">Sold by: {item.seller}</p>
-                      <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900">Rs. {item.price.toLocaleString()}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+      {/* Orders List */}
+      {loadingOrders ? (
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+          <p className="text-gray-600 mt-2">Loading orders...</p>
+        </div>
+      ) : filteredOrders.length === 0 ? (
+        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-900 mb-2">No orders found</h3>
+          <p className="text-gray-600">
+            {orderStatusFilter === 'all' 
+              ? "You haven't placed any orders yet" 
+              : `No ${orderStatusFilter} orders found`
+            }
+          </p>
         </div>
       ) : (
-        // Orders List View
-        <div className="grid gap-4">
-          {orders.map((order) => (
-            <div key={order.id} className="bg-white p-6 rounded-2xl border border-gray-200">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
-                    <Package className="w-6 h-6 text-primary-600" />
+        <div className="space-y-4">
+          {filteredOrders.map((order) => (
+            <div key={order.order_id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+              {/* Order Header */}
+              <div 
+                className="p-6 cursor-pointer hover:bg-gray-50 transition-colors"
+                onClick={() => toggleOrderExpansion(order.order_id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center">
+                      <Package className="w-6 h-6 text-primary-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-900">{order.order_number}</h3>
+                      <p className="text-sm text-gray-500">
+                        {new Date(order.order_datetime).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'long',
+                          day: 'numeric'
+                        })}
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {order.items ? order.items.length : 0} items
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-gray-900">{order.id}</h3>
-                    <p className="text-sm text-gray-500">{order.date}</p>
-                    <p className="text-sm text-gray-500">{order.items.length} items</p>
+                  <div className="text-right">
+                    <p className="font-bold text-gray-900 mb-2">
+                      Rs. {parseFloat(order.total_amount).toLocaleString()}
+                    </p>
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.order_status)} mb-2 inline-block`}>
+                      {order.order_status}
+                    </span>
+                    <div className="flex items-center justify-end space-x-2">
+                      {order.tracking_number && (
+                        <div className="text-xs text-gray-500">
+                          <Truck className="w-3 h-3 inline mr-1" />
+                          {order.tracking_number}
+                        </div>
+                      )}
+                      <ChevronRight 
+                        className={`w-4 h-4 text-gray-400 transition-transform ${
+                          expandedOrders.has(order.order_id) ? 'rotate-90' : ''
+                        }`} 
+                      />
+                    </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-gray-900 mb-2">Rs. {order.total.toLocaleString()}</p>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(order.status)} mb-2 inline-block`}>
-                    {order.status}
-                  </span>
-                  <button
-                    onClick={() => setSelectedOrder(order)}
-                    className="flex items-center space-x-1 text-primary-600 hover:text-primary-700 text-sm font-medium"
-                  >
-                    <Eye className="w-4 h-4" />
-                    <span>View Details</span>
-                  </button>
                 </div>
               </div>
+
+              {/* Expanded Order Details */}
+              {expandedOrders.has(order.order_id) && (
+                <div className="border-t border-gray-200 bg-gray-50">
+                  <div className="p-6 space-y-6">
+                    {/* Order Information */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Order Information</h4>
+                        <div className="space-y-2 text-sm">
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Order Date:</span>
+                            <span className="font-medium">
+                              {new Date(order.order_datetime).toLocaleDateString()}
+                            </span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Payment Status:</span>
+                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                              order.payment_status === 'completed' ? 'bg-green-100 text-green-800' :
+                              order.payment_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                            }`}>
+                              {order.payment_status}
+                            </span>
+                          </div>
+                          {order.tracking_number && (
+                            <div className="flex justify-between">
+                              <span className="text-gray-600">Tracking Number:</span>
+                              <span className="font-medium font-mono text-primary-600">
+                                {order.tracking_number}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Subtotal:</span>
+                            <span className="font-medium">Rs. {parseFloat(order.subtotal).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Shipping:</span>
+                            <span className="font-medium">Rs. {parseFloat(order.shipping_cost).toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between font-semibold text-gray-900 pt-2 border-t">
+                            <span>Total:</span>
+                            <span>Rs. {parseFloat(order.total_amount).toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Shipping Address</h4>
+                        <div className="text-sm text-gray-600 bg-white p-3 rounded-lg">
+                          <p>{order.line1}</p>
+                          {order.line2 && <p>{order.line2}</p>}
+                          <p>{order.city_name}, {order.district_name}</p>
+                          <p>{order.province_name}, {order.postal_code}</p>
+                          <p>{order.country_name}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Order Items */}
+                    {order.items && order.items.length > 0 && (
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-3">Order Items</h4>
+                        <div className="space-y-3">
+                          {order.items.map((item, index) => (
+                            <div key={index} className="bg-white p-4 rounded-lg border border-gray-200">
+                              <div className="flex items-center space-x-4">
+                                <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
+                                  {item.product_image_url ? (
+                                    <img
+                                      src={item.product_image_url.startsWith('http') ? 
+                                        item.product_image_url : 
+                                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.product_image_url}`
+                                      }
+                                      alt={item.product_title}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        e.target.src = 'https://via.placeholder.com/64x64?text=No+Image';
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Package className="w-6 h-6 text-gray-400" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="flex-1">
+                                  <h5 className="font-medium text-gray-900">{item.product_title}</h5>
+                                  {item.product_description && (
+                                    <p className="text-sm text-gray-600 line-clamp-2">{item.product_description}</p>
+                                  )}
+                                  <div className="flex items-center space-x-4 mt-1 text-sm text-gray-500">
+                                    <span>Quantity: {item.quantity}</span>
+                                    <span>Unit Price: Rs. {parseFloat(item.unit_price).toLocaleString()}</span>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-semibold text-gray-900">
+                                    Rs. {parseFloat(item.total_price).toLocaleString()}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -598,146 +792,402 @@ const CustomerAccount = () => {
     </div>
   );
 
-  const renderAddresses = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">My Addresses</h2>
-      </div>
+  const renderAddresses = () => {
+    const handleFormSubmit = async (e) => {
+      e.preventDefault();
+      
+      if (!addressForm.line1 || !addressForm.postal_code || !addressForm.city_id) {
+        alert('Please fill in all required fields');
+        return;
+      }
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Billing Address */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Billing Address</h3>
-            <button
-              onClick={() => setEditingAddress('billing')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <Edit className="w-4 h-4 text-gray-500" />
-            </button>
-          </div>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>{addresses.billing.line1}</p>
-            {addresses.billing.line2 && <p>{addresses.billing.line2}</p>}
-            <p>{addresses.billing.city}, {addresses.billing.postal}</p>
-            <p>{addresses.billing.country}</p>
-          </div>
+      const success = editingAddress 
+        ? await updateAddress(editingAddress, {
+            addressType: addressForm.address_type,
+            line1: addressForm.line1,
+            line2: addressForm.line2,
+            postalCode: addressForm.postal_code,
+            cityId: addressForm.city_id,
+            isDefault: addressForm.is_default
+          })
+        : await createAddress({
+            addressType: addressForm.address_type,
+            line1: addressForm.line1,
+            line2: addressForm.line2,
+            postalCode: addressForm.postal_code,
+            cityId: addressForm.city_id,
+            isDefault: addressForm.is_default
+          });
+
+      if (success) {
+        setShowAddAddressModal(false);
+        setEditingAddress(null);
+        resetAddressForm();
+        alert(`Address ${editingAddress ? 'updated' : 'created'} successfully!`);
+      }
+    };
+
+    const resetAddressForm = () => {
+      setAddressForm({
+        address_type: 'billing',
+        line1: '',
+        line2: '',
+        postal_code: '',
+        province_id: '',
+        district_id: '',
+        city_id: '',
+        is_default: false
+      });
+      setDistricts([]);
+      setCities([]);
+    };
+
+    const handleProvinceChange = async (provinceId) => {
+      setAddressForm(prev => ({ ...prev, province_id: provinceId, district_id: '', city_id: '' }));
+      setCities([]);
+      if (provinceId) {
+        await fetchDistricts(provinceId);
+      } else {
+        setDistricts([]);
+      }
+    };
+
+    const handleDistrictChange = async (districtId) => {
+      setAddressForm(prev => ({ ...prev, district_id: districtId, city_id: '' }));
+      if (districtId) {
+        await fetchCities(districtId);
+      } else {
+        setCities([]);
+      }
+    };
+
+    const handleEditAddress = (address) => {
+      setAddressForm({
+        address_type: address.address_type,
+        line1: address.line1,
+        line2: address.line2 || '',
+        postal_code: address.postal_code,
+        province_id: address.province_id || '',
+        district_id: address.district_id || '',
+        city_id: address.city_id,
+        is_default: address.is_default === 1
+      });
+      
+      // Load districts and cities for editing
+      if (address.province_id) {
+        fetchDistricts(address.province_id);
+        if (address.district_id) {
+          fetchCities(address.district_id);
+        }
+      }
+      
+      setEditingAddress(address.address_id);
+      setShowAddAddressModal(true);
+    };
+
+    const billingAddresses = userAddresses.filter(addr => addr.address_type === 'billing');
+    const shippingAddresses = userAddresses.filter(addr => addr.address_type === 'shipping');
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-gray-900">My Addresses</h2>
+          <button
+            onClick={() => {
+              resetAddressForm();
+              setShowAddAddressModal(true);
+            }}
+            className="flex items-center space-x-2 bg-primary-600 text-white px-4 py-2 rounded-lg hover:bg-primary-700 transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Add New Address</span>
+          </button>
         </div>
 
-        {/* Shipping Address */}
-        <div className="bg-white rounded-2xl p-6 border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-gray-900">Shipping Address</h3>
-            <button
-              onClick={() => setEditingAddress('shipping')}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <Edit className="w-4 h-4 text-gray-500" />
-            </button>
+        {loadingAddresses ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="text-gray-600 mt-2">Loading addresses...</p>
           </div>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p>{addresses.shipping.line1}</p>
-            {addresses.shipping.line2 && <p>{addresses.shipping.line2}</p>}
-            <p>{addresses.shipping.city}, {addresses.shipping.postal}</p>
-            <p>{addresses.shipping.country}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Edit Address Modal */}
-      {editingAddress && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-lg mx-4 max-h-screen overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-gray-900">
-                Edit {editingAddress === 'billing' ? 'Billing' : 'Shipping'} Address
-              </h3>
-              <button
-                onClick={() => setEditingAddress(null)}
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-500" />
-              </button>
+        ) : (
+          <div className="space-y-6">
+            {/* Billing Addresses */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Billing Addresses</h3>
+              {billingAddresses.length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                  <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">No billing addresses found</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {billingAddresses.map((address) => (
+                    <div key={address.address_id} className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          {address.is_default === 1 && (
+                            <span className="inline-block bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded-full mb-2">
+                              Default
+                            </span>
+                          )}
+                          <p className="font-medium text-gray-900">{address.line1}</p>
+                          {address.line2 && <p className="text-gray-600">{address.line2}</p>}
+                          <p className="text-gray-600">{address.city_name}, {address.district_name}</p>
+                          <p className="text-gray-600">{address.province_name}, {address.postal_code}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditAddress(address)}
+                            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                            title="Edit Address"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteAddress(address.address_id)}
+                            className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                            title="Delete Address"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
-                <input
-                  type="text"
-                  value={addresses[editingAddress].line1}
-                  onChange={(e) => setAddresses(prev => ({
-                    ...prev,
-                    [editingAddress]: { ...prev[editingAddress], line1: e.target.value }
-                  }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
+            {/* Shipping Addresses */}
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Shipping Addresses</h3>
+              {shippingAddresses.length === 0 ? (
+                <div className="text-center py-8 bg-white rounded-lg border border-gray-200">
+                  <MapPin className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-600">No shipping addresses found</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {shippingAddresses.map((address) => (
+                    <div key={address.address_id} className="bg-white rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          {address.is_default === 1 && (
+                            <span className="inline-block bg-primary-100 text-primary-800 text-xs px-2 py-1 rounded-full mb-2">
+                              Default
+                            </span>
+                          )}
+                          <p className="font-medium text-gray-900">{address.line1}</p>
+                          {address.line2 && <p className="text-gray-600">{address.line2}</p>}
+                          <p className="text-gray-600">{address.city_name}, {address.district_name}</p>
+                          <p className="text-gray-600">{address.province_name}, {address.postal_code}</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEditAddress(address)}
+                            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                            title="Edit Address"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => deleteAddress(address.address_id)}
+                            className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                            title="Delete Address"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Add/Edit Address Modal */}
+        {showAddAddressModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl p-6 w-full max-w-2xl mx-4 max-h-screen overflow-y-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-bold text-gray-900">
+                  {editingAddress ? 'Edit Address' : 'Add New Address'}
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAddAddressModal(false);
+                    setEditingAddress(null);
+                    resetAddressForm();
+                  }}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                >
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
-                <input
-                  type="text"
-                  value={addresses[editingAddress].line2}
-                  onChange={(e) => setAddresses(prev => ({
-                    ...prev,
-                    [editingAddress]: { ...prev[editingAddress], line2: e.target.value }
-                  }))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+              <form onSubmit={handleFormSubmit} className="space-y-4">
+                {/* Address Type */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
-                  <input
-                    type="text"
-                    value={addresses[editingAddress].city}
-                    onChange={(e) => setAddresses(prev => ({
-                      ...prev,
-                      [editingAddress]: { ...prev[editingAddress], city: e.target.value }
-                    }))}
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Address Type *</label>
+                  <select
+                    value={addressForm.address_type}
+                    onChange={(e) => setAddressForm(prev => ({ ...prev, address_type: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
+                  >
+                    <option value="billing">Billing Address</option>
+                    <option value="shipping">Shipping Address</option>
+                  </select>
                 </div>
 
+                {/* Address Lines */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 1 *</label>
+                    <input
+                      type="text"
+                      value={addressForm.line1}
+                      onChange={(e) => setAddressForm(prev => ({ ...prev, line1: e.target.value }))}
+                      placeholder="House/Building number, Street name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Address Line 2</label>
+                    <input
+                      type="text"
+                      value={addressForm.line2}
+                      onChange={(e) => setAddressForm(prev => ({ ...prev, line2: e.target.value }))}
+                      placeholder="Apartment, suite, etc. (optional)"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Location Dropdowns */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Province *</label>
+                    <select
+                      value={addressForm.province_id}
+                      onChange={(e) => handleProvinceChange(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                      required
+                    >
+                      <option value="">Select Province</option>
+                      {provinces.map((province) => (
+                        <option key={province.province_id} value={province.province_id}>
+                          {province.province_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">District *</label>
+                    <select
+                      value={addressForm.district_id}
+                      onChange={(e) => handleDistrictChange(e.target.value)}
+                      disabled={!addressForm.province_id}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      required
+                    >
+                      <option value="">Select District</option>
+                      {districts.map((district) => (
+                        <option key={district.district_id} value={district.district_id}>
+                          {district.district_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">City *</label>
+                    <select
+                      value={addressForm.city_id}
+                      onChange={(e) => setAddressForm(prev => ({ ...prev, city_id: e.target.value }))}
+                      disabled={!addressForm.district_id}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                      required
+                    >
+                      <option value="">Select City</option>
+                      {cities.map((city) => (
+                        <option key={city.city_id} value={city.city_id}>
+                          {city.city_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Postal Code */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Postal Code *</label>
                   <input
                     type="text"
-                    value={addresses[editingAddress].postal}
-                    onChange={(e) => setAddresses(prev => ({
-                      ...prev,
-                      [editingAddress]: { ...prev[editingAddress], postal: e.target.value }
-                    }))}
+                    value={addressForm.postal_code}
+                    onChange={(e) => setAddressForm(prev => ({ ...prev, postal_code: e.target.value }))}
+                    placeholder="Enter postal code"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    required
                   />
                 </div>
-              </div>
-            </div>
 
-            <div className="flex space-x-3 mt-6">
-              <button
-                onClick={() => setEditingAddress(null)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  // Save address logic here
-                  setEditingAddress(null);
-                }}
-                className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
-              >
-                Save Address
-              </button>
+                {/* Default Address Checkbox */}
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    id="is_default"
+                    checked={addressForm.is_default}
+                    onChange={(e) => setAddressForm(prev => ({ ...prev, is_default: e.target.checked }))}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                  />
+                  <label htmlFor="is_default" className="ml-2 text-sm text-gray-700">
+                    Set as default address
+                  </label>
+                </div>
+
+                {/* Form Actions */}
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowAddAddressModal(false);
+                      setEditingAddress(null);
+                      resetAddressForm();
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingAddress}
+                    className="flex-1 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                  >
+                    {savingAddress ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>{editingAddress ? 'Update Address' : 'Save Address'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
-        </div>
-      )}
-    </div>
-  );
+        )}
+      </div>
+    );
+  };
 
   const renderMyAds = () => {
     const filteredAds = selectedAdStatus === 'all'
@@ -1055,49 +1505,25 @@ const CustomerAccount = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl p-6 border border-gray-200 sticky top-6">
-              <div className="flex items-center space-x-3 mb-6 pb-6 border-b border-gray-200">
-                <div className="w-12 h-12 bg-primary-100 rounded-full flex items-center justify-center">
-                  <User className="w-6 h-6 text-primary-600" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900">
-                    {userData.firstName} {userData.lastName}
-                  </h3>
-                  <p className="text-sm text-gray-500">{userData.email}</p>
-                </div>
-              </div>
-
-              <nav className="space-y-2">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => setActiveTab(item.id)}
-                      className={`w-full flex items-center space-x-3 px-3 py-3 rounded-lg transition-colors ${
-                        activeTab === item.id
-                          ? 'bg-primary-100 text-primary-700'
-                          : 'text-gray-600 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Icon className="w-5 h-5" />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-
-                <button
-                  onClick={handleSignOut}
-                  className="w-full flex items-center space-x-3 px-4 py-3 text-left rounded-lg text-red-600 hover:bg-red-50 transition-colors mt-4"
-                >
-                  <LogOut className="w-5 h-5" />
-                  <span>Sign Out</span>
-                </button>
-              </nav>
-            </div>
+          <div className="lg:col-span-1 lg:block hidden">
+            <AccountSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
           </div>
+
+          {/* Mobile Menu Button */}
+          <div className="lg:hidden fixed bottom-4 right-4 z-50">
+            <button
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="bg-primary-600 text-white rounded-full p-4 shadow-lg"
+            >
+              <User className="w-6 h-6" />
+            </button>
+          </div>
+
+          <MobileMenu 
+            isOpen={isMobileMenuOpen} 
+            onClose={() => setIsMobileMenuOpen(false)} 
+            setActiveTab={setActiveTab} 
+          />
 
           {/* Main Content */}
           <div className="lg:col-span-3">

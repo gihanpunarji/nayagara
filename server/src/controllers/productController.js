@@ -10,6 +10,7 @@ const createProduct = async (req, res) => {
       title,
       description,
       price,
+      cost,
       category,
       subcategory,
       stock,
@@ -22,10 +23,10 @@ const createProduct = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !description || !price || !category || !subcategory || !stock) {
+    if (!title || !description || !price || !category || !subcategory || !stock || !cost) {
       return res.status(400).json({
         success: false,
-        message: "Title, description, price, category, subcategory, and stock are required"
+        message: "Title, description, price, category, subcategory, stock and cost are required"
       });
     }
 
@@ -64,6 +65,7 @@ const createProduct = async (req, res) => {
       subcategoryId: subcategory, // Store subcategory separately
       sellerId: sellerId,
       price: parseFloat(price),
+      cost: parseFloat(cost),
       currencyCode: 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : null,
       stockQuantity: parseInt(stock),

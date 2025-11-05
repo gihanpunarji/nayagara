@@ -21,26 +21,8 @@ const ShoppingCart = () => {
     loading 
   } = useCart();
   
-  const [selectedItems, setSelectedItems] = useState(new Set());
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
-
-  const [selection, setSelection] = useState({
-    items: [],
-    subtotal: 0,
-    itemCount: 0,
-    total: 0,
-  });
-
-  useEffect(() => {
-    const selectedCartItems = cartItems.filter(item => selectedItems.has(item.id));
-    const subtotal = selectedCartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    const itemCount = selectedCartItems.reduce((sum, item) => sum + item.quantity, 0);
-    const shippingCost = 200;
-    const total = subtotal + shippingCost;
-
-    setSelection({ items: selectedCartItems, subtotal, itemCount, total });
-  }, [selectedItems, cartItems]);
 
   const handleUpdateQuantity = (productId, newQuantity) => {
     if (newQuantity < 1) return;
@@ -49,23 +31,6 @@ const ShoppingCart = () => {
 
   const handleRemoveItem = (productId) => {
     removeFromCart(productId);
-    setSelectedItems(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(productId);
-      return newSet;
-    });
-  };
-
-  const toggleItemSelection = (id) => {
-    setSelectedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
   };
 
 
@@ -134,23 +99,6 @@ const ShoppingCart = () => {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-heading font-bold text-gray-900">Cart Items</h2>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.size === cartItems.filter(item => item.inStock).length}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedItems(new Set(cartItems.filter(item => item.inStock).map(item => item.id)));
-                          } else {
-                            setSelectedItems(new Set());
-                          }
-                        }}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span>Select All</span>
-                    </label>
-                  </div>
                 </div>
               </div>
 
@@ -158,13 +106,6 @@ const ShoppingCart = () => {
                 {cartItems.map((item) => (
                   <div key={item.id} className={`p-6 ${!item.inStock ? 'bg-gray-50' : ''}`}>
                     <div className="flex items-start space-x-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(item.id)}
-                        onChange={() => toggleItemSelection(item.id)}
-                        disabled={!item.inStock}
-                        className="mt-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50"
-                      />
 
                       <div className="flex-shrink-0">
                         <img
@@ -306,17 +247,23 @@ const ShoppingCart = () => {
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Subtotal ({selection.itemCount} items)</span>
-                  <span>Rs. {selection.subtotal.toLocaleString()}</span>
+                  <span>Subtotal ({itemCount} items)</span>
+                  <span>Rs. {subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>Rs. 200</span>
+                  <span>Rs. {shipping.toLocaleString()}</span>
                 </div>
+                {discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
+                    <span>-Rs. {discount.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>Rs. {selection.total.toLocaleString()}</span>
+                    <span>Rs. {finalTotal.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -340,17 +287,17 @@ const ShoppingCart = () => {
               </div>
 
               <button
-                onClick={() => navigate('/checkout', { state: { items: selection.items, subtotal: selection.subtotal, total: selection.total, itemCount: selection.itemCount, shipping: 200 } })}
-                disabled={selection.items.length === 0}
+                onClick={() => navigate('/checkout', { state: { items: cartItems, subtotal: subtotal, total: finalTotal, itemCount: itemCount, shipping: shipping } })}
+                disabled={cartItems.length === 0}
                 className="w-full bg-gradient-primary text-white py-3 px-6 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 <CreditCard className="w-5 h-5" />
                 <span>Proceed to Checkout</span>
               </button>
 
-              {selectedItems.size === 0 && (
+              {cartItems.length === 0 && (
                 <p className="text-xs text-gray-500 text-center mt-2">
-                  Please select items to checkout
+                  Your cart is empty
                 </p>
               )}
             </div>

@@ -240,8 +240,12 @@ export const CartProvider = ({ children }) => {
   }, [isAuthenticated, user, loadCartFromAPI, loadCartFromLocalStorage]);
 
   // Calculate totals
-  const subtotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const itemCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+  const subtotal = cart.reduce((sum, item) => {
+    const price = parseFloat(item.price || 0);
+    const quantity = parseInt(item.quantity || 0);
+    return sum + (price * quantity);
+  }, 0);
+  const itemCount = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
 
   // Calculate shipping (free over Rs. 50,000)
   const shipping = subtotal > 50000 ? 0 : 1000;

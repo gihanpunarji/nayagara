@@ -9,6 +9,7 @@ class Product {
     subcategoryId = null,
     sellerId, 
     price, 
+    cost,
     currencyCode = 'LKR', 
     weightKg, 
     stockQuantity, 
@@ -28,15 +29,15 @@ class Product {
       const [result] = await connection.execute(
         `INSERT INTO products (
           product_title, product_slug, product_description, category_id, subcategory_id, seller_id, 
-          price, currency_code, weight_kg, stock_quantity, product_status, 
+          price, weight_kg, stock_quantity, product_status, 
           is_featured, is_promoted, location_city_id, meta_title, meta_description, 
-          product_attributes, created_at, updated_at, expires_at
+          product_attributes, created_at, updated_at, expires_at, cost
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           productTitle, productSlug, productDescription, categoryId, subcategoryId, sellerId,
-          price, currencyCode, weightKg, stockQuantity, productStatus,
+          price, weightKg, stockQuantity, productStatus,
           isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-          productAttributes, new Date(), new Date(), expiresAt
+          productAttributes, new Date(), new Date(), expiresAt, cost
         ]
       );
       return result;
@@ -47,15 +48,15 @@ class Product {
         const [result] = await connection.execute(
           `INSERT INTO products (
             product_title, product_slug, product_description, category_id, seller_id, 
-            price, currency_code, weight_kg, stock_quantity, product_status, 
+            price, weight_kg, stock_quantity, product_status, 
             is_featured, is_promoted, location_city_id, meta_title, meta_description, 
-            product_attributes, created_at, updated_at, expires_at
+            product_attributes, created_at, updated_at, expires_at, cost
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             productTitle, productSlug, productDescription, categoryId, sellerId,
-            price, currencyCode, weightKg, stockQuantity, productStatus,
+            price, weightKg, stockQuantity, productStatus,
             isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-            productAttributes, new Date(), new Date(), expiresAt
+            productAttributes, new Date(), new Date(), expiresAt, cost
           ]
         );
         return result;
@@ -116,13 +117,13 @@ class Product {
         product_title = ?, product_slug = ?, product_description = ?, category_id = ?, 
         price = ?, currency_code = ?, weight_kg = ?, stock_quantity = ?, product_status = ?, 
         is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?, 
-        product_attributes = ?, updated_at = ?, expires_at = ?
+        product_attributes = ?, updated_at = ?, expires_at = ?, cost = ?
        WHERE product_id = ?`,
       [
         productTitle, productSlug, productDescription, categoryId,
         price, currencyCode, weightKg, stockQuantity, productStatus,
         isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-        productAttributes, new Date(), expiresAt, productId
+        productAttributes, new Date(), expiresAt, cost, productId
       ]
     );
     return result.affectedRows;

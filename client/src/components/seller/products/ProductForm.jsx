@@ -12,6 +12,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     title: '',
     description: '',
     price: '',
+    cost: '',
     category: '',
     subcategory: '',
     stock: '',
@@ -114,6 +115,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         title: productData.title || '',
         description: productData.description || '',
         price: productData.price || '',
+        cost: productData.cost || '',
         category: productData.category || '',
         subcategory: productData.subcategory || '',
         stock: productData.stock || '',
@@ -190,6 +192,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       if (!formData.title) newErrors.title = 'Title is required';
       if (!formData.description) newErrors.description = 'Description is required';
       if (!formData.price) newErrors.price = 'Price is required';
+      if (!formData.cost) newErrors.cost = 'Cost is required';
       if (!isEdit && !formData.category) newErrors.category = 'Category is required';
       if (!isEdit && !formData.subcategory) newErrors.subcategory = 'Subcategory is required';
       if (!formData.stock) newErrors.stock = 'Stock quantity is required';
@@ -212,6 +215,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       formDataToSubmit.append('description', formData.description);
       formDataToSubmit.append('price', formData.price);
       formDataToSubmit.append('stock', formData.stock);
+      formDataToSubmit.append('cost', formData.cost);
       
       // Add optional fields
       if (formData.weightKg) formDataToSubmit.append('weightKg', formData.weightKg);
@@ -417,16 +421,16 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               </label>
               <input
                 type="number"
-                value={formData.price}
-                onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
+                value={formData.cost}
+                onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.price ? 'border-red-500' : 'border-gray-300'
+                  errors.cost ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
               />
-              {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
+              {errors.cost && <p className="text-red-500 text-sm">{errors.cost}</p>}
             </div>
 
              {/* Price */}
@@ -473,8 +477,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               </label>
               <input
                 type="text"
-                value={formData.stock}
-                onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
+                value={formData.weightKg}
+                onChange={(e) => setFormData(prev => ({ ...prev, weightKg: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
                   errors.stock ? 'border-red-500' : 'border-gray-300'
                 }`}

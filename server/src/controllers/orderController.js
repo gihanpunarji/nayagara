@@ -234,9 +234,107 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
+const getSellerOrders = async (req, res) => {
+  try {
+    const seller_id = req.user.user_id;
+    
+    // Get seller orders with customer details
+    const orders = await Order.getSellerOrders(seller_id);
+    
+    // Get order items for each order that belong to this seller
+    const ordersWithItems = await Promise.all(
+      orders.map(async (order) => {
+        const allItems = await Order.getOrderItems(order.order_id);
+        // Filter items to only include seller's items
+        const sellerItems = allItems.filter(item => item.seller_id === seller_id);
+        
+        return {
+          ...order,
+          items: sellerItems,
+          customer: {
+            name: `${order.customer_first_name} ${order.customer_last_name}`.trim(),
+            email: order.customer_email,
+            phone: order.customer_phone,
+            address: `${order.line1}${order.line2 ? ', ' + order.line2 : ''}, ${order.city_name}, ${order.district_name}, ${order.province_name}, ${order.postal_code}`
+          }
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      message: 'Seller orders retrieved successfully',
+      data: ordersWithItems
+    });
+
+  } catch (error) {
+    console.error('Get seller orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve seller orders',
+      error: error.message
+    });
+  }
+};
+
+const updateSellerOrderStatus = async (req, res) => {
+  try {
+    const { order_item_id, status, tracking_number } = req.body;
+    const seller_id = req.user.user_id;
+
+    if (!order_item_id || !status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing order item ID or status'
+      });
+    }
+
+    // First, verify that this order item belongs to the seller
+    const orderItems = await Order.getSellerOrderItems(seller_id);
+    const orderItem = orderItems.find(item => item.order_item_id == order_item_id);
+    
+    if (!orderItem) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized to update this order item'
+      });
+    }
+
+    // Update the order item status
+    const affectedRows = await Order.updateOrderItemStatus(order_item_id, status, tracking_number);
+    
+    if (affectedRows > 0) {
+      res.json({
+        success: true,
+        message: 'Order item status updated successfully',
+        data: {
+          order_item_id,
+          status,
+          tracking_number
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to update order item status'
+      });
+    }
+
+  } catch (error) {
+    console.error('Update seller order status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating order status',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderPaymentStatus,
   getUserOrders,
-  getOrderDetails
+  getOrderDetails,
+  getSellerOrders,
+  updateSellerOrderStatus
 };

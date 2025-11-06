@@ -78,7 +78,7 @@ const ProfileSettings = ({
           <div className="relative">
             {profileData.profile_image ? (
               <img
-                src={`http://localhost:5001${profileData.profile_image}`}
+                src={profileData.profile_image}
                 alt="Profile"
                 className="w-20 h-20 rounded-full object-cover border-2 border-gray-300"
               />

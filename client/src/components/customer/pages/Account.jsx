@@ -1399,25 +1399,9 @@ const CustomerAccount = () => {
               <p className="text-sm text-gray-500">Get instant help over the phone</p>
             </div>
           </div>
-          <p className="text-blue-600 font-semibold mb-4">+94 11 123 4567</p>
+          <p className="text-blue-600 font-semibold mb-4">+94 71 775 0039</p>
           <p className="text-sm text-gray-600">Available 24/7 for customer support</p>
         </div>
-
-        <div className="bg-white rounded-2xl p-6 border border-gray-200">
-          <div className="flex items-center space-x-4 mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <MessageCircle className="w-6 h-6 text-green-600" />
-            </div>
-            <div>
-              <h3 className="font-bold text-gray-900">Live Chat</h3>
-              <p className="text-sm text-gray-500">Chat with our support team</p>
-            </div>
-          </div>
-          <button className="w-full bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors">
-            Start Chat
-          </button>
-        </div>
-
         <div className="bg-white rounded-2xl p-6 border border-gray-200">
           <div className="flex items-center space-x-4 mb-4">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">

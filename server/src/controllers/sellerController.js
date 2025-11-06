@@ -152,8 +152,8 @@ const uploadProfilePicture = async (req, res) => {
       });
     }
 
-    // Generate image URL
-    const imageUrl = `/uploads/profile-pictures/${req.file.filename}`;
+    // Use the Cloudinary URL directly
+    const imageUrl = req.file.path; // Now contains the full Cloudinary URL
 
     // Update user's profile_image in database
     const connection = require("../config/database").getConnection();

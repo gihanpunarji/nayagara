@@ -11,8 +11,58 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
-    <!-- PayHere SDK -->
-    <script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+    <!-- Disable debugger statements -->
+    <script>
+      // Override eval to remove debugger statements
+      (function() {
+        var originalEval = window.eval;
+        window.eval = function(code) {
+          if (typeof code === 'string') {
+            code = code.replace(/debugger\s*;?/g, '// debugger removed');
+          }
+          return originalEval.call(this, code);
+        };
+        
+        // Override Function constructor
+        var originalFunction = window.Function;
+        window.Function = function() {
+          var args = Array.prototype.slice.call(arguments);
+          if (args.length > 0) {
+            var functionBody = args[args.length - 1];
+            if (typeof functionBody === 'string') {
+              args[args.length - 1] = functionBody.replace(/debugger\s*;?/g, '// debugger removed');
+            }
+          }
+          return originalFunction.apply(this, args);
+        };
+        
+        // Preserve Function prototype
+        window.Function.prototype = originalFunction.prototype;
+      })();
+    </script>
+    
+    <!-- PayHere SDK loaded dynamically to intercept -->
+    <script>
+      // Load PayHere script dynamically and patch it
+      fetch('https://www.payhere.lk/lib/payhere.js')
+        .then(response => response.text())
+        .then(scriptContent => {
+          // Remove all debugger statements from the script
+          const cleanedScript = scriptContent.replace(/debugger\s*;?/g, '// debugger removed');
+          
+          // Create and execute the cleaned script
+          const script = document.createElement('script');
+          script.textContent = cleanedScript;
+          document.head.appendChild(script);
+        })
+        .catch(error => {
+          console.error('Failed to load PayHere script:', error);
+          // Fallback to original script
+          const script = document.createElement('script');
+          script.src = 'https://www.payhere.lk/lib/payhere.js';
+          document.head.appendChild(script);
+        });
+    </script>
   </head>
   <body>
     <div id="root"></div>

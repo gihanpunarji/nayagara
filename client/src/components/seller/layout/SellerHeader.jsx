@@ -109,7 +109,7 @@ const SellerHeader = ({ onMenuToggle, showMobileMenu }) => {
                 <div className="w-8 h-8 rounded-full overflow-hidden">
                   {sellerInfo.profileImage ? (
                     <img 
-                      src={`http://localhost:5001${sellerInfo.profileImage}`} 
+                      src={sellerInfo.profileImage} 
                       alt={sellerInfo.name}
                       className="w-full h-full object-cover"
                       onError={(e) => {

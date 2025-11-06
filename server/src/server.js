@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { connectDB } = require("./config/database");
+const cloudinaryServeMiddleware = require("./middleware/cloudinaryServe");
 const authRoutes = require("./routes/authRoutes");
 const sellerRoutes = require("./routes/sellerRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -29,7 +30,9 @@ app.use(
 
 app.use(express.json());
 
-// Serve static files from uploads directory
+// Serve images from Cloudinary with fallback to local files
+app.use('/uploads', cloudinaryServeMiddleware);
+// Serve static files from uploads directory (fallback)
 app.use('/uploads', express.static('uploads'));
 
 app.use("/api/auth", authRoutes);

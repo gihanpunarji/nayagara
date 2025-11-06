@@ -19,113 +19,119 @@ import {
   Package2,
   Send
 } from 'lucide-react';
+import api from '../../../api/axios';
+import { useAuth } from '../../../context/AuthContext';
 
 const OrderManagement = () => {
+  const { user, isAuthenticated, userRole } = useAuth();
   const [orders, setOrders] = useState([]);
   const [filteredOrders, setFilteredOrders] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('pending');
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock order data
-  const mockOrders = [
-    {
-      id: 'ORD-001',
-      customer: {
-        name: 'John Doe',
-        email: 'john@example.com',
-        phone: '+94 77 123 4567',
-        address: '123 Galle Road, Colombo 03, Western Province, 00300'
-      },
-      product: {
-        title: 'iPhone 14 Pro Max 256GB Space Black',
-        image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
-        sku: 'IPH14PM256-BLK'
-      },
-      quantity: 1,
-      price: 450000,
-      total: 450000,
-      status: 'pending',
-      orderDate: '2024-01-15T10:30:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '123 Galle Road, Colombo 03, Western Province, 00300',
-      trackingNumber: null,
-      notes: 'Customer requested express delivery'
-    },
-    {
-      id: 'ORD-002',
-      customer: {
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        phone: '+94 71 987 6543',
-        address: '456 Kandy Road, Peradeniya, Central Province, 20400'
-      },
-      product: {
-        title: 'MacBook Pro 16" M2 512GB',
-        image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400',
-        sku: 'MBP16M2512-SLV'
-      },
-      quantity: 1,
-      price: 650000,
-      total: 650000,
-      status: 'shipped',
-      orderDate: '2024-01-14T15:20:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '456 Kandy Road, Peradeniya, Central Province, 20400',
-      trackingNumber: 'TN123456789LK',
-      shippedDate: '2024-01-15T09:00:00Z',
-      notes: null
-    },
-    {
-      id: 'ORD-003',
-      customer: {
-        name: 'Mike Johnson',
-        email: 'mike@example.com',
-        phone: '+94 75 555 1234',
-        address: '789 Main Street, Negombo, Western Province, 11500'
-      },
-      product: {
-        title: 'Nike Air Max 270 Black White',
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
-        sku: 'NAM270-BLKWHT-42'
-      },
-      quantity: 2,
-      price: 15000,
-      total: 30000,
-      status: 'delivered',
-      orderDate: '2024-01-12T09:15:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '789 Main Street, Negombo, Western Province, 11500',
-      trackingNumber: 'TN987654321LK',
-      shippedDate: '2024-01-13T14:30:00Z',
-      deliveredDate: '2024-01-14T16:45:00Z',
-      notes: null
-    },
-    {
-      id: 'ORD-004',
-      customer: {
-        name: 'Sarah Wilson',
-        email: 'sarah@example.com',
-        phone: '+94 72 444 8888',
-        address: '321 Beach Road, Galle, Southern Province, 80000'
-      },
-      product: {
-        title: 'Samsung 65" 4K Smart TV',
-        image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400',
-        sku: 'SAM65-4KTV-2023'
-      },
-      quantity: 1,
-      price: 185000,
-      total: 185000,
-      status: 'processing',
-      orderDate: '2024-01-13T11:20:00Z',
-      paymentStatus: 'paid',
-      shippingAddress: '321 Beach Road, Galle, Southern Province, 80000',
-      trackingNumber: null,
-      notes: 'Large item - special delivery required'
+  // Fetch orders from API
+  const fetchOrders = async () => {
+    if (!isAuthenticated) {
+      setError('Please log in to view orders');
+      setLoading(false);
+      return;
     }
-  ];
+
+    if (userRole !== 'seller') {
+      setError('Access denied. Seller account required.');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const response = await api.get('/orders/seller');
+      
+      if (response.data.success) {
+        const fetchedOrders = response.data.data.map(order => ({
+          id: order.order_number,
+          order_id: order.order_id,
+          customer: {
+            name: order.customer.name,
+            email: order.customer.email,
+            phone: order.customer.phone,
+            address: order.customer.address
+          },
+          // Use the first item for main display (sellers might have multiple items per order)
+          product: order.items.length > 0 ? {
+            title: order.items[0].product_title,
+            image: order.items[0].product_image_url || '/placeholder-product.jpg',
+            sku: order.items[0].product_id
+          } : null,
+          quantity: order.items.reduce((sum, item) => sum + item.quantity, 0),
+          price: order.items.length > 0 ? order.items[0].unit_price : 0,
+          total: order.items.reduce((sum, item) => sum + item.total_price, 0),
+          status: order.order_status,
+          orderDate: order.order_datetime,
+          paymentStatus: order.payment_status,
+          shippingAddress: order.customer.address,
+          trackingNumber: order.items.find(item => item.tracking_number)?.tracking_number || null,
+          notes: order.notes || null,
+          items: order.items // Keep all items for detailed view
+        }));
+        
+        setOrders(fetchedOrders);
+        setError(null);
+      } else {
+        setError(response.data.message || 'Failed to fetch orders');
+      }
+    } catch (error) {
+      console.error('Error fetching orders:', error);
+      setError('Failed to load orders. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Update order status
+  const updateOrderStatus = async (orderId, newStatus, trackingNumber = null) => {
+    try {
+      const order = orders.find(o => o.id === orderId);
+      if (!order || !order.items || order.items.length === 0) {
+        alert('Order not found or has no items');
+        return;
+      }
+
+      // Update status for the first item (or you could update all items)
+      const response = await api.put('/orders/seller/status', {
+        order_item_id: order.items[0].order_item_id,
+        status: newStatus,
+        tracking_number: trackingNumber
+      });
+
+      if (response.data.success) {
+        // Update local state
+        setOrders(prev => prev.map(order =>
+          order.id === orderId
+            ? {
+                ...order,
+                status: newStatus,
+                ...(trackingNumber && { trackingNumber }),
+                ...(newStatus === 'shipped' && { shippedDate: new Date().toISOString() }),
+                ...(newStatus === 'delivered' && { deliveredDate: new Date().toISOString() })
+              }
+            : order
+        ));
+        
+        alert('Order status updated successfully');
+      } else {
+        alert(response.data.message || 'Failed to update order status');
+      }
+    } catch (error) {
+      console.error('Error updating order status:', error);
+      alert('Failed to update order status. Please try again.');
+    }
+  };
+
 
   const statusFilters = [
     { key: 'pending', label: 'Pending Orders', count: 0, color: 'bg-orange-100 text-orange-600' },
@@ -137,17 +143,19 @@ const OrderManagement = () => {
 
   // Initialize orders and update counts
   useEffect(() => {
-    setOrders(mockOrders);
+    fetchOrders();
+  }, [isAuthenticated]);
 
-    // Update status filter counts
+  // Update status filter counts when orders change
+  useEffect(() => {
     statusFilters.forEach(filter => {
       if (filter.key === 'all') {
-        filter.count = mockOrders.length;
+        filter.count = orders.length;
       } else {
-        filter.count = mockOrders.filter(order => order.status === filter.key).length;
+        filter.count = orders.filter(order => order.status === filter.key).length;
       }
     });
-  }, []);
+  }, [orders]);
 
   // Filter orders
   useEffect(() => {
@@ -193,19 +201,6 @@ const OrderManagement = () => {
     }
   };
 
-  const updateOrderStatus = (orderId, newStatus, trackingNumber = null) => {
-    setOrders(prev => prev.map(order =>
-      order.id === orderId
-        ? {
-            ...order,
-            status: newStatus,
-            ...(trackingNumber && { trackingNumber }),
-            ...(newStatus === 'shipped' && { shippedDate: new Date().toISOString() }),
-            ...(newStatus === 'delivered' && { deliveredDate: new Date().toISOString() })
-          }
-        : order
-    ));
-  };
 
   const formatPrice = (price) => {
     return `Rs. ${price.toLocaleString()}`;
@@ -448,6 +443,31 @@ const OrderManagement = () => {
       </div>
     );
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-500"></div>
+        <span className="ml-3 text-gray-600">Loading orders...</span>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+        <div className="text-red-600 mb-2">{error}</div>
+        <button
+          onClick={fetchOrders}
+          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

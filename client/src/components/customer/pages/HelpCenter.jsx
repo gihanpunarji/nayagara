@@ -66,7 +66,7 @@ const HelpCenter = () => {
             </div>
             <div className="flex items-center space-x-2">
               <Phone className="w-6 h-6 text-primary-600" />
-              <span className="text-gray-700">+94 12 345 6789</span>
+              <span className="text-gray-700">+94 71 775 0039</span>
             </div>
           </div>
         </div>

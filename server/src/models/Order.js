@@ -126,6 +126,53 @@ class Order {
     );
     return rows;
   }
+
+  static async getSellerOrders(seller_id) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      `SELECT DISTINCT o.*, osa.*, 
+        u.first_name as customer_first_name, u.last_name as customer_last_name, 
+        u.user_email as customer_email, u.user_mobile as customer_phone
+       FROM orders o 
+       LEFT JOIN order_shipping_addresses osa ON o.shipping_address_id = osa.shipping_address_id 
+       LEFT JOIN order_items oi ON o.order_id = oi.order_id
+       LEFT JOIN users u ON o.customer_id = u.user_id
+       WHERE oi.seller_id = ? 
+       ORDER BY o.order_datetime DESC`,
+      [seller_id]
+    );
+    return rows;
+  }
+
+  static async getSellerOrderItems(seller_id) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      `SELECT oi.*, o.order_number, o.order_status, o.payment_status, o.order_datetime
+       FROM order_items oi
+       JOIN orders o ON oi.order_id = o.order_id
+       WHERE oi.seller_id = ? 
+       ORDER BY o.order_datetime DESC`,
+      [seller_id]
+    );
+    return rows;
+  }
+
+  static async updateOrderItemStatus(order_item_id, status, tracking_number = null) {
+    const connection = getConnection();
+    let query = `UPDATE order_items SET item_status = ?`;
+    let params = [status];
+    
+    if (tracking_number) {
+      query += `, tracking_number = ?`;
+      params.push(tracking_number);
+    }
+    
+    query += ` WHERE order_item_id = ?`;
+    params.push(order_item_id);
+    
+    const [result] = await connection.execute(query, params);
+    return result.affectedRows;
+  }
 }
 
 module.exports = Order;

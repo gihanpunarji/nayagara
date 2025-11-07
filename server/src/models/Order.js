@@ -109,9 +109,12 @@ class Order {
   static async getOrderItems(order_id) {
     const connection = getConnection();
     const [rows] = await connection.execute(
-      `SELECT * FROM order_items WHERE order_id = ?`,
+      `SELECT *, pi.image_url as product_image_url 
+      FROM order_items oi
+      LEFT JOIN product_images pi ON oi.product_id = pi.product_id 
+      WHERE order_id = ? `,
       [order_id]
-    );
+    );    
     return rows;
   }
 
@@ -130,17 +133,22 @@ class Order {
   static async getSellerOrders(seller_id) {
     const connection = getConnection();
     const [rows] = await connection.execute(
-      `SELECT DISTINCT o.*, osa.*, 
-        u.first_name as customer_first_name, u.last_name as customer_last_name, 
-        u.user_email as customer_email, u.user_mobile as customer_phone
-       FROM orders o 
-       LEFT JOIN order_shipping_addresses osa ON o.shipping_address_id = osa.shipping_address_id 
-       LEFT JOIN order_items oi ON o.order_id = oi.order_id
+      `SELECT DISTINCT
+        o.order_id,
+        o.order_number,
+        o.order_status,
+        o.payment_status,
+        o.order_datetime,
+        o.total_amount,
+        u.first_name as customer_first_name,
+        u.last_name as customer_last_name
+       FROM orders o
+       JOIN order_items oi ON o.order_id = oi.order_id
        LEFT JOIN users u ON o.customer_id = u.user_id
-       WHERE oi.seller_id = ? 
+       WHERE oi.seller_id = ?
        ORDER BY o.order_datetime DESC`,
       [seller_id]
-    );
+    );    
     return rows;
   }
 
@@ -154,6 +162,7 @@ class Order {
        ORDER BY o.order_datetime DESC`,
       [seller_id]
     );
+    console.log(rows);
     return rows;
   }
 

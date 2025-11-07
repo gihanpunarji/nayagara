@@ -242,7 +242,7 @@ const ChatView = () => {
             src={product.image_url ? 
               (product.image_url.startsWith('http') ? 
                 product.image_url : 
-                `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${product.image_url}`
+                product.image_url
               ) : 
               'https://via.placeholder.com/150x150?text=No+Image'
             }

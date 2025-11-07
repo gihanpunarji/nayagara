@@ -175,7 +175,7 @@ const Messages = () => {
         {/* Product Image */}
         <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
           <img
-            src={conversation.product_image ? `${serverUrl}${conversation.product_image}` : 'https://via.placeholder.com/150'}
+            src={conversation.product_image ? conversation.product_image : 'https://via.placeholder.com/150'}
             alt={conversation.product_title}
             className="w-full h-full object-cover"
           />
@@ -349,7 +349,7 @@ const Messages = () => {
                 <div className="flex items-center space-x-3">
                   <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden">
                     <img
-                      src={selectedConversation.product_image ? `${serverUrl}${selectedConversation.product_image}` : 'https://via.placeholder.com/150'}
+                      src={selectedConversation.product_image ? selectedConversation.product_image : 'https://via.placeholder.com/150'}
                       alt={selectedConversation.product_title}
                       className="w-full h-full object-cover"
                     />

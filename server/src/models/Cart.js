@@ -17,7 +17,6 @@ class Cart {
           sc.created_at,
           p.product_title,
           p.price,
-          p.currency_code,
           p.stock_quantity,
           p.seller_id,
           pi.image_url,
@@ -36,6 +35,7 @@ class Cart {
       
       return rows;
     } catch (error) {
+      console.error("Error in Cart.getByUserId:", error);
       throw error;
     }
   }

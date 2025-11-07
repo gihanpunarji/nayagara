@@ -6,6 +6,7 @@ const getCart = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const cartItems = await Cart.getByUserId(userId);
+    console.log('Cart items:', cartItems);
     
     const formattedItems = cartItems.map(item => ({
       id: item.product_id,

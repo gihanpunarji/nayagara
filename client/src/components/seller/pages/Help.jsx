@@ -127,14 +127,14 @@ const Help = () => {
     {
       icon: Mail,
       title: 'Email Support',
-      description: 'seller-support@nayagara.lk',
+      description: 'support@nayagara.lk',
       availability: 'Response within 24 hours',
       action: 'Send Email'
     },
     {
       icon: Phone,
       title: 'Phone Support',
-      description: '+94 11 234 5678',
+      description: '+94 71 775 0039',
       availability: 'Mon-Fri 9 AM - 6 PM',
       action: 'Call Now'
     }

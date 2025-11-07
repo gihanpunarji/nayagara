@@ -84,7 +84,7 @@ const createProduct = async (req, res) => {
     // Handle image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: ProductImage.generateImageUrl(file.filename),
+        imageUrl: file.path, // Now contains the full Cloudinary URL
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
@@ -322,6 +322,7 @@ const updateProduct = async (req, res) => {
       title,
       description,
       price,
+      cost,
       stock,
       dynamicFields,
       weightKg,
@@ -387,6 +388,7 @@ const updateProduct = async (req, res) => {
       productDescription: description,
       categoryId: existingProduct.category_id, // Keep original category
       price: parseFloat(price),
+      cost: parseFloat(cost),
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
       stockQuantity: parseInt(stock),
@@ -410,7 +412,7 @@ const updateProduct = async (req, res) => {
     // Handle new image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: ProductImage.generateImageUrl(file.filename),
+        imageUrl: file.path, // Now contains the full Cloudinary URL
         imageAlt: `${title} - Image ${index + 1}`
       }));
 

@@ -234,9 +234,123 @@ const getOrderDetails = async (req, res) => {
   }
 };
 
+const getSellerOrders = async (req, res) => {
+  try {
+    const seller_id = req.user.user_id;
+    const orders = await Order.getSellerOrders(seller_id);
+    res.json({
+      success: true,
+      message: 'Seller orders retrieved successfully',
+      data: orders
+    });
+  } catch (error) {
+    console.error('Get seller orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve seller orders',
+      error: error.message
+    });
+  }
+};
+
+const getSellerOrderDetails = async (req, res) => {
+  try {
+    const { order_id } = req.params;
+    const seller_id = req.user.user_id;
+
+    // First, verify that this order has items belonging to the seller
+    const sellerOrders = await Order.getSellerOrders(seller_id);
+    const isSellerOrder = sellerOrders.some(order => order.order_id == order_id);
+
+    if (!isSellerOrder) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized to view this order'
+      });
+    }
+
+    // Get order items
+    const items = await Order.getOrderItems(order_id);
+
+    // Filter items to only those belonging to the seller
+    const sellerItems = items.filter(item => item.seller_id === seller_id);
+
+    res.json({
+      success: true,
+      message: 'Order items retrieved successfully',
+      data: sellerItems
+    });
+
+  } catch (error) {
+    console.error('Get seller order items error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve order items',
+      error: error.message
+    });
+  }
+};
+
+const updateSellerOrderStatus = async (req, res) => {
+  try {
+    const { order_item_id, status, tracking_number } = req.body;
+    const seller_id = req.user.user_id;
+
+    if (!order_item_id || !status) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing order item ID or status'
+      });
+    }
+
+    // First, verify that this order item belongs to the seller
+    const orderItems = await Order.getSellerOrderItems(seller_id);
+    const orderItem = orderItems.find(item => item.order_item_id == order_item_id);
+    console.log('order item:', orderItem);
+    
+    if (!orderItem) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized to update this order item'
+      });
+    }
+
+    // Update the order item status
+    const affectedRows = await Order.updateOrderItemStatus(order_item_id, status, tracking_number);
+    
+    if (affectedRows > 0) {
+      res.json({
+        success: true,
+        message: 'Order item status updated successfully',
+        data: {
+          order_item_id,
+          status,
+          tracking_number
+        }
+      });
+    } else {
+      res.status(400).json({
+        success: false,
+        message: 'Failed to update order item status'
+      });
+    }
+
+  } catch (error) {
+    console.error('Update seller order status error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating order status',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderPaymentStatus,
   getUserOrders,
-  getOrderDetails
+  getOrderDetails,
+  getSellerOrders,
+  getSellerOrderDetails,
+  updateSellerOrderStatus
 };

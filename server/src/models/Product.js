@@ -99,7 +99,7 @@ class Product {
     productDescription, 
     categoryId, 
     price, 
-    currencyCode, 
+    cost,
     weightKg, 
     stockQuantity, 
     productStatus, 
@@ -115,13 +115,13 @@ class Product {
     const [result] = await connection.execute(
       `UPDATE products SET 
         product_title = ?, product_slug = ?, product_description = ?, category_id = ?, 
-        price = ?, currency_code = ?, weight_kg = ?, stock_quantity = ?, product_status = ?, 
+        price = ?, weight_kg = ?, stock_quantity = ?, product_status = ?, 
         is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?, 
         product_attributes = ?, updated_at = ?, expires_at = ?, cost = ?
        WHERE product_id = ?`,
       [
         productTitle, productSlug, productDescription, categoryId,
-        price, currencyCode, weightKg, stockQuantity, productStatus,
+        price, weightKg, stockQuantity, productStatus,
         isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
         productAttributes, new Date(), expiresAt, cost, productId
       ]

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 // Import layout components
@@ -85,7 +85,8 @@ const App = () => {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [showCategories, setShowCategories] = useState(false);
   const [serverStatus, setServerStatus] = useState("Checking...");
-  const { user } = useAuth(); // User state for authentication
+  const { user, isSeller, loading } = useAuth(); // User state for authentication
+  const navigate = useNavigate();
 
   // Server connection check
   const checkServerConnection = async () => {
@@ -102,6 +103,14 @@ const App = () => {
     const interval = setInterval(checkServerConnection, 30000);
     return () => clearInterval(interval);
   }, []);
+
+  // Redirect sellers to their dashboard if they access the home page
+  useEffect(() => {
+    if (!loading && isSeller) {
+      console.log('Seller detected on home page, redirecting to dashboard');
+      navigate('/seller/dashboard', { replace: true });
+    }
+  }, [isSeller, loading, navigate]);
 
   const [mainCategories, setMainCategories] = useState([]);
 
@@ -179,6 +188,27 @@ const App = () => {
     </h1>
   </div>
 );
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  // Don't render home content if user is a seller (they'll be redirected)
+  if (isSeller) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to seller dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ResponsiveLayout>

@@ -109,9 +109,12 @@ class Order {
   static async getOrderItems(order_id) {
     const connection = getConnection();
     const [rows] = await connection.execute(
-      `SELECT * FROM order_items WHERE order_id = ?`,
+      `SELECT *, pi.image_url as product_image_url 
+      FROM order_items oi
+      LEFT JOIN product_images pi ON oi.product_id = pi.product_id 
+      WHERE order_id = ? `,
       [order_id]
-    );
+    );    
     return rows;
   }
 
@@ -125,6 +128,59 @@ class Order {
       [customer_id]
     );
     return rows;
+  }
+
+  static async getSellerOrders(seller_id) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      `SELECT DISTINCT
+        o.order_id,
+        o.order_number,
+        o.order_status,
+        o.payment_status,
+        o.order_datetime,
+        o.total_amount,
+        u.first_name as customer_first_name,
+        u.last_name as customer_last_name
+       FROM orders o
+       JOIN order_items oi ON o.order_id = oi.order_id
+       LEFT JOIN users u ON o.customer_id = u.user_id
+       WHERE oi.seller_id = ?
+       ORDER BY o.order_datetime DESC`,
+      [seller_id]
+    );    
+    return rows;
+  }
+
+  static async getSellerOrderItems(seller_id) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      `SELECT oi.*, o.order_number, o.order_status, o.payment_status, o.order_datetime
+       FROM order_items oi
+       JOIN orders o ON oi.order_id = o.order_id
+       WHERE oi.seller_id = ? 
+       ORDER BY o.order_datetime DESC`,
+      [seller_id]
+    );
+    console.log(rows);
+    return rows;
+  }
+
+  static async updateOrderItemStatus(order_item_id, status, tracking_number = null) {
+    const connection = getConnection();
+    let query = `UPDATE order_items SET item_status = ?`;
+    let params = [status];
+    
+    if (tracking_number) {
+      query += `, tracking_number = ?`;
+      params.push(tracking_number);
+    }
+    
+    query += ` WHERE order_item_id = ?`;
+    params.push(order_item_id);
+    
+    const [result] = await connection.execute(query, params);
+    return result.affectedRows;
   }
 }
 

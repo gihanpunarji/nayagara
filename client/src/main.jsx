@@ -8,6 +8,7 @@ import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
 import ProtectedRoute from "./components/shared/auth/ProtectedRoute.jsx";
 import AuthRoute from "./components/shared/auth/AuthRoute.jsx";
+import SellerRedirect from "./components/shared/auth/SellerRedirect.jsx";
 import ErrorBoundary from "./components/shared/error/ErrorBoundary.jsx";
 
 // Customer Components
@@ -254,7 +255,8 @@ createRoot(document.getElementById("root")).render(
               <AuthProvider>
                 <AxiosInterceptorManager>
                   <CartProvider>
-                    <Routes>
+                    <SellerRedirect>
+                      <Routes>
                       {/* Customer Routes */}
                       <Route path="/" element={<Home />} />
                       <Route
@@ -531,7 +533,8 @@ createRoot(document.getElementById("root")).render(
                         element={<AccessDenied />}
                       />
                       <Route path="*" element={<NotFound />} />
-                    </Routes>
+                      </Routes>
+                    </SellerRedirect>
                   </CartProvider>
                 </AxiosInterceptorManager>
               </AuthProvider>

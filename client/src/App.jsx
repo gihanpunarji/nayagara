@@ -1,23 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
 
 // Import layout components
-import Header from "./components/layout/Header";
-import Sidebar from "./components/layout/Sidebar";
-import Footer from "./components/layout/Footer";
-import MobileLayout from "./components/layout/MobileLayout";
+import Header from "./components/customer/layout/Header";
+import Sidebar from "./components/customer/layout/Sidebar";
+import Footer from "./components/customer/layout/Footer";
+import MobileLayout from "./components/customer/layout/MobileLayout";
 
 // Import page components
-import HeroSection from "./components/sections/HeroSection";
-import FlashSale from "./components/sections/FlashSale";
-import ProductGrid from "./components/sections/ProductGrid";
-import ServicesSection from "./components/sections/ServicesSection";
-import Newsletter from "./components/sections/Newsletter";
-import MobileHome from "./components/pages/MobileHome";
-// import CustomerLogin from "./components/ui/CustomerLogin";
-// import CustomerRegistration from "./components/ui/CustomerRegistration";
-// import ShoppingCart from "./components/pages/ShoppingCart";
-// import ProductDetails from "./components/pages/ProductDetails";
+import HeroSection from "./components/customer/sections/HeroSection";
+import NewArrivals from "./components/customer/sections/NewArrivals";
+import ProductGrid from "./components/customer/sections/ProductGrid";
+import ServicesSection from "./components/customer/sections/ServicesSection";
+import Newsletter from "./components/customer/sections/Newsletter";
+import MobileHome from "./pages/MobileHome";
+import CustomerAccount from "./components/customer/pages/Account";
 
 import api from "./api/axios";
 
@@ -60,7 +58,7 @@ const DesktopHomePage = ({
             <HeroSection />
 
             {/* Flash Sale Section */}
-            <FlashSale />
+            <NewArrivals />
 
             {/* Product Grid */}
             <ProductGrid />
@@ -87,7 +85,8 @@ const App = () => {
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [showCategories, setShowCategories] = useState(false);
   const [serverStatus, setServerStatus] = useState("Checking...");
-  const [user, setUser] = useState(null); // User state for authentication
+  const { user, isSeller, loading } = useAuth(); // User state for authentication
+  const navigate = useNavigate();
 
   // Server connection check
   const checkServerConnection = async () => {
@@ -105,26 +104,13 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // TEMPORARILY DISABLED TO STOP INFINITE RELOAD
-  // useEffect(() => {
-  // const fetchCategories = async () => {
-  //   try {
-  //     const res = await api.get("/categories");
-  //     const mapped = res.data.map((cat) => ({
-  //       name: cat.name,
-  //       icon: categoryMeta[cat.slug]?.icon || "❓",
-  //       subcats: categoryMeta[cat.slug]?.subcats || [],
-  //       image: categoryMeta[cat.slug]?.image || "https://via.placeholder.com/300",
-  //     }));
-  //     console.log(mapped);
-  //     setMainCategories(mapped);
-  //   } catch (err) {
-  //     console.error("Error fetching categories", err);
-  //   }
-  // };
-
-  // fetchCategories();
-  // }, []);
+  // Redirect sellers to their dashboard if they access the home page
+  useEffect(() => {
+    if (!loading && isSeller) {
+      console.log('Seller detected on home page, redirecting to dashboard');
+      navigate('/seller/dashboard', { replace: true });
+    }
+  }, [isSeller, loading, navigate]);
 
   const [mainCategories, setMainCategories] = useState([]);
 
@@ -162,7 +148,7 @@ const App = () => {
 };
 
   const quickLinks = [
-    { name: "Daily Deals", href: "#" },
+
     { name: "New Arrivals", href: "#" },
     { name: "Best Sellers", href: "#" },
    { name: "Nayagara Water", href: "/nayagara_water" },
@@ -188,7 +174,7 @@ const App = () => {
         {/* Mobile Layout */}
         <div className="md:hidden">
           <MobileLayout user={user}>
-            {children}
+            {location.pathname.startsWith('/account') ? <CustomerAccount /> : children}
           </MobileLayout>
         </div>
       </>
@@ -202,6 +188,27 @@ const App = () => {
     </h1>
   </div>
 );
+
+  // Show loading while checking authentication
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-primary-500"></div>
+      </div>
+    );
+  }
+
+  // Don't render home content if user is a seller (they'll be redirected)
+  if (isSeller) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to seller dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ResponsiveLayout>

@@ -34,6 +34,20 @@ const ShopPage = () => {
   const [page, setPage] = useState(1);
   const [totalProducts, setTotalProducts] = useState(0);
 
+  // Set view mode based on screen size
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setViewMode('list');
+      } else {
+        setViewMode('grid');
+      }
+    };
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Fetch categories on component mount
   useEffect(() => {
     const fetchCategories = async () => {
@@ -148,6 +162,10 @@ const ShopPage = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [loadMoreProducts]);
 
+  const capitalizeFirstLetter = (string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
+
   const ProductCard = ({ product, viewMode }) => {
     const { addToCart, isInCart, getItemQuantity, loading: cartLoading } = useCart();
     
@@ -190,24 +208,28 @@ const ShopPage = () => {
         viewMode === 'list' ? 'flex' : ''
       }`}>
         <div className={`relative ${
-          viewMode === 'list' ? 'w-48 flex-shrink-0' : ''
+          viewMode === 'list' ? 'w-32 flex-shrink-0' : 'w-full'
         }`}>
           <Link to={`/product/${product.product_id}`}>
             <img
               src={displayImage}
               alt={product.product_title || 'Product'}
               className={`object-contain group-hover:scale-105 transition-transform duration-300 ${
-                viewMode === 'list' ? 'w-full h-48' : 'w-full h-48 sm:h-56'
+                viewMode === 'list' ? 'w-full h-32' : 'w-full h-48 sm:h-56'
               }`}
             />
           </Link>
+
+          <div className="absolute top-0 left-0 w-full h-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+            <Link to={`/product/${product.product_id}`} className="bg-white text-gray-800 py-2 px-4 rounded-lg text-sm font-semibold">Quick View</Link>
+          </div>
 
           <button className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-white rounded-full shadow-sm opacity-0 group-hover:opacity-100 transition-all duration-300">
             <Heart className="w-4 h-4 text-gray-600 hover:text-red-500" />
           </button>
         </div>
 
-        <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
+        <div className={`p-2 sm:p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>
           <Link to={`/product/${product.product_id}`}>
             <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 hover:text-primary-600 transition-colors">
               {product.product_title || 'Untitled Product'}
@@ -280,23 +302,18 @@ const ShopPage = () => {
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
                   {searchQuery ? `Search results for "${searchQuery}"` : 
-                   selectedCategory === 'all' ? 'All Products' : selectedCategory}
+                   selectedCategory === 'all' ? 'All Products' : capitalizeFirstLetter(selectedCategory)}
                 </h1>
-                <p className="text-gray-600">
-                  Found {totalProducts} product{totalProducts !== 1 ? 's' : ''}
-                  {searchQuery && ` for "${searchQuery}"`}
-                  {selectedCategory !== 'all' && ` in ${selectedCategory}`}
-                </p>
               </div>
 
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4">
                 <div className="relative">
                   <button
                     onClick={() => setShowSortMenu(!showSortMenu)}
-                    className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors"
+                    className="flex items-center space-x-2 px-3 py-2 sm:px-4 sm:py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors"
                   >
                     <ArrowUpDown className="w-4 h-4" />
-                    <span>Sort by {sortBy}</span>
+                    <span className="hidden sm:inline">Sort by {sortBy}</span>
                     <ChevronDown className="w-4 h-4" />
                   </button>
 
@@ -405,7 +422,12 @@ const ShopPage = () => {
       </div>
 
       {/* Products Grid */}
-      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-[85%] mx-auto px-0 sm:px-6 lg:px-8 py-8">
+        <div className="text-gray-600 mb-4">
+          <p>Found {totalProducts} product{totalProducts !== 1 ? 's' : ''}</p>
+          {searchQuery && <p> for "{searchQuery}"</p>}
+          {selectedCategory !== 'all' && <p> in {capitalizeFirstLetter(selectedCategory)}</p>}
+        </div>
         <div className={`grid gap-6 ${
           viewMode === 'grid'
             ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'

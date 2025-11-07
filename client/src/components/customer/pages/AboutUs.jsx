@@ -117,9 +117,9 @@ const AboutUs = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Our Mission</h3>
               <p className="text-gray-700 leading-relaxed">
-                To democratize commerce in Sri Lanka by providing a secure, transparent, and
-                accessible platform that empowers individuals and businesses to buy and sell
-                with confidence.
+                "Our mission is to empower every Sri Lankan to shop with confidence by building the country's most trusted and customer-centric e-commerce platform. To become the online goods and services provider of choice."
+                <br /><br />
+                "අපගේ මෙහෙවර වන්නේ රටේ වඩාත්ම විශ්වාසදායක සහ පාරිභෝගික කේන්ද්‍රීය විද්‍යුත් වාණිජ්‍ය වේදිකාව ගොඩනැගීම මගින් සෑම ශ්‍රී ලාංකිකයෙකුටම විශ්වාසයෙන් යුතුව සාප්පු සවාරි යාමට බලගැන්වීම හා ඔබ කැමතිම මාර්ගගත භාණ්ඩ හා සේවා සපයන්නා බවට පත්වීම."
               </p>
             </div>
           </div>
@@ -131,8 +131,9 @@ const AboutUs = () => {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-4">Our Vision</h3>
               <p className="text-gray-700 leading-relaxed">
-                To be Sri Lanka's leading digital marketplace that creates economic opportunities
-                for everyone, fostering innovation and growth in our local communities.
+                "To become the number one best online goods and services provider in Sri Lanka by 2030 by increasing customer satisfaction."
+                <br /><br />
+                "පාරිභෝගික තෘප්තිය වැඩි කිරීමෙන් 2030 වන විට ශ්‍රී ලංකාවේ අංක එකේ වඩාත් හොඳම අන්තර්ජාල භාණ්ඩ සහ සේවා සැපයුම්කරු බවට පත්වීම."
               </p>
             </div>
           </div>

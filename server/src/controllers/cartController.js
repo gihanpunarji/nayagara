@@ -19,10 +19,9 @@ const getCart = async (req, res) => {
       seller: item.seller_business_name || `${item.seller_first_name || ''} ${item.seller_last_name || ''}`.trim() || 'Unknown Seller',
       seller_id: item.seller_id,
       stockCount: item.stock_quantity || 0,
+      inStock: (item.stock_quantity !== undefined && item.stock_quantity > 0),
       currency: item.currency_code || 'LKR'
     }));
-
-    console.log('Formatted Cart Items:', formattedItems);
 
     res.json({
       success: true,
@@ -31,7 +30,6 @@ const getCart = async (req, res) => {
       subtotal: formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
     });
   } catch (error) {
-    console.error('Error getting cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get cart items'
@@ -84,7 +82,6 @@ const addToCart = async (req, res) => {
       message: 'Item added to cart successfully'
     });
   } catch (error) {
-    console.error('Error adding to cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to add item to cart'
@@ -113,7 +110,6 @@ const updateCartItem = async (req, res) => {
       message: 'Cart updated successfully'
     });
   } catch (error) {
-    console.error('Error updating cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to update cart'
@@ -134,7 +130,6 @@ const removeFromCart = async (req, res) => {
       message: 'Item removed from cart'
     });
   } catch (error) {
-    console.error('Error removing from cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to remove item'
@@ -153,7 +148,6 @@ const clearCart = async (req, res) => {
       message: 'Cart cleared successfully'
     });
   } catch (error) {
-    console.error('Error clearing cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to clear cart'
@@ -188,7 +182,6 @@ const mergeCart = async (req, res) => {
           }
         } catch (error) {
           // Skip invalid items, continue with others
-          console.log('Skipped invalid item:', productId);
         }
       }
     }
@@ -198,7 +191,6 @@ const mergeCart = async (req, res) => {
       message: 'Guest cart merged successfully'
     });
   } catch (error) {
-    console.error('Error merging cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to merge cart'

@@ -5,27 +5,29 @@ const dbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0
 };
 
-let connection;
+let pool;
 
 const connectDB = async () => {
   try {
-    connection = await mysql.createPool(dbConfig);
+    pool = mysql.createPool(dbConfig);
+    console.log("MySQL pool created successfully");
+    
+    // Test the connection
+    const connection = await pool.getConnection();
     console.log("MySQL connected successfully");
+    connection.release();
 
-    await connection.query(
-      `CREATE DATABASE IF NOT EXISTS ${dbConfig.database}`
-    );
-    await connection.query(`USE ${dbConfig.database}`);
-
-    return connection;
   } catch (error) {
     console.error("Database connection failed:", error.message);
     process.exit(1);
   }
 };
 
-const getConnection = () => connection;
+const getConnection = () => pool;
 
 module.exports = { connectDB, getConnection };

@@ -10,6 +10,7 @@ const createProduct = async (req, res) => {
       title,
       description,
       price,
+      cost,
       category,
       subcategory,
       stock,
@@ -22,10 +23,10 @@ const createProduct = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !description || !price || !category || !subcategory || !stock) {
+    if (!title || !description || !price || !category || !subcategory || !stock || !cost) {
       return res.status(400).json({
         success: false,
-        message: "Title, description, price, category, subcategory, and stock are required"
+        message: "Title, description, price, category, subcategory, stock and cost are required"
       });
     }
 
@@ -64,6 +65,7 @@ const createProduct = async (req, res) => {
       subcategoryId: subcategory, // Store subcategory separately
       sellerId: sellerId,
       price: parseFloat(price),
+      cost: parseFloat(cost),
       currencyCode: 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : null,
       stockQuantity: parseInt(stock),
@@ -82,7 +84,7 @@ const createProduct = async (req, res) => {
     // Handle image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: ProductImage.generateImageUrl(file.filename),
+        imageUrl: file.path, // Now contains the full Cloudinary URL
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
@@ -320,6 +322,7 @@ const updateProduct = async (req, res) => {
       title,
       description,
       price,
+      cost,
       stock,
       dynamicFields,
       weightKg,
@@ -385,6 +388,7 @@ const updateProduct = async (req, res) => {
       productDescription: description,
       categoryId: existingProduct.category_id, // Keep original category
       price: parseFloat(price),
+      cost: parseFloat(cost),
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
       stockQuantity: parseInt(stock),
@@ -408,7 +412,7 @@ const updateProduct = async (req, res) => {
     // Handle new image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: ProductImage.generateImageUrl(file.filename),
+        imageUrl: file.path, // Now contains the full Cloudinary URL
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
@@ -442,7 +446,11 @@ const updateProduct = async (req, res) => {
 
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {
+  const { getConnection } = require("../config/database");
+  const pool = getConnection();
+  let connection;
   try {
+    connection = await pool.getConnection();
     const { 
       page = 1, 
       limit = 12,
@@ -454,12 +462,9 @@ const getPublicProducts = async (req, res) => {
     } = req.query;
     
     const offset = (page - 1) * limit;
-    const { getConnection } = require("../config/database");
-    const connection = getConnection();
     
     // First check if any products exist at all
     const [countResult] = await connection.execute("SELECT COUNT(*) as total FROM products");
-    console.log("Total products in database:", countResult[0].total);
 
     let query = `
       SELECT p.*, 
@@ -576,6 +581,8 @@ const getPublicProducts = async (req, res) => {
       success: false,
       message: "Internal server error"
     });
+  } finally {
+    if (connection) connection.release();
   }
 };
 
@@ -586,7 +593,11 @@ const filterProducts = async (req, res) => {
 
 // Get public product by ID (no authentication required)
 const getPublicProductById = async (req, res) => {
+  const { getConnection } = require("../config/database");
+  const pool = getConnection();
+  let connection;
   try {
+    connection = await pool.getConnection();
     const { productId } = req.params;
     
     if (!productId) {
@@ -595,9 +606,6 @@ const getPublicProductById = async (req, res) => {
         message: "Product ID is required"
       });
     }
-
-    const { getConnection } = require("../config/database");
-    const connection = getConnection();
     
     // Query to get product with all related data
     const query = `
@@ -611,6 +619,8 @@ const getPublicProductById = async (req, res) => {
         u.profile_image as seller_avatar,
         u.user_mobile as seller_phone,
         u.user_email as seller_email,
+        u.profile_image as seller_image,
+        s.store_name,
         c2.city_name as location_city_name,
         d.district_name as location_district_name,
         GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
@@ -619,6 +629,7 @@ const getPublicProductById = async (req, res) => {
         LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
         LEFT JOIN categories c ON sc.categories_category_id = c.category_id
         LEFT JOIN users u ON p.seller_id = u.user_id
+        LEFT JOIN store s ON u.user_id = s.user_id
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
@@ -723,6 +734,8 @@ const getPublicProductById = async (req, res) => {
       success: false,
       message: "Internal server error"
     });
+  } finally {
+    if (connection) connection.release();
   }
 };
 

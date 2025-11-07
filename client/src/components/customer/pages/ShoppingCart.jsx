@@ -7,6 +7,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../../../context/CartContext';
 
 const ShoppingCart = () => {
+  const navigate = useNavigate();
   const { 
     cart: cartItems, 
     updateQuantity, 
@@ -20,9 +21,6 @@ const ShoppingCart = () => {
     loading 
   } = useCart();
   
-  const navigate = useNavigate();
-  
-  const [selectedItems, setSelectedItems] = useState(new Set());
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
 
@@ -33,23 +31,6 @@ const ShoppingCart = () => {
 
   const handleRemoveItem = (productId) => {
     removeFromCart(productId);
-    setSelectedItems(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(productId);
-      return newSet;
-    });
-  };
-
-  const toggleItemSelection = (id) => {
-    setSelectedItems(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
   };
 
 
@@ -118,23 +99,6 @@ const ShoppingCart = () => {
               <div className="p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-heading font-bold text-gray-900">Cart Items</h2>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 text-sm text-gray-600">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.size === cartItems.filter(item => item.inStock).length}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedItems(new Set(cartItems.filter(item => item.inStock).map(item => item.id)));
-                          } else {
-                            setSelectedItems(new Set());
-                          }
-                        }}
-                        className="rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <span>Select All</span>
-                    </label>
-                  </div>
                 </div>
               </div>
 
@@ -142,13 +106,6 @@ const ShoppingCart = () => {
                 {cartItems.map((item) => (
                   <div key={item.id} className={`p-6 ${!item.inStock ? 'bg-gray-50' : ''}`}>
                     <div className="flex items-start space-x-4">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.has(item.id)}
-                        onChange={() => toggleItemSelection(item.id)}
-                        disabled={!item.inStock}
-                        className="mt-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500 disabled:opacity-50"
-                      />
 
                       <div className="flex-shrink-0">
                         <img
@@ -160,7 +117,8 @@ const ShoppingCart = () => {
                             'https://via.placeholder.com/150x150?text=No+Image'
                           }
                           alt={item.name || item.title}
-                          className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-lg bg-gray-50"
+                          className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-lg bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => navigate(`/product/${item.product_id || item.id}`)}
                           onError={(e) => {
                             e.target.src = 'https://via.placeholder.com/150x150?text=No+Image';
                           }}
@@ -170,7 +128,10 @@ const ShoppingCart = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between">
                           <div className="flex-1">
-                            <h3 className="text-lg font-bold text-gray-900 mb-1">
+                            <h3 
+                              className="text-lg font-bold text-gray-900 mb-1 cursor-pointer hover:text-primary-600 transition-colors"
+                              onClick={() => navigate(`/product/${item.product_id || item.id}`)}
+                            >
                               {item.name}
                             </h3>
                             <div className="flex items-center space-x-4 text-sm text-gray-500 mb-2">
@@ -286,29 +247,23 @@ const ShoppingCart = () => {
 
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
-                  <span>Subtotal ({selectedCartItems.length} items)</span>
+                  <span>Subtotal ({itemCount} items)</span>
                   <span>Rs. {subtotal.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>{shippingCost === 0 ? 'Free' : `Rs. ${shippingCost.toLocaleString()}`}</span>
+                  <span>Rs. {shipping.toLocaleString()}</span>
                 </div>
-                {savings > 0 && (
-                  <div className="flex justify-between text-success">
-                    <span>You Save</span>
-                    <span>-Rs. {savings.toLocaleString()}</span>
-                  </div>
-                )}
                 {discount > 0 && (
-                  <div className="flex justify-between text-success">
-                    <span>Promo Discount</span>
+                  <div className="flex justify-between text-green-600">
+                    <span>Discount</span>
                     <span>-Rs. {discount.toLocaleString()}</span>
                   </div>
                 )}
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>Rs. {total.toLocaleString()}</span>
+                    <span>Rs. {finalTotal.toLocaleString()}</span>
                   </div>
                 </div>
               </div>
@@ -332,17 +287,17 @@ const ShoppingCart = () => {
               </div>
 
               <button
-                onClick={() => navigate('/checkout')}
-                disabled={selectedItems.size === 0}
+                onClick={() => navigate('/checkout', { state: { items: cartItems, subtotal: subtotal, total: finalTotal, itemCount: itemCount, shipping: shipping } })}
+                disabled={cartItems.length === 0}
                 className="w-full bg-gradient-primary text-white py-3 px-6 rounded-lg font-bold hover:shadow-green transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
               >
                 <CreditCard className="w-5 h-5" />
                 <span>Proceed to Checkout</span>
               </button>
 
-              {selectedItems.size === 0 && (
+              {cartItems.length === 0 && (
                 <p className="text-xs text-gray-500 text-center mt-2">
-                  Please select items to checkout
+                  Your cart is empty
                 </p>
               )}
             </div>

@@ -59,7 +59,7 @@ const ProductList = () => {
           subcategory: product.sub_category_name || 'General',
           stock: product.stock_quantity,
           status: product.product_status,
-          images: product.images?.map(img => `http://localhost:5001${img.image_url}`) || ['/placeholder-image.jpg'],
+          images: product.images?.map(img => img.image_url),
           createdAt: product.created_at,
           views: product.view_count || 0,
           orders: product.inquiry_count || 0,
@@ -152,7 +152,7 @@ const ProductList = () => {
         <img
           src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
           alt={product.title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-contain"
           onError={(e) => {
             e.target.src = '/api/placeholder/400/400';
           }}

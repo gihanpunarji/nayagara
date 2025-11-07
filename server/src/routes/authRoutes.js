@@ -9,7 +9,8 @@ const {
   resetPassword,
   loginAdmin,
   sendEmail,
-  verifyEmailOtp
+  verifyEmailOtp,
+  verifyAdminSmsOtp
 } = require("../controllers/authController");
 const { mobile, verifyOtp } = require("../utils/mobileVerify");
 
@@ -25,6 +26,7 @@ router.post("/forgot-password", (req, res) => forgotPassword(req, res));
 router.post("/reset-password", (req, res) => resetPassword(req, res));
 router.post("/admin/send-email", sendEmail);
 router.post("/admin/email-otp-verify", verifyEmailOtp);
+router.post("/admin/sms-otp-verify", verifyAdminSmsOtp);
 router.post("/admin/login", (req, res) => loginAdmin(req, res));
 
 module.exports = router;

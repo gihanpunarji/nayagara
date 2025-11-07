@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Send,
@@ -10,89 +10,82 @@ import {
   Award,
   Clock,
   CheckCircle,
-  Check
+  Check,
+  Loader
 } from 'lucide-react';
+import api from '../../../api/axios';
+import { useAuth } from '../../../context/AuthContext';
 
 const ChatView = () => {
   const { sellerId, productId } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState([]);
+  const [conversation, setConversation] = useState(null);
+  const [product, setProduct] = useState(null);
+  const [seller, setSeller] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [sendingMessage, setSendingMessage] = useState(false);
   const messagesEndRef = useRef(null);
   const textareaRef = useRef(null);
 
-  // Sample seller data (in real app, fetch by sellerId)
-  const seller = {
-    id: sellerId,
-    name: 'TechZone Lanka',
-    avatar: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80',
-    rating: 4.9,
-    isOnline: true,
-    lastSeen: 'Active now',
-    responseTime: '< 1 hour',
-    verified: true
-  };
-
-  // Sample product being discussed
-  const product = {
-    id: productId,
-    name: 'iPhone 15 Pro Max 256GB',
-    price: 385000,
-    image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?ixlib=rb-4.0.3&auto=format&fit=crop&w=150&q=80'
-  };
-
-  // Sample chat messages
-  const sampleMessages = [
-    {
-      id: 1,
-      senderId: sellerId,
-      senderName: 'TechZone Lanka',
-      message: 'Hi! Thank you for your interest in the iPhone 15 Pro Max. How can I help you today?',
-      timestamp: '2024-01-15T10:30:00Z',
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: 2,
-      senderId: 'customer',
-      senderName: 'You',
-      message: 'Hello! I\'m interested in this iPhone. Is it still available?',
-      timestamp: '2024-01-15T10:31:00Z',
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: 3,
-      senderId: sellerId,
-      senderName: 'TechZone Lanka',
-      message: 'Yes, it\'s still available! This is a brand new unit with 1 year international warranty. Would you like to know more about the specifications?',
-      timestamp: '2024-01-15T10:32:00Z',
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: 4,
-      senderId: 'customer',
-      senderName: 'You',
-      message: 'That sounds great! Can you tell me about the warranty and return policy?',
-      timestamp: '2024-01-15T10:33:00Z',
-      isRead: true,
-      type: 'text'
-    },
-    {
-      id: 5,
-      senderId: sellerId,
-      senderName: 'TechZone Lanka',
-      message: 'Absolutely! We offer:\n• 1 year international warranty\n• 7-day return policy\n• Free delivery within Colombo\n• Cash on delivery available\n\nIs there anything specific you\'d like to know about the device?',
-      timestamp: '2024-01-15T10:35:00Z',
-      isRead: false,
-      type: 'text'
-    }
-  ];
-
+  // Initialize chat - get or create conversation and load messages
   useEffect(() => {
-    setMessages(sampleMessages);
-  }, []);
+    if (!isAuthenticated || !user) {
+      navigate('/login');
+      return;
+    }
+
+    const initializeChat = async () => {
+      try {
+        setLoading(true);
+
+        // Fetch product details
+        const productResponse = await api.get(`/products/${productId}`);
+        if (productResponse.data.success) {
+          setProduct(productResponse.data.product);
+        }
+
+        // Start or get existing conversation
+        const conversationResponse = await api.post('/chat/conversations', {
+          productId: parseInt(productId),
+          subject: `Inquiry about ${productResponse.data.product?.product_title || 'product'}`
+        });
+
+        if (conversationResponse.data.success) {
+          const conv = conversationResponse.data.conversation;
+          setConversation(conv);
+          
+          // Set seller details from conversation
+          setSeller({
+            id: conv.seller_id,
+            name: conv.seller_business_name || `${conv.seller_first_name} ${conv.seller_last_name}`.trim(),
+            email: conv.seller_email,
+            isOnline: true, // We can implement this later
+            lastSeen: 'Active now',
+            responseTime: '< 1 hour',
+            verified: true
+          });
+
+          // Load conversation messages
+          const messagesResponse = await api.get(`/chat/conversations/${conv.conversation_id}/messages`);
+          if (messagesResponse.data.success) {
+            setMessages(messagesResponse.data.messages);
+          }
+        }
+      } catch (error) {
+        console.error('Error initializing chat:', error);
+        if (error.response?.status === 401) {
+          navigate('/login');
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeChat();
+  }, [sellerId, productId, isAuthenticated, user, navigate]);
 
   useEffect(() => {
     scrollToBottom();
@@ -102,20 +95,11 @@ const ChatView = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
 
-  const handleSendMessage = () => {
-    if (message.trim() === '') return;
+  const handleSendMessage = async () => {
+    if (message.trim() === '' || !conversation || sendingMessage) return;
 
-    const newMessage = {
-      id: Date.now(),
-      senderId: 'customer',
-      senderName: 'You',
-      message: message.trim(),
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      type: 'text'
-    };
-
-    setMessages(prev => [...prev, newMessage]);
+    setSendingMessage(true);
+    const messageText = message.trim();
     setMessage('');
 
     // Auto-resize textarea
@@ -123,19 +107,24 @@ const ChatView = () => {
       textareaRef.current.style.height = 'auto';
     }
 
-    // Simulate seller response after 2 seconds
-    setTimeout(() => {
-      const sellerResponse = {
-        id: Date.now() + 1,
-        senderId: sellerId,
-        senderName: seller.name,
-        message: 'Thank you for your message! I\'ll get back to you with the details shortly.',
-        timestamp: new Date().toISOString(),
-        isRead: false,
-        type: 'text'
-      };
-      setMessages(prev => [...prev, sellerResponse]);
-    }, 2000);
+    try {
+      const response = await api.post(`/chat/conversations/${conversation.conversation_id}/messages`, {
+        messageText,
+        messageType: 'text'
+      });
+
+      if (response.data.success) {
+        // Add the sent message to the messages list
+        const newMessage = response.data.message;
+        setMessages(prev => [...prev, newMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      // Restore the message if sending failed
+      setMessage(messageText);
+    } finally {
+      setSendingMessage(false);
+    }
   };
 
   const handleKeyPress = (e) => {
@@ -159,6 +148,39 @@ const ChatView = () => {
     textarea.style.height = 'auto';
     textarea.style.height = textarea.scrollHeight + 'px';
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <Loader className="w-8 h-8 animate-spin text-primary-600 mx-auto mb-4" />
+            <p className="text-gray-600">Loading chat...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no conversation or product
+  if (!conversation || !product || !seller) {
+    return (
+      <div className="flex flex-col h-screen bg-gray-50">
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <p className="text-gray-600 mb-4">Unable to load chat</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
@@ -217,16 +239,25 @@ const ChatView = () => {
       <div className="bg-primary-50 border-b border-primary-200 px-4 py-3">
         <div className="flex items-center space-x-3">
           <img
-            src={product.image}
-            alt={product.name}
+            src={product.image_url ? 
+              (product.image_url.startsWith('http') ? 
+                product.image_url : 
+                `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${product.image_url}`
+              ) : 
+              'https://via.placeholder.com/150x150?text=No+Image'
+            }
+            alt={product.product_title}
             className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/150x150?text=No+Image';
+            }}
           />
           <div className="flex-1">
-            <h4 className="font-semibold text-gray-900 text-sm">{product.name}</h4>
-            <p className="text-primary-600 font-bold">Rs. {product.price.toLocaleString()}</p>
+            <h4 className="font-semibold text-gray-900 text-sm">{product.product_title}</h4>
+            <p className="text-primary-600 font-bold">Rs. {parseFloat(product.price || 0).toLocaleString()}</p>
           </div>
           <Link
-            to={`/product/${product.id}`}
+            to={`/product/${product.product_id}`}
             className="text-primary-600 hover:bg-primary-100 px-3 py-1 rounded-lg text-sm font-medium transition-colors"
           >
             View Product
@@ -236,42 +267,45 @@ const ChatView = () => {
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`flex ${msg.senderId === 'customer' ? 'justify-end' : 'justify-start'}`}
-          >
+        {messages.map((msg) => {
+          const isCustomerMessage = msg.sender_type === 'customer' || msg.sender_id === user?.user_id;
+          return (
             <div
-              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl relative ${
-                msg.senderId === 'customer'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white border border-gray-200 text-gray-900'
-              }`}
+              key={msg.message_id}
+              className={`flex ${isCustomerMessage ? 'justify-end' : 'justify-start'}`}
             >
-              <p className="text-sm whitespace-pre-line break-words">{msg.message}</p>
-              <div className="flex items-center justify-end space-x-1 mt-1">
-                <span
-                  className={`text-xs ${
-                    msg.senderId === 'customer'
-                      ? 'text-primary-200'
-                      : 'text-gray-500'
-                  }`}
-                >
-                  {formatTime(msg.timestamp)}
-                </span>
-                {msg.senderId === 'customer' && (
-                  <div className="text-primary-200">
-                    {msg.isRead ? (
-                      <CheckCircle className="w-3 h-3" />
-                    ) : (
-                      <Check className="w-3 h-3" />
-                    )}
-                  </div>
-                )}
+              <div
+                className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl relative ${
+                  isCustomerMessage
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white border border-gray-200 text-gray-900'
+                }`}
+              >
+                <p className="text-sm whitespace-pre-line break-words">{msg.message_text}</p>
+                <div className="flex items-center justify-end space-x-1 mt-1">
+                  <span
+                    className={`text-xs ${
+                      isCustomerMessage
+                        ? 'text-primary-200'
+                        : 'text-gray-500'
+                    }`}
+                  >
+                    {formatTime(msg.sent_at)}
+                  </span>
+                  {isCustomerMessage && (
+                    <div className="text-primary-200">
+                      {msg.is_read ? (
+                        <CheckCircle className="w-3 h-3" />
+                      ) : (
+                        <Check className="w-3 h-3" />
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={messagesEndRef} />
       </div>
 
@@ -294,7 +328,7 @@ const ChatView = () => {
                 setMessage(e.target.value);
                 autoResizeTextarea(e);
               }}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyPress}
               placeholder="Type your message..."
               className="w-full px-4 py-3 border border-gray-300 rounded-2xl resize-none focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm max-h-32"
               rows="1"
@@ -302,14 +336,18 @@ const ChatView = () => {
           </div>
           <button
             onClick={handleSendMessage}
-            disabled={message.trim() === ''}
+            disabled={message.trim() === '' || sendingMessage}
             className={`p-3 rounded-full transition-colors ${
-              message.trim() === ''
+              message.trim() === '' || sendingMessage
                 ? 'bg-gray-300 cursor-not-allowed'
                 : 'bg-primary-600 hover:bg-primary-700'
             }`}
           >
-            <Send className={`w-5 h-5 ${message.trim() === '' ? 'text-gray-500' : 'text-white'}`} />
+            {sendingMessage ? (
+              <Loader className="w-5 h-5 text-gray-500 animate-spin" />
+            ) : (
+              <Send className={`w-5 h-5 ${message.trim() === '' ? 'text-gray-500' : 'text-white'}`} />
+            )}
           </button>
         </div>
       </div>

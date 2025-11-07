@@ -31,6 +31,14 @@ const Header = ({
   const { itemCount } = useCart();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [activeFilters, setActiveFilters] = useState({});
+  const [searchHistory, setSearchHistory] = useState([]);
+
+  useEffect(() => {
+    const storedHistory = localStorage.getItem('searchHistory');
+    if (storedHistory) {
+      setSearchHistory(JSON.parse(storedHistory));
+    }
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -56,6 +64,10 @@ const Header = ({
 
   const handleSearch = useCallback(() => {
     if (searchQuery.trim()) {
+      const newHistory = [searchQuery.trim(), ...searchHistory.filter(item => item !== searchQuery.trim())].slice(0, 10);
+      setSearchHistory(newHistory);
+      localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+
       const params = new URLSearchParams();
       params.append("search", searchQuery.trim());
       if (selectedCategory && selectedCategory !== "All Categories") {
@@ -63,7 +75,15 @@ const Header = ({
       }
       navigate(`/shop?${params.toString()}`);
     }
-  }, [searchQuery, selectedCategory, navigate]);
+  }, [searchQuery, selectedCategory, navigate, searchHistory]);
+
+  const handleHistorySearch = (tag) => {
+    setSearchQuery(tag);
+    const newHistory = [tag, ...searchHistory.filter(item => item !== tag)].slice(0, 10);
+    setSearchHistory(newHistory);
+    localStorage.setItem('searchHistory', JSON.stringify(newHistory));
+    navigate(`/shop?search=${tag}`);
+  };
 
   const handleKeyPress = useCallback(
     (e) => {
@@ -213,7 +233,7 @@ const Header = ({
                   onKeyDown={handleKeyPress}
                 />
                 <button
-                  onClick={handleSearch}
+                  onClick={() => handleSearch()}
                   className="h-10 sm:h-12 px-3 sm:px-6 bg-gradient-primary text-white hover:shadow-green transition-all duration-300 flex items-center space-x-1 sm:space-x-2"
                 >
                   <Search className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -235,14 +255,10 @@ const Header = ({
 
               {/* Quick Search Tags */}
               <div className="hidden lg:flex space-x-2 mt-2">
-                {[
-                  "iPhone 15",
-                  "Toyota Prius",
-                  "Gaming Laptop",
-                  "Apartments Colombo",
-                ].map((tag, idx) => (
+                {searchHistory.slice(0, 4).map((tag, idx) => (
                   <button
                     key={idx}
+                    onClick={() => handleHistorySearch(tag)}
                     className="text-xs bg-primary-50 hover:bg-primary-100 px-3 py-1 rounded-full text-primary-700 transition-colors"
                   >
                     {tag}
@@ -276,7 +292,7 @@ const Header = ({
               >
                 <ShoppingCart className="w-5 h-5 sm:w-6 sm:h-6" />
                 <span className="absolute -top-1 -right-1 w-3 h-3 sm:w-4 sm:h-4 bg-primary-500 text-white text-xs rounded-full flex items-center justify-center">
-                  3
+                  {itemCount}
                 </span>
               </Link>
 
@@ -345,7 +361,7 @@ const Header = ({
               <div className="hidden sm:flex items-center space-x-2 text-sm text-gray-600">
                 <MapPin className="w-4 h-4" />
                 <span>Deliver to</span>
-                <span className="font-medium text-primary-600">Colombo 07</span>
+                <span className="font-medium text-primary-600">all Island</span>
               </div>
             </div>
           </div>

@@ -16,8 +16,8 @@ const { log } = require("console");
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
 
-const generateToken = (userId) => {
-  return jwt.sign({ userId }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+const generateToken = (userId, userType) => {
+  return jwt.sign({ userId, userType }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 const register = async (req, res, role = "customer") => {
@@ -71,7 +71,7 @@ const register = async (req, res, role = "customer") => {
       lastName,
       role,
     });
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
 
     const { first_name, last_name, user_role } = user;
 
@@ -146,7 +146,7 @@ const sellerRegister = async (req, res, role = "seller") => {
       role,
       nic,
     });
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
     const userId = user.user_id;
 
     createAddressForSeller({
@@ -221,7 +221,7 @@ const login = async (req, res, role = "customer") => {
       });
     }
 
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
     const { first_name, last_name, user_role } = user;
 
     res.json({
@@ -286,7 +286,7 @@ const sellerLogin = async (req, res, role = "seller") => {
       return res.status(403).json({ success: false, message: "mnv" });
     }
 
-    const token = generateToken(user.user_id);
+    const token = generateToken(user.user_id, user.user_type);
     const { first_name, last_name, user_role } = user;
 
     res.json({
@@ -939,32 +939,104 @@ const sendEmail = async (req, res) => {
 const verifyEmailOtp = async (req, res) => {
   try {
     const { code, email } = req.body;
-    if (!code) {
+    if (!code || !email) {
       return res
         .status(400)
-        .json({ success: false, message: "Email is required" });
+        .json({ success: false, message: "Email and code are required" });
     }
 
-    const validCode = Admin.checkCode(code, email);
+    const validCode = await Admin.checkCode(code, email);
     if (!validCode) {
       return res
       .status(400)
-      .json({ success: false, message: "Invalid code" });
+      .json({ success: false, message: "Invalid email verification code" });
     }
 
-    Admin.deleteCode(email);
-
-    return res.json({
-      success: true,
-      message: "OK"
-    })
+    await Admin.deleteCode(email);
+    
+    // If email OTP is correct, proceed to send SMS OTP
+    await sendAdminSmsOtp(req, res);
 
   } catch (err) {
     console.log(err);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
-const verifyMobile = async (req, res) => {};
+const sendAdminSmsOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    const admin = await Admin.checkAdmin(email);
+    if (!admin || !admin.mobile) {
+      return res.status(404).json({ success: false, message: "Admin mobile number not found." });
+    }
+
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    await Admin.updateMobileCode(email, verificationCode);
+
+    const response = await fetch("https://app.text.lk/api/v3/sms/send", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.TEXTLK_API_KEY}`,
+      },
+      body: JSON.stringify({
+        recipient: admin.mobile,
+        sender_id: process.env.TEXTLK_SENDER_ID,
+        type: "plain",
+        message: `Your Nayagara Admin verification code is ${verificationCode}. Do not share it.`,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('SMS gateway response was not ok');
+    }
+
+    const maskedPhone = admin.mobile.slice(0, 3) + '***' + admin.mobile.slice(-4);
+
+    res.json({ 
+      success: true, 
+      message: "SMS verification code sent successfully.",
+      maskedPhone
+    });
+
+  } catch (error) {
+    console.error("Send admin SMS OTP error:", error);
+    res.status(500).json({ success: false, message: "Failed to send SMS verification code." });
+  }
+};
+
+const verifyAdminSmsOtp = async (req, res) => {
+  try {
+    const { code, email } = req.body;
+    if (!code || !email) {
+      return res.status(400).json({ success: false, message: "Email and code are required" });
+    }
+
+    const admin = await Admin.checkMobileCode(code, email);
+    if (!admin) {
+      return res.status(400).json({ success: false, message: "Invalid SMS verification code" });
+    }
+
+    // SMS code is valid, complete the login by generating a token
+    const adminData = await Admin.checkAdmin(email);
+    const token = jwt.sign({ adminId: adminData.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+
+    // Clear the mobile code after successful verification
+    await Admin.updateMobileCode(email, null);
+
+    res.json({ 
+      success: true, 
+      message: "Admin login successful",
+      token 
+    });
+
+  } catch (err) {
+    console.error("Admin SMS verification error:", err);
+    res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
 
 module.exports = {
   register,
@@ -976,4 +1048,5 @@ module.exports = {
   loginAdmin,
   verifyEmailOtp,
   sendEmail,
+  verifyAdminSmsOtp
 };

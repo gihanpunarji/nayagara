@@ -35,31 +35,5 @@ api.interceptors.request.use(
     }
 );
 
-api.interceptors.response.use(
-    (response) => {
-        return response;
-    },
-    (error) => {
-        if (error.response?.status === 401) {
-            const url = error.config?.url || '';
-            const isAuthEndpoint = url.includes('/auth/login') || 
-                                 url.includes('/auth/register') || 
-                                 url.includes('/auth/seller-login') || 
-                                 url.includes('/auth/seller/register') ||
-                                 url.includes('auth/admin/login');
-            
-            if (!isAuthEndpoint) {
-                localStorage.removeItem('token');
-                if (navigate) {
-                    navigate('/');
-                } else {
-                    window.location.href = '/';
-                }
-            }
-        }
-        return Promise.reject(error);
-    }
-);
-
 export default api;
 export { publicApi };

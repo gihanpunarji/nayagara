@@ -155,8 +155,7 @@ function CustomerLogin() {
                 {error}
               </div>
             )}
-            {/* Debug: Show error state */}
-            {console.log('Current error state:', error)}
+            
 
             <button
               type="submit"

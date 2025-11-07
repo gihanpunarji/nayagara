@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 const { connectDB } = require("./config/database");
+const cloudinaryServeMiddleware = require("./middleware/cloudinaryServe");
 const authRoutes = require("./routes/authRoutes");
 const sellerRoutes = require("./routes/sellerRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -9,6 +10,8 @@ const addressRoutes = require("./routes/addressRoute");
 const categoryRoutes = require("./routes/categoryRoutes");
 const cartRoutes = require("./routes/cartRoutes");
 const chatRoutes = require("./routes/chatRoutes");
+const paymentRoutes = require("./routes/paymentRoute");
+const orderRoutes = require("./routes/orderRoute");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -27,7 +30,9 @@ app.use(
 
 app.use(express.json());
 
-// Serve static files from uploads directory
+// Serve images from Cloudinary with fallback to local files
+app.use('/uploads', cloudinaryServeMiddleware);
+// Serve static files from uploads directory (fallback)
 app.use('/uploads', express.static('uploads'));
 
 app.use("/api/auth", authRoutes);
@@ -37,6 +42,8 @@ app.use("/api/address", addressRoutes);
 app.use("/api", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/chat", chatRoutes);
+app.use("/api/payment", paymentRoutes);
+app.use("/api/orders", orderRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running successfully!" });

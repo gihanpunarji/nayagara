@@ -9,7 +9,7 @@ import MobileLayout from "../layout/MobileLayout";
 
 // Import page components
 import HeroSection from "../sections/HeroSection";
-import FlashSale from "../sections/FlashSale";
+import NewArrivals from "../sections/NewArrivals";
 import ProductGrid from "../sections/ProductGrid";
 import ServicesSection from "../sections/ServicesSection";
 import Newsletter from "../sections/Newsletter";
@@ -82,7 +82,7 @@ const DesktopHomePage = ({
             <HeroSection />
 
             {/* Flash Sale Section */}
-            <FlashSale />
+            <NewArrivals />
 
             {/* Product Grid */}
             <ProductGrid />
@@ -159,22 +159,18 @@ const App = () => {
       image:
         "https://images.unsplash.com/photo-1493238792000-8113da705763?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
     },
-    books: {
+    "books-media": {
       icon: "📚",
       image:
         "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
     },
-    health: {
-      icon: "💊",
-      image:
-        "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
-    },
+    
     toys: {
       icon: "🧸",
       image:
         "https://images.unsplash.com/photo-1545558014-8692077e9b5c?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
     },
-    beauty: {
+    "beauty-health": {
       icon: "💄",
       image:
         "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
@@ -184,7 +180,7 @@ const App = () => {
       image:
         "https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
     },
-    home: {
+    "home-living": {
       icon: "🏡",
       image:
         "https://images.unsplash.com/photo-1484101403633-562f891dc89a?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
@@ -199,7 +195,7 @@ const App = () => {
       image:
         "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
     },
-    gaming: {
+    "toys-games": {
       icon: "🎮",
       image:
         "https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
@@ -234,7 +230,7 @@ const App = () => {
       image:
         "https://images.unsplash.com/photo-1523275335684-37898b6baf30?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
     },
-    office: {
+   services: {
       icon: "🖥️",
       image:
         "https://images.unsplash.com/photo-1497032628192-86f99bcd76bc?ixlib=rb-4.0.3&auto=format&fit=crop&w=300&q=80",
@@ -305,9 +301,9 @@ const App = () => {
   
 
   const quickLinks = [
-    { name: "Daily Deals", href: "#" },
+
     { name: "New Arrivals", href: "#" },
-    { name: "Best Sellers", href: "#" },
+
    { name: "Nayagara Water", href: "/nayagara-water" },
   ];
 

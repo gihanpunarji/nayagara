@@ -21,7 +21,7 @@ const ProductGrid = () => {
             price: `Rs. ${product.price?.toLocaleString()}`,
             originalPrice: null,
             image: product.images?.length > 0 
-              ? `http://localhost:5001${product.images[0].image_url}` 
+              ? product.images[0].image_url 
               : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
             rating: 4.5,
             reviews: Math.floor(Math.random() * 500) + 50,
@@ -34,34 +34,7 @@ const ProductGrid = () => {
       } catch (error) {
         console.error('Error fetching products:', error);
         // Set fallback static data if API fails
-        if (isMounted) {
-          setProducts([
-            {
-              id: 1,
-              name: 'Sample Product 1',
-              price: 'Rs. 10,000',
-              originalPrice: null,
-              image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-              rating: 4.5,
-              reviews: 123,
-              badge: 'Featured',
-              shipping: 'Free Shipping',
-              location: 'Colombo'
-            },
-            {
-              id: 2,
-              name: 'Sample Product 2',
-              price: 'Rs. 25,000',
-              originalPrice: null,
-              image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-              rating: 4.2,
-              reviews: 89,
-              badge: 'New',
-              shipping: 'Free Shipping',
-              location: 'Kandy'
-            }
-          ]);
-        }
+        
       } finally {
         if (isMounted) {
           setLoading(false);

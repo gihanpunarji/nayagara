@@ -203,6 +203,41 @@ class User {
       if (connection) connection.release();
     }
   }
+
+  static async getCustomersBySellerId(sellerId) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(`
+        SELECT
+            u.user_id AS id,
+            CONCAT(u.first_name, ' ', u.last_name) AS name,
+            u.user_email AS email,
+            u.user_mobile AS phone,
+            MIN(o.order_datetime) AS joinDate,
+            COUNT(DISTINCT o.order_id) AS totalOrders,
+            SUM(oi.total_price) AS totalSpent,
+            MAX(o.order_datetime) as lastOrderDate,
+            (SELECT city_name FROM cities c JOIN addresses a ON c.city_id = a.city_id WHERE a.user_id = u.user_id AND a.is_default = 1 LIMIT 1) as location
+        FROM
+            users u
+        JOIN
+            orders o ON u.user_id = o.customer_id
+        JOIN
+            order_items oi ON o.order_id = oi.order_id
+        WHERE
+            oi.seller_id = ?
+        GROUP BY
+            u.user_id
+        ORDER BY
+            totalSpent DESC;
+      `, [sellerId]);
+      return rows;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
 }
 
 module.exports = User;

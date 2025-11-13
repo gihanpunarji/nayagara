@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+    baseURL: import.meta.env.VITE_API_URL,
     timeout: 1000 * 3600,
     headers: {
         'Content-Type': 'application/json',
@@ -10,7 +10,7 @@ const api = axios.create({
 
 // Public API instance without authentication
 const publicApi = axios.create({
-    baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+    baseURL: import.meta.env.VITE_API_URL,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',

@@ -26,4 +26,30 @@ export default defineConfig([
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
     },
   },
+  {
+    files: ['tailwind.config.js', 'postcss.config.cjs'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'commonjs',
+      globals: {
+        ...globals.node,
+      },
+    },
+    rules: {
+      'no-unused-vars': 'off', // Allow unused vars in config files
+    },
+  },
+  {
+    files: ['vite.config.js', 'src/components/seller/orders/OrderFilterTest.js'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      sourceType: 'module',
+      globals: {
+        ...globals.node, // vite.config.js might use some node globals
+      },
+    },
+    rules: {
+      'no-unused-vars': 'off', // Allow unused vars in config files
+    },
+  },
 ])

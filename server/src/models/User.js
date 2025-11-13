@@ -238,6 +238,40 @@ class User {
       if (connection) connection.release();
     }
   }
+  static async getAllCustomersWithStats() {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(`
+        SELECT
+            u.user_id AS id,
+            CONCAT(u.first_name, ' ', u.last_name) AS name,
+            u.user_email AS email,
+            u.user_mobile AS phone,
+            u.user_status AS status,
+            u.email_verified AS verified,
+            u.profile_image AS avatar,
+            u.created_at AS joinDate,
+            (SELECT MAX(o.order_datetime) FROM orders o WHERE o.customer_id = u.user_id) AS lastOrderDate,
+            (SELECT COUNT(DISTINCT o.order_id) FROM orders o WHERE o.customer_id = u.user_id) AS totalOrders,
+            (SELECT SUM(oi.total_price) FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE o.customer_id = u.user_id) AS totalSpent,
+            (SELECT AVG(pr.rating) FROM product_reviews pr WHERE pr.user_id = u.user_id) AS avgRating,
+            (SELECT city_name FROM cities c JOIN addresses a ON c.city_id = a.city_id WHERE a.user_id = u.user_id AND a.is_default = 1 LIMIT 1) as location
+        FROM
+            users u
+        WHERE
+            u.user_type = 'customer'
+        GROUP BY
+            u.user_id
+        ORDER BY
+            u.created_at DESC;
+      `);
+      return rows;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
 }
 
 module.exports = User;

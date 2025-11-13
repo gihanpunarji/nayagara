@@ -1024,6 +1024,7 @@ const verifyAdminSmsOtp = async (req, res) => {
 
     // Clear the mobile code after successful verification
     await Admin.updateMobileCode(email, null);
+    console.log("Admin SMS verification successful for:", email, "Token:", token);
 
     res.json({ 
       success: true, 

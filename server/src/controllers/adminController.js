@@ -14,6 +14,9 @@ const updateAdminProfile = async (req, res) => {
 const getCustomers = async (req, res) => {
   try {
     const customers = await User.getAllCustomersWithStats();
+    console.log("ok");
+    console.log(customers);
+    
     res.json({ success: true, customers });
   } catch (error) {
     console.error("Error fetching all customers:", error);

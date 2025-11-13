@@ -1,12 +1,12 @@
 const express = require("express");
-const { authenticateToken } = require("../middleware/auth");
+const { authenticateAdmin } = require("../middleware/auth");
 const { getAdminProfile, updateAdminProfile, getCustomers, getAdminDashboardData } = require("../controllers/adminController");
 
 const router = express.Router();
 
-router.get("/profile", authenticateToken, getAdminProfile);
-router.put("/profile", authenticateToken, updateAdminProfile);
-router.get("/customers", authenticateToken, getCustomers);
-router.get("/dashboard", authenticateToken, getAdminDashboardData);
+router.get("/profile", authenticateAdmin, getAdminProfile);
+router.put("/profile", authenticateAdmin, updateAdminProfile);
+router.get("/customers", authenticateAdmin, getCustomers);
+router.get("/dashboard", authenticateAdmin, getAdminDashboardData);
 
 module.exports = router;

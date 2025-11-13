@@ -1020,7 +1020,7 @@ const verifyAdminSmsOtp = async (req, res) => {
 
     // SMS code is valid, complete the login by generating a token
     const adminData = await Admin.checkAdmin(email);
-    const token = jwt.sign({ adminId: adminData.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+    const token = jwt.sign({ adminId: adminData.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '1h', algorithm: 'HS256' });
 
     // Clear the mobile code after successful verification
     await Admin.updateMobileCode(email, null);

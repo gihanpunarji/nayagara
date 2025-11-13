@@ -227,7 +227,11 @@ const AdminLogin = () => {
         });
 
         if (res.data.success && res.data.token) {
-          localStorage.setItem("admin_token", res.data.token);
+          const tokenData = {
+            token: res.data.token,
+            timestamp: new Date().getTime(),
+          };
+          localStorage.setItem("admin_token", JSON.stringify(tokenData));
           navigate("/admin/dashboard");
         } else {
           setError(res.data.message || "SMS verification failed.");

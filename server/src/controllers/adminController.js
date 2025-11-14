@@ -14,13 +14,20 @@ const updateAdminProfile = async (req, res) => {
 const getCustomers = async (req, res) => {
   try {
     const customers = await User.getAllCustomersWithStats();
-    console.log("ok");
-    console.log(customers);
-    
     res.json({ success: true, customers });
   } catch (error) {
     console.error("Error fetching all customers:", error);
     res.status(500).json({ success: false, message: "Failed to fetch customers" });
+  }
+};
+
+const getSellers = async (req, res) => {
+  try {
+    const sellers = await User.getAllSellersWithStats();
+    res.json({ success: true, sellers });
+  } catch (error) {
+    console.error("Error fetching all sellers:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch sellers" });
   }
 };
 
@@ -47,5 +54,6 @@ module.exports = {
   getAdminProfile,
   updateAdminProfile,
   getCustomers,
+  getSellers,
   getAdminDashboardData,
 };

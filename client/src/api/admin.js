@@ -10,6 +10,16 @@ export const getAdminCustomers = async () => {
     }
 };
 
+export const getAdminSellers = async () => {
+    try {
+        const response = await api.get('/admin/sellers');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching admin sellers:', error.response?.data || error.message);
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};
+
 export const getAdminDashboardData = async () => {
     try {
         const response = await api.get('/admin/dashboard');

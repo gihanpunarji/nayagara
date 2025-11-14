@@ -8,30 +8,22 @@ const AdminProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = () => {
-      const tokenDataString = localStorage.getItem('admin_token');
-      if (tokenDataString) {
+      const sessionDataString = localStorage.getItem('admin_session');
+      if (sessionDataString) {
         try {
-          // New format: { token: "...", timestamp: ... }
-          const tokenData = JSON.parse(tokenDataString);
-          const { token, timestamp } = tokenData;
+          const sessionData = JSON.parse(sessionDataString);
+          const { accessToken } = sessionData;
 
-          const tenDaysInMillis = 10 * 24 * 60 * 60 * 1000;
-          const now = new Date().getTime();
-
-          if (now - timestamp > tenDaysInMillis) {
-            localStorage.removeItem('admin_token');
-            setIsAuthenticated(false);
-          } else {
-            api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          if (accessToken) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
             setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
           }
         } catch (error) {
-          // Old format: "eyJhbGciOi..."
-          // If parsing fails, it's likely the old raw token string.
-          // For simplicity, we'll treat it as valid for this session
-          // and the next login will store it in the new format.
-          api.defaults.headers.common['Authorization'] = `Bearer ${tokenDataString}`;
-          setIsAuthenticated(true);
+          // If parsing fails, clear the invalid item
+          localStorage.removeItem('admin_session');
+          setIsAuthenticated(false);
         }
       } else {
         setIsAuthenticated(false);

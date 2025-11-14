@@ -226,12 +226,13 @@ const AdminLogin = () => {
           email: loginData.email,
         });
 
-        if (res.data.success && res.data.token) {
-          const tokenData = {
-            token: res.data.token,
+        if (res.data.success && res.data.accessToken && res.data.refreshToken) {
+          const sessionData = {
+            accessToken: res.data.accessToken,
+            refreshToken: res.data.refreshToken,
             timestamp: new Date().getTime(),
           };
-          localStorage.setItem("admin_token", JSON.stringify(tokenData));
+          localStorage.setItem("admin_session", JSON.stringify(sessionData));
           navigate("/admin/dashboard");
         } else {
           setError(res.data.message || "SMS verification failed.");

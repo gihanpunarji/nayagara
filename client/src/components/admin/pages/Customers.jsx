@@ -46,8 +46,6 @@ const Customers = () => {
         if (response.success) {
           const processedCustomers = response.customers.map(customer => ({
             ...customer,
-            // Assuming 'status' and 'verified' come directly from the backend
-            // If not, you'd add logic here to derive them
             status: customer.status || 'active', // Default to active if not provided
             verified: customer.email_verified === 1 && customer.mobile_verified === 1,
             avgRating: customer.avgRating ? parseFloat(customer.avgRating).toFixed(1) : 0,
@@ -77,6 +75,7 @@ const Customers = () => {
         filter.count = customers.filter(customer => customer.status === filter.key).length;
       }
     });
+
     setFilterOptions(newFilterOptions);
 
     let filtered = [...customers];
@@ -224,8 +223,8 @@ const Customers = () => {
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
-              <div className="py-1">
+            <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
+              <div className="">
                 <button
                   onClick={() => handleCustomerAction('contact', customer.id)}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
@@ -270,8 +269,8 @@ const Customers = () => {
     activeCustomers: customers.filter(c => c.status === 'active').length,
     newCustomers: customers.filter(c => c.status === 'new').length,
     vipCustomers: customers.filter(c => c.status === 'vip').length,
-    totalRevenue: customers.reduce((sum, c) => sum + c.totalSpent, 0),
-    avgOrderValue: customers.length > 0 ? customers.reduce((sum, c) => sum + (c.totalSpent / c.totalOrders), 0) / customers.length : 0
+    totalRevenue: customers.reduce((sum, c) => sum + parseFloat(c.totalSpent || 0), 0),
+    avgOrderValue: customers.length > 0 ? customers.reduce((sum, c) => sum + (parseFloat(c.totalSpent || 0) / (c.totalOrders || 1)), 0) / customers.length : 0
   };
 
   if (loading) {

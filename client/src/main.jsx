@@ -83,6 +83,7 @@ import AccessDenied from "./components/shared/error/AccessDenied.jsx";
 import Dashboard from "./components/seller/pages/Dashboard.jsx";
 import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx";
 import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx";
+import AdminAxiosInterceptor from "./api/AdminAxiosInterceptor.jsx";
 import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
 
 createRoot(document.getElementById("root")).render(
@@ -94,157 +95,166 @@ createRoot(document.getElementById("root")).render(
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Admin Routes - WITHOUT AuthProvider */}
-          <Route path="/admin/login" element={<AdminLogin />} />
           <Route
-            path="/admin/dashboard"
+            path="/admin/*"
             element={
-              <AdminProtectedRoute>
-                <AdminDashboard />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/customers"
-            element={
-              <AdminProtectedRoute>
-                <AdminCustomers />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/sellers"
-            element={
-              <AdminProtectedRoute>
-                <AdminSellers />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/products"
-            element={
-              <AdminProtectedRoute>
-                <AdminProducts />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/orders"
-            element={
-              <AdminProtectedRoute>
-                <AdminOrders />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              <AdminProtectedRoute>
-                <AdminAnalytics />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/advertisements"
-            element={
-              <AdminProtectedRoute>
-                <AdManagement />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/categories"
-            element={
-              <AdminProtectedRoute>
-                <AdminCategories />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/inventory"
-            element={
-              <AdminProtectedRoute>
-                <AdminInventory />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/reviews"
-            element={
-              <AdminProtectedRoute>
-                <AdminReviewsRatings />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/promotions"
-            element={
-              <AdminProtectedRoute>
-                <AdminPromotions />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/payments"
-            element={
-              <AdminProtectedRoute>
-                <AdminPayments />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/shipping"
-            element={
-              <AdminProtectedRoute>
-                <AdminShipping />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/support"
-            element={
-              <AdminProtectedRoute>
-                <AdminSupport />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/settings"
-            element={
-              <AdminProtectedRoute>
-                <AdminSettings />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/notifications"
-            element={
-              <AdminProtectedRoute>
-                <AdminNotifications />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/returns"
-            element={
-              <AdminProtectedRoute>
-                <AdminReturns />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/banners"
-            element={
-              <AdminProtectedRoute>
-                <AdminBanners />
-              </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/referrals"
-            element={
-              <AdminProtectedRoute>
-                <Referral />
-              </AdminProtectedRoute>
+              <AdminAxiosInterceptor>
+                <Routes>
+                  <Route path="/login" element={<AdminLogin />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminDashboard />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/customers"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminCustomers />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/sellers"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSellers />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/products"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminProducts />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/orders"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminOrders />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminAnalytics />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/advertisements"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdManagement />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/categories"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminCategories />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/inventory"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminInventory />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/reviews"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminReviewsRatings />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/promotions"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminPromotions />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payments"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminPayments />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/shipping"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminShipping />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/support"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSupport />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSettings />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/notifications"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminNotifications />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/returns"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminReturns />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/banners"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminBanners />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/referrals"
+                    element={
+                      <AdminProtectedRoute>
+                        <Referral />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </AdminAxiosInterceptor>
             }
           />
 

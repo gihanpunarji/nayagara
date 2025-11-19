@@ -1,6 +1,7 @@
 const e = require("express");
 const User = require("../models/User");
 const Admin = require("../models/Admin");
+const Referral = require("../models/Referral");
 const jwt = require("jsonwebtoken");
 const {
   validateUserInputs,
@@ -71,6 +72,11 @@ const register = async (req, res, role = "customer") => {
       lastName,
       role,
     });
+
+    if (refCode) {
+      await Referral.create({ userId: user.user_id, referrerId: refCode });
+    }
+
     const token = generateToken(user.user_id, user.user_type);
 
     const { first_name, last_name, user_role } = user;

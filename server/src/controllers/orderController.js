@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const { processReferralsAndDiscounts } = require("../utils/referralHelpers");
 
 const createOrder = async (req, res) => {
   try {
@@ -129,6 +130,13 @@ const updateOrderPaymentStatus = async (req, res) => {
       // If payment is completed, update order status to confirmed
       if (payment_status === 'completed') {
         await Order.updateOrderStatus(order.order_id, 'confirmed');
+        
+        // Attempt to process referrals, but don't let it break the order flow
+        try {
+          await processReferralsAndDiscounts(order);
+        } catch (referralError) {
+          console.error(`[Non-blocking Error] Failed to process referrals for order ${order.order_number}:`, referralError);
+        }
       }
 
       console.log(`Order ${order_number} payment status updated to ${payment_status}`);

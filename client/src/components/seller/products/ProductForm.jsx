@@ -12,6 +12,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     title: '',
     description: '',
     price: '',
+    market_price: '',
     cost: '',
     category: '',
     subcategory: '',
@@ -115,6 +116,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         title: productData.title || '',
         description: productData.description || '',
         price: productData.price || '',
+        market_price: productData.market_price || '',
         cost: productData.cost || '',
         category: productData.category || '',
         subcategory: productData.subcategory || '',
@@ -192,6 +194,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       if (!formData.title) newErrors.title = 'Title is required';
       if (!formData.description) newErrors.description = 'Description is required';
       if (!formData.price) newErrors.price = 'Price is required';
+      if (!formData.market_price) newErrors.market_price = 'Market Price is required';
       if (!formData.cost) newErrors.cost = 'Cost is required';
       if (!isEdit && !formData.category) newErrors.category = 'Category is required';
       if (!isEdit && !formData.subcategory) newErrors.subcategory = 'Subcategory is required';
@@ -214,6 +217,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       formDataToSubmit.append('title', formData.title);
       formDataToSubmit.append('description', formData.description);
       formDataToSubmit.append('price', formData.price);
+      formDataToSubmit.append('market_price', formData.market_price);
       formDataToSubmit.append('stock', formData.stock);
       formDataToSubmit.append('cost', formData.cost);
       
@@ -436,7 +440,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
              {/* Price */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
-                Price (Rs.) <span className="text-red-500">*</span>
+                Selling Price (Rs.) <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -450,6 +454,25 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
                 step="0.01"
               />
               {errors.price && <p className="text-red-500 text-sm">{errors.price}</p>}
+            </div>
+
+            {/* Market Price */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Market Price (Rs.) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={formData.market_price}
+                onChange={(e) => setFormData(prev => ({ ...prev, market_price: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.market_price ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              {errors.market_price && <p className="text-red-500 text-sm">{errors.market_price}</p>}
             </div>
 
             {/* Stock */}

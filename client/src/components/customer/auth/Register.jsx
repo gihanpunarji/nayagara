@@ -285,7 +285,7 @@ function CustomerRegistration() {
                 </div>
                 <input
                   type="text"
-                  name="refcode"
+                  name="refCode"
                   value={formData.refCode}
                   onChange={handleChange}
                   placeholder="Enter your referral code here (optional)"

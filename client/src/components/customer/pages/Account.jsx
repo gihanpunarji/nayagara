@@ -59,6 +59,11 @@ const CustomerAccount = () => {
   const [loadingOrders, setLoadingOrders] = useState(false);
   const [expandedOrders, setExpandedOrders] = useState(new Set());
 
+  // Wallet states
+  const [walletBalance, setWalletBalance] = useState(0);
+  const [walletTransactions, setWalletTransactions] = useState([]);
+  const [loadingWallet, setLoadingWallet] = useState(false);
+
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -70,13 +75,29 @@ const CustomerAccount = () => {
     lastName: user.last_name || '',
     email: user.email || '',
     mobile: user.mobile || '',
-    joinDate: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently',
+    joinDate: user.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', 'year': 'numeric' }) : 'Recently',
     profileImage: null,
     verified: user.email_verified || true,
-    walletBalance: user.wallet_balance || 0,
     referralCode: `USER${user.user_id}`,
     totalReferrals: 0,
     referralEarnings: 0
+  };
+
+  const fetchWalletData = async () => {
+    if (!isAuthenticated) return;
+
+    setLoadingWallet(true);
+    try {
+      const response = await api.get('/wallet');
+      if (response.data.success) {
+        setWalletBalance(response.data.data.balance);
+        setWalletTransactions(response.data.data.transactions);
+      }
+    } catch (error) {
+      console.error('Error fetching wallet data:', error);
+    } finally {
+      setLoadingWallet(false);
+    }
   };
 
 
@@ -262,11 +283,12 @@ const CustomerAccount = () => {
 
  
 
-  // Fetch provinces on component mount and orders for dashboard
+  // Fetch initial data on component mount
   useEffect(() => {
     fetchProvinces();
     if (isAuthenticated) {
       fetchUserOrders();
+      fetchWalletData();
     }
   }, [isAuthenticated]);
 
@@ -407,7 +429,7 @@ const CustomerAccount = () => {
               <CreditCard className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">Rs. {userData.walletBalance.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">Rs. {walletBalance.toLocaleString()}</p>
               <p className="text-sm text-gray-500">Wallet Balance</p>
             </div>
           </div>
@@ -696,7 +718,11 @@ const CustomerAccount = () => {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-green-100 mb-1">Available Balance</p>
-            <h3 className="text-3xl font-bold">Rs. {userData.walletBalance.toLocaleString()}</h3>
+            {loadingWallet ? (
+              <div className="h-9 w-32 bg-white bg-opacity-25 rounded-md animate-pulse"></div>
+            ) : (
+              <h3 className="text-3xl font-bold">Rs. {walletBalance.toLocaleString()}</h3>
+            )}
           </div>
           <div className="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
             <CreditCard className="w-8 h-8" />
@@ -715,33 +741,40 @@ const CustomerAccount = () => {
       {/* Transaction History */}
       <div className="bg-white rounded-2xl p-6 border border-gray-200">
         <h3 className="text-lg font-bold text-gray-900 mb-4">Recent Transactions</h3>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <Plus className="w-5 h-5 text-green-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Refund - ORD-2024-003</p>
-                <p className="text-sm text-gray-500">Jan 15, 2024</p>
-              </div>
-            </div>
-            <p className="font-bold text-green-600">+Rs. 12,500</p>
+        {loadingWallet ? (
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="text-gray-500 mt-2">Loading transactions...</p>
           </div>
-
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <Minus className="w-5 h-5 text-red-600" />
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Purchase - ORD-2024-002</p>
-                <p className="text-sm text-gray-500">Jan 10, 2024</p>
-              </div>
-            </div>
-            <p className="font-bold text-red-600">-Rs. 429,750</p>
+        ) : walletTransactions.length === 0 ? (
+          <div className="text-center py-8">
+            <FileText className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500">No transactions yet.</p>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-4">
+            {walletTransactions.map((tx) => (
+              <div key={tx.transaction_id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${tx.amount > 0 ? 'bg-green-100' : 'bg-red-100'}`}>
+                    {tx.amount > 0 ? (
+                      <Plus className="w-5 h-5 text-green-600" />
+                    ) : (
+                      <Minus className="w-5 h-5 text-red-600" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="font-medium text-gray-900">{tx.description}</p>
+                    <p className="text-sm text-gray-500">{new Date(tx.bebitted_at).toLocaleString()}</p>
+                  </div>
+                </div>
+                <p className={`font-bold ${tx.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {tx.amount > 0 ? '+' : ''}Rs. {tx.amount.toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Withdraw Modal */}
@@ -759,7 +792,7 @@ const CustomerAccount = () => {
             </div>
 
             <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {userData.walletBalance.toLocaleString()}</p>
+              <p className="text-sm text-gray-600 mb-2">Available Balance: Rs. {walletBalance.toLocaleString()}</p>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 Withdrawal Amount
               </label>

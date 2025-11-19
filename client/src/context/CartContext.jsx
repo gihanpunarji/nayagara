@@ -93,11 +93,11 @@ export const CartProvider = ({ children }) => {
         title: productTitle,
         price: productPrice,
         quantity: quantity,
-        image: product.images ? (
+        images: product.images ? (
           typeof product.images === 'string' ? 
-            product.images.split(',')[0].trim() : 
-            (Array.isArray(product.images) ? product.images[0]?.image_url || product.images[0] : product.images)
-        ) : (product.image || null),
+            [product.images.split(',')[0].trim()] : 
+            (Array.isArray(product.images) ? [product.images[0]?.image_url || product.images[0]] : [product.images])
+        ) : (product.image ? [product.image] : []),
         seller: product.seller_name || product.seller || 'Unknown Seller',
         seller_id: product.seller_id,
         category: product.category,
@@ -108,7 +108,7 @@ export const CartProvider = ({ children }) => {
       };
 
       setCart(prevCart => {
-        const existingItemIndex = prevCart.findIndex(item => item.product_id === productId);
+        const existingItemIndex = prevCart.findIndex(item => item.product_id === productId || item.id === productId);
         let newCart;
 
         if (existingItemIndex > -1) {

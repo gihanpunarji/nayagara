@@ -182,6 +182,37 @@ class Order {
     const [result] = await connection.execute(query, params);
     return result.affectedRows;
   }
+
+  static async addDiscount(orderId, discountToAdd) {
+    const connection = getConnection();
+    try {
+      await connection.beginTransaction();
+
+      const [rows] = await connection.execute("SELECT discount_amount, total_amount FROM orders WHERE order_id = ? FOR UPDATE", [orderId]);
+      const order = rows[0];
+
+      if (!order) {
+        throw new Error(`Order with ID ${orderId} not found.`);
+      }
+
+      const newDiscountAmount = parseFloat(order.discount_amount) + parseFloat(discountToAdd);
+      const newTotalAmount = parseFloat(order.total_amount) - parseFloat(discountToAdd);
+
+      const [result] = await connection.execute(
+        "UPDATE orders SET discount_amount = ?, total_amount = ? WHERE order_id = ?",
+        [newDiscountAmount, newTotalAmount, orderId]
+      );
+
+      await connection.commit();
+      return result.affectedRows;
+
+    } catch (error) {
+      const connection = getConnection();
+      await connection.rollback();
+      console.error(`Failed to add discount to order ${orderId}:`, error);
+      throw error;
+    }
+  }
 }
 
 module.exports = Order;

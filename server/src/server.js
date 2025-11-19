@@ -12,6 +12,8 @@ const cartRoutes = require("./routes/cartRoutes");
 const chatRoutes = require("./routes/chatRoutes");
 const paymentRoutes = require("./routes/paymentRoute");
 const orderRoutes = require("./routes/orderRoute");
+const walletRoutes = require("./routes/walletRoutes");
+const adminReferralRoutes = require("./routes/adminReferralRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -44,6 +46,8 @@ app.use("/api/cart", cartRoutes);
 app.use("/api/chat", chatRoutes);
 app.use("/api/payment", paymentRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api", walletRoutes);
+app.use("/api", adminReferralRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running successfully!" });

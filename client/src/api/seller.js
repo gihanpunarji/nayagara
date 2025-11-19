@@ -10,6 +10,8 @@ export const getSellerCustomers = async () => {
     }
 };
 
+//changes
+
 export const getSellerDashboardData = async () => {
     try {
         const response = await api.get('/seller/dashboard');

@@ -46,12 +46,14 @@ const AdminLogin = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [blockTimer, setBlockTimer] = useState(0);
 
-  // useEffect(() => {
-  //   const adminToken = localStorage.getItem("admin_token");
-  //   if (adminToken) {
-  //     navigate("/admin/dashboard");
-  //   }
-  // }, [navigate]);
+
+
+  useEffect(() => {
+    const adminToken = localStorage.getItem("admin_token");
+    if (adminToken) {
+      navigate("/admin/dashboard");
+    }
+  }, [navigate]);
 
   // Timer effects
   useEffect(() => {
@@ -224,8 +226,13 @@ const AdminLogin = () => {
           email: loginData.email,
         });
 
-        if (res.data.success && res.data.token) {
-          localStorage.setItem("admin_token", res.data.token);
+        if (res.data.success && res.data.accessToken && res.data.refreshToken) {
+          const sessionData = {
+            accessToken: res.data.accessToken,
+            refreshToken: res.data.refreshToken,
+            timestamp: new Date().getTime(),
+          };
+          localStorage.setItem("admin_session", JSON.stringify(sessionData));
           navigate("/admin/dashboard");
         } else {
           setError(res.data.message || "SMS verification failed.");
@@ -238,15 +245,15 @@ const AdminLogin = () => {
   };
 
   const handleResendOtp = async (type) => {
-    // if (type === "email" && canResendEmail) {
-    //   setEmailOtpTimer(300);
-    //   setCanResendEmail(false);
-    //   console.log("Resending email OTP");
-    // } else if (type === "phone" && canResendPhone) {
-    //   setPhoneOtpTimer(300);
-    //   setCanResendPhone(false);
-    //   console.log("Resending phone OTP");
-    // }
+    if (type === "email" && canResendEmail) {
+      setEmailOtpTimer(300);
+      setCanResendEmail(false);
+      console.log("Resending email OTP");
+    } else if (type === "phone" && canResendPhone) {
+      setPhoneOtpTimer(300);
+      setCanResendPhone(false);
+      console.log("Resending phone OTP");
+    }
   };
   const goBack = () => {
     if (currentStep > 1) {

@@ -269,10 +269,60 @@ const updateSellerPaymentDetails = async (req, res) => {
   }
 };
 
+const getSellerCustomers = async (req, res) => {
+  try {
+    const sellerId = req.user.user_id; // Assuming req.user.user_id contains the authenticated seller's ID
+
+    const customers = await User.getCustomersBySellerId(sellerId);
+
+    res.json({
+      success: true,
+      customers: customers
+    });
+  } catch (error) {
+    console.error("Get seller customers error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve seller customers"
+    });
+  }
+};
+
+const Dashboard = require("../models/Dashboard");
+
+const getSellerDashboardData = async (req, res) => {
+  try {
+    const sellerId = req.user.user_id;
+
+    const stats = await Dashboard.getSellerStats(sellerId);
+    const monthlyGrowth = await Dashboard.getMonthlyGrowth(sellerId);
+    const recentOrders = await Dashboard.getRecentOrders(sellerId);
+
+    const dashboardData = {
+      ...stats,
+      monthlyGrowth,
+      recentOrders,
+    };
+
+    res.json({
+      success: true,
+      data: dashboardData,
+    });
+  } catch (error) {
+    console.error("Get seller dashboard data error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve seller dashboard data",
+    });
+  }
+};
+
 module.exports = {
   getSellerProfile,
   updateSellerProfile,
   uploadProfilePicture,
   getSellerPaymentDetails,
   updateSellerPaymentDetails,
+  getSellerCustomers,
+  getSellerDashboardData,
 };

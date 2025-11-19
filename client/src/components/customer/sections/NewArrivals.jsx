@@ -113,7 +113,7 @@ const NewArrivals = () => {
               >
                 <div className="relative mb-2 sm:mb-3">
                   <img 
-                    src={`http://localhost:5001${product.images[0]?.image_url}` || 'https://via.placeholder.com/300'} 
+                    src={product.images[0]?.image_url}
                     alt={product.product_title} 
                     className="w-full h-24 sm:h-32 object-cover rounded-lg"
                   />

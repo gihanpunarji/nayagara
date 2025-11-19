@@ -485,56 +485,12 @@ const ReviewStep = memo(({
 
         <div className="space-y-4">
           {cartItems && cartItems.length > 0 ? cartItems.map((item) => (
+            
             <div key={item.product_id || item.id || Math.random()} className="flex items-center space-x-4">
+              
               <img
                 src={
-                  // Try different image field variations from different data sources
-                  (() => {
-                    let imageUrl = null;
-                    
-                    // Debug: Log item structure to understand data format
-                    if (!item.image && !item.images?.[0] && !item.product_image_url) {
-                      console.log('Item missing image, available fields:', Object.keys(item));
-                      console.log('Item data:', item);
-                    }
-                    
-                    // Check for direct image URL (cart items)
-                    if (item.image) {
-                      imageUrl = item.image.startsWith('http') ? 
-                        item.image : 
-                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.image}`;
-                    }
-                    // Check for images array (product data)
-                    else if (item.images?.[0]?.image_url) {
-                      const imgUrl = item.images[0].image_url;
-                      imageUrl = imgUrl.startsWith('http') ? 
-                        imgUrl : 
-                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
-                    }
-                    // Check for product_image_url (order items)
-                    else if (item.product_image_url) {
-                      const imgUrl = item.product_image_url;
-                      imageUrl = imgUrl.startsWith('http') ? 
-                        imgUrl : 
-                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
-                    }
-                    // Check for thumbnail (product variations)
-                    else if (item.thumbnail) {
-                      const imgUrl = item.thumbnail;
-                      imageUrl = imgUrl.startsWith('http') ? 
-                        imgUrl : 
-                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
-                    }
-                    // Check for featured_image (product data)
-                    else if (item.featured_image) {
-                      const imgUrl = item.featured_image;
-                      imageUrl = imgUrl.startsWith('http') ? 
-                        imgUrl : 
-                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${imgUrl}`;
-                    }
-                    
-                    return imageUrl || '/placeholder-product.jpg';
-                  })()
+                  item.images[0] ||'/placeholder-product.jpg'
                 }
                 alt={item.product_title || item.name || item.title || 'Product'}
                 className="w-16 h-16 object-cover rounded-lg"

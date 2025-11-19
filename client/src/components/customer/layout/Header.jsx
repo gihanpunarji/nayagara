@@ -50,9 +50,8 @@ const Header = ({
   const handleAccountClick = () => {
     if (isAuthenticated) {
       navigate("/account");
-    } else {
-      navigate("/login");
     }
+    // If not authenticated, don't navigate - let the dropdown handle it
   };
 
   const handleOpenAdvancedFilters = () => {
@@ -297,22 +296,41 @@ const Header = ({
                 </span>
               </Link>
 
-              <div
-                onClick={handleAccountClick}
-                className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors cursor-pointer"
-              >
-                <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
-                <div className="text-left">
-                  <p className="text-xs text-gray-500">
-                    {isAuthenticated ? "Hello" : "Hello"}
-                  </p>
-                  <div className="text-sm font-medium text-gray-800">
-                    {isAuthenticated
-                      ? user?.firstName || user?.first_name || "User"
-                      : "Sign In / Register"}
+              {isAuthenticated ? (
+                <div
+                  onClick={handleAccountClick}
+                  className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors cursor-pointer"
+                >
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <div className="text-left">
+                    <p className="text-xs text-gray-500">Hello</p>
+                    <div className="text-sm font-medium text-gray-800">
+                      {user?.firstName || user?.first_name || "User"}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ) : (
+                <div className="hidden sm:flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <div className="text-left">
+                    <div className="flex items-center space-x-2 text-sm font-medium">
+                      <Link
+                        to="/login"
+                        className="text-primary-600 hover:text-primary-700 transition-colors"
+                      >
+                        Sign In
+                      </Link>
+                      <span className="text-gray-400">/</span>
+                      <Link
+                        to="/register"
+                        className="text-primary-600 hover:text-primary-700 transition-colors"
+                      >
+                        Register
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

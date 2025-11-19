@@ -8,12 +8,23 @@ const AdminProtectedRoute = ({ children }) => {
 
   useEffect(() => {
     const checkAuth = () => {
-      const adminToken = localStorage.getItem('token');
-      
-      if (adminToken) {
-        // Set the token in API headers
-        api.defaults.headers.common['Authorization'] = `Bearer ${adminToken}`;
-        setIsAuthenticated(true);
+      const sessionDataString = localStorage.getItem('admin_session');
+      if (sessionDataString) {
+        try {
+          const sessionData = JSON.parse(sessionDataString);
+          const { accessToken } = sessionData;
+
+          if (accessToken) {
+            api.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+            setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
+          }
+        } catch (error) {
+          // If parsing fails, clear the invalid item
+          localStorage.removeItem('admin_session');
+          setIsAuthenticated(false);
+        }
       } else {
         setIsAuthenticated(false);
       }

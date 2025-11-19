@@ -19,136 +19,65 @@ import {
   MoreVertical
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
+import { getAdminCustomers } from '../../../api/admin';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedCustomers, setSelectedCustomers] = useState([]);
 
-  // Mock customer data
-  const mockCustomers = [
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+94 77 123 4567',
-      location: 'Colombo, Western Province',
-      joinDate: '2023-12-15',
-      totalOrders: 25,
-      totalSpent: 850000,
-      avgRating: 4.8,
-      lastOrderDate: '2024-01-15',
-      status: 'active',
-      verified: true,
-      avatar: null
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+94 71 987 6543',
-      location: 'Kandy, Central Province',
-      joinDate: '2023-11-20',
-      totalOrders: 38,
-      totalSpent: 1200000,
-      avgRating: 4.9,
-      lastOrderDate: '2024-01-14',
-      status: 'active',
-      verified: true,
-      avatar: null
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      phone: '+94 75 555 1234',
-      location: 'Negombo, Western Province',
-      joinDate: '2024-01-05',
-      totalOrders: 2,
-      totalSpent: 45000,
-      avgRating: 5.0,
-      lastOrderDate: '2024-01-12',
-      status: 'new',
-      verified: false,
-      avatar: null
-    },
-    {
-      id: 4,
-      name: 'Sarah Wilson',
-      email: 'sarah@example.com',
-      phone: '+94 72 444 8888',
-      location: 'Galle, Southern Province',
-      joinDate: '2023-10-10',
-      totalOrders: 62,
-      totalSpent: 1850000,
-      avgRating: 4.7,
-      lastOrderDate: '2024-01-13',
-      status: 'vip',
-      verified: true,
-      avatar: null
-    },
-    {
-      id: 5,
-      name: 'David Brown',
-      email: 'david@example.com',
-      phone: '+94 76 777 9999',
-      location: 'Matara, Southern Province',
-      joinDate: '2023-09-25',
-      totalOrders: 3,
-      totalSpent: 125000,
-      avgRating: 4.3,
-      lastOrderDate: '2023-12-20',
-      status: 'suspended',
-      verified: true,
-      avatar: null
-    },
-    {
-      id: 6,
-      name: 'Emily Chen',
-      email: 'emily@example.com',
-      phone: '+94 71 222 3333',
-      location: 'Anuradhapura, North Central',
-      joinDate: '2023-08-15',
-      totalOrders: 15,
-      totalSpent: 320000,
-      avgRating: 4.6,
-      lastOrderDate: '2024-01-10',
-      status: 'active',
-      verified: true,
-      avatar: null
-    }
-  ];
-
-  const filterOptions = [
+  const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Customers', count: 0, color: 'gray' },
     { key: 'active', label: 'Active', count: 0, color: 'green' },
     { key: 'new', label: 'New Customers', count: 0, color: 'blue' },
     { key: 'vip', label: 'VIP Customers', count: 0, color: 'purple' },
     { key: 'suspended', label: 'Suspended', count: 0, color: 'red' }
-  ];
+  ]);
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setCustomers(mockCustomers);
-
-      // Update filter counts
-      filterOptions.forEach(filter => {
-        if (filter.key === 'all') {
-          filter.count = mockCustomers.length;
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const response = await getAdminCustomers();
+        if (response.success) {
+          const processedCustomers = response.customers.map(customer => ({
+            ...customer,
+            status: customer.status || 'active', // Default to active if not provided
+            verified: customer.email_verified === 1 && customer.mobile_verified === 1,
+            avgRating: customer.avgRating ? parseFloat(customer.avgRating).toFixed(1) : 0,
+            totalSpent: customer.totalSpent || 0,
+            totalOrders: customer.totalOrders || 0,
+          }));
+          setCustomers(processedCustomers);
         } else {
-          filter.count = mockCustomers.filter(customer => customer.status === filter.key).length;
+          setError(response.message);
         }
-      });
+      } catch (err) {
+        setError(err.message || 'Failed to fetch customers');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      setLoading(false);
-    }, 1000);
+    fetchCustomers();
   }, []);
 
   useEffect(() => {
+    const newFilterOptions = [...filterOptions];
+    newFilterOptions.forEach(filter => {
+      if (filter.key === 'all') {
+        filter.count = customers.length;
+      } else {
+        filter.count = customers.filter(customer => customer.status === filter.key).length;
+      }
+    });
+
+    setFilterOptions(newFilterOptions);
+
     let filtered = [...customers];
 
     // Apply status filter
@@ -161,8 +90,8 @@ const Customers = () => {
       filtered = filtered.filter(customer =>
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.phone.includes(searchQuery) ||
-        customer.location.toLowerCase().includes(searchQuery.toLowerCase())
+        (customer.phone && customer.phone.includes(searchQuery)) ||
+        (customer.location && customer.location.toLowerCase().includes(searchQuery.toLowerCase()))
       );
     }
 
@@ -177,16 +106,17 @@ const Customers = () => {
       case 'active': return 'bg-green-100 text-green-700 border-green-200';
       case 'new': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'vip': return 'bg-purple-100 text-purple-700 border-purple-200';
-      case 'suspended': return 'bg-red-100 text-green-700 border-red-200';
+      case 'suspended': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
     }
   };
 
   const formatPrice = (amount) => {
-    return `Rs. ${amount.toLocaleString()}`;
+    return `Rs. ${amount ? amount.toLocaleString() : '0'}`;
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
@@ -242,18 +172,18 @@ const Customers = () => {
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <Phone className="w-4 h-4 text-gray-400" />
-            <span>{customer.phone}</span>
+            <span>{customer.phone || 'N/A'}</span>
           </div>
           <div className="flex items-center space-x-2">
             <MapPin className="w-4 h-4 text-gray-400" />
-            <span>{customer.location}</span>
+            <span>{customer.location || 'N/A'}</span>
           </div>
         </div>
       </td>
 
       <td className="px-6 py-4 text-sm text-gray-500">
         <div className="space-y-1">
-          <div>{formatDate(customer.joinDate)}</div>
+          <div>Joined: {formatDate(customer.joinDate)}</div>
           <div className="text-xs">Last order: {formatDate(customer.lastOrderDate)}</div>
         </div>
       </td>
@@ -293,8 +223,8 @@ const Customers = () => {
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
-              <div className="py-1">
+            <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
+              <div className="">
                 <button
                   onClick={() => handleCustomerAction('contact', customer.id)}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
@@ -312,7 +242,7 @@ const Customers = () => {
                 {customer.status !== 'suspended' ? (
                   <button
                     onClick={() => handleCustomerAction('suspend', customer.id)}
-                    className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-red-50 flex items-center space-x-2"
+                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                   >
                     <Ban className="w-4 h-4" />
                     <span>Suspend Account</span>
@@ -339,8 +269,8 @@ const Customers = () => {
     activeCustomers: customers.filter(c => c.status === 'active').length,
     newCustomers: customers.filter(c => c.status === 'new').length,
     vipCustomers: customers.filter(c => c.status === 'vip').length,
-    totalRevenue: customers.reduce((sum, c) => sum + c.totalSpent, 0),
-    avgOrderValue: customers.length > 0 ? customers.reduce((sum, c) => sum + (c.totalSpent / c.totalOrders), 0) / customers.length : 0
+    totalRevenue: customers.reduce((sum, c) => sum + parseFloat(c.totalSpent || 0), 0),
+    avgOrderValue: customers.length > 0 ? customers.reduce((sum, c) => sum + (parseFloat(c.totalSpent || 0) / (c.totalOrders || 1)), 0) / customers.length : 0
   };
 
   if (loading) {
@@ -348,6 +278,17 @@ const Customers = () => {
       <AdminLayout>
         <div className="flex items-center justify-center h-64">
           <RefreshCw className="w-8 h-8 animate-spin text-green-600" />
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {error}</span>
         </div>
       </AdminLayout>
     );

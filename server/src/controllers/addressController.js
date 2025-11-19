@@ -26,8 +26,6 @@ const getAllProvinces = async (req, res) => {
         message: "Failed to fetch provinces",
       });
     }
-
-    console.log(provinces);
     
     res.json({
       success: true,
@@ -55,8 +53,6 @@ const getDistrictsByProvince = async (req, res) => {
       });
     }
 
-    console.log(districts);
-
     res.json({
       success: true,
       message: "Districts fetched successfully",
@@ -83,7 +79,6 @@ const getCitiesByDistrict = async (req, res) => {
       });
     }
 
-    console.log(cities);
 
     res.json({
       success: true,

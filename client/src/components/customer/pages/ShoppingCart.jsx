@@ -109,13 +109,7 @@ const ShoppingCart = () => {
 
                       <div className="flex-shrink-0">
                         <img
-                          src={item.image ? 
-                            (item.image.startsWith('http') ? 
-                              item.image : 
-                              `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.image}`
-                            ) : 
-                            'https://via.placeholder.com/150x150?text=No+Image'
-                          }
+                          src={item.image || 'https://via.placeholder.com/150x150?text=No+Image'}
                           alt={item.name || item.title}
                           className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-lg bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => navigate(`/product/${item.product_id || item.id}`)}

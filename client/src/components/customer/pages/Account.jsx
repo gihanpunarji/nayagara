@@ -641,10 +641,7 @@ const CustomerAccount = () => {
                                 <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
                                   {item.product_image_url ? (
                                     <img
-                                      src={item.product_image_url.startsWith('http') ? 
-                                        item.product_image_url : 
-                                        `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5001'}${item.product_image_url}`
-                                      }
+                                      src={item.product_image_url || 'https://via.placeholder.com/64x64?text=No+Image'}
                                       alt={item.product_title}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {

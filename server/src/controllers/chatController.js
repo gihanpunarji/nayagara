@@ -54,7 +54,7 @@ const startConversation = async (req, res) => {
       conversation: conversation,
       seller: {
         name: seller.first_name + ' ' + seller.last_name,
-        profile_image: seller.profile_image
+        image: seller.profile_image
       }
     });
   } catch (error) {

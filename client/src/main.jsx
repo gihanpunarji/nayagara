@@ -83,6 +83,7 @@ import AccessDenied from "./components/shared/error/AccessDenied.jsx";
 import Dashboard from "./components/seller/pages/Dashboard.jsx";
 import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx";
 import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx";
+import AdminAxiosInterceptor from "./api/AdminAxiosInterceptor.jsx";
 import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
 
 createRoot(document.getElementById("root")).render(
@@ -94,157 +95,166 @@ createRoot(document.getElementById("root")).render(
           <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Admin Routes - WITHOUT AuthProvider */}
-          <Route path="/admin/login" element={<AdminLogin />} />
           <Route
-            path="/admin/dashboard"
+            path="/admin/*"
             element={
-              // <AdminProtectedRoute>
-              <AdminDashboard />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/customers"
-            element={
-              // <AdminProtectedRoute>
-              <AdminCustomers />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/sellers"
-            element={
-              // <AdminProtectedRoute>
-              <AdminSellers />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/products"
-            element={
-              // <AdminProtectedRoute>
-              <AdminProducts />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/orders"
-            element={
-              // <AdminProtectedRoute>
-              <AdminOrders />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/analytics"
-            element={
-              // <AdminProtectedRoute>
-              <AdminAnalytics />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/advertisements"
-            element={
-              // <AdminProtectedRoute>
-              <AdManagement />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/categories"
-            element={
-              // <AdminProtectedRoute>
-              <AdminCategories />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/inventory"
-            element={
-              // <AdminProtectedRoute>
-              <AdminInventory />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/reviews"
-            element={
-              // <AdminProtectedRoute>
-              <AdminReviewsRatings />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/promotions"
-            element={
-              // <AdminProtectedRoute>
-              <AdminPromotions />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/payments"
-            element={
-              // <AdminProtectedRoute>
-              <AdminPayments />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/shipping"
-            element={
-              // <AdminProtectedRoute>
-              <AdminShipping />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/support"
-            element={
-              // <AdminProtectedRoute>
-              <AdminSupport />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/settings"
-            element={
-              // <AdminProtectedRoute>
-              <AdminSettings />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/notifications"
-            element={
-              // <AdminProtectedRoute>
-              <AdminNotifications />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/returns"
-            element={
-              // <AdminProtectedRoute>
-              <AdminReturns />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/banners"
-            element={
-              // <AdminProtectedRoute>
-              <AdminBanners />
-              // </AdminProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/referrals"
-            element={
-              // <AdminProtectedRoute>
-              <Referral />
-              // </AdminProtectedRoute>
+              <AdminAxiosInterceptor>
+                <Routes>
+                  <Route path="/login" element={<AdminLogin />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminDashboard />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/customers"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminCustomers />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/sellers"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSellers />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/products"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminProducts />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/orders"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminOrders />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/analytics"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminAnalytics />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/advertisements"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdManagement />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/categories"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminCategories />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/inventory"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminInventory />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/reviews"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminReviewsRatings />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/promotions"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminPromotions />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/payments"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminPayments />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/shipping"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminShipping />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/support"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSupport />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/settings"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSettings />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/notifications"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminNotifications />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/returns"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminReturns />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/banners"
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminBanners />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/referrals"
+                    element={
+                      <AdminProtectedRoute>
+                        <Referral />
+                      </AdminProtectedRoute>
+                    }
+                  />
+                </Routes>
+              </AdminAxiosInterceptor>
             }
           />
 
@@ -257,282 +267,279 @@ createRoot(document.getElementById("root")).render(
                   <CartProvider>
                     <SellerRedirect>
                       <Routes>
-                      {/* Customer Routes */}
-                      <Route path="/" element={<Home />} />
-                      <Route
-                        path="/login"
-                        element={
-                          <AuthRoute>
-                            <CustomerLogin />
-                          </AuthRoute>
-                        }
-                      />
-                      <Route
-                        path="/register"
-                        element={
-                          <AuthRoute>
-                            <CustomerRegister />
-                          </AuthRoute>
-                        }
-                      />
-                      <Route
-                        path="/forgot-password"
-                        element={<ForgotPassword />}
-                      />
-                      <Route
-                        path="/cart"
-                        element={
-                          <PageWrapper>
-                            <ShoppingCart />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/product/:id"
-                        element={
-                          <PageWrapper>
-                            <ProductView />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/new-arrivals"
-                        element={
-                          <PageWrapper>
-                            <NewArrivals />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/flash-sale"
-                        element={
-                          <PageWrapper>
-                            <NewArrivals />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/daily-deals"
-                        element={
-                          <PageWrapper>
-                            {/* <DailyDeals /> */}
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/deals"
-                        element={
-                          <PageWrapper>
-                            {/* <DailyDeals /> */}
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/top-rated"
-                        element={
-                          <PageWrapper>
-                            {/* <TopRated /> */}
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/about-us"
-                        element={
-                          <PageWrapper>
-                            <AboutUs />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/our-business"
-                        element={
-                          <PageWrapper>
-                            <OurBusiness />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/buyer-protection"
-                        element={
-                          <PageWrapper>
-                            <BuyerProtection />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/chat/:sellerId/:productId"
-                        element={
-                          <ProtectedRoute requiredRole="customer">
-                            <ChatView />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/search"
-                        element={
-                          <PageWrapper>
-                            <SearchPage />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/shop"
-                        element={
-                          <PageWrapper>
-                            <ShopPage />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/advanced-search"
-                        element={
-                          <PageWrapper>
-                            <AdvancedSearch />
-                          </PageWrapper>
-                        }
-                      />
-                      <Route
-                        path="/account"
-                        element={
-                          <ProtectedRoute requiredRole="customer">
+                        {/* Customer Routes */}
+                        <Route path="/" element={<Home />} />
+                        <Route
+                          path="/login"
+                          element={
+                            <AuthRoute>
+                              <CustomerLogin />
+                            </AuthRoute>
+                          }
+                        />
+                        <Route
+                          path="/register"
+                          element={
+                            <AuthRoute>
+                              <CustomerRegister />
+                            </AuthRoute>
+                          }
+                        />
+                        <Route
+                          path="/forgot-password"
+                          element={<ForgotPassword />}
+                        />
+                        <Route
+                          path="/cart"
+                          element={
                             <PageWrapper>
-                              <CustomerAccount />
+                              <ShoppingCart />
                             </PageWrapper>
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/post-ad"
-                        element={
-                          <ProtectedRoute requiredRole="customer">
+                          }
+                        />
+                        <Route
+                          path="/product/:id"
+                          element={
                             <PageWrapper>
-                              <PostAd />
+                              <ProductView />
                             </PageWrapper>
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/checkout"
-                        element={
-                          <ProtectedRoute
-                            requiredRole="customer"
-                            promptOnRedirect={true}
-                          >
+                          }
+                        />
+                        <Route
+                          path="/new-arrivals"
+                          element={
                             <PageWrapper>
-                              <Checkout />
+                              <NewArrivals />
                             </PageWrapper>
-                          </ProtectedRoute>
-                        }
-                      />{" "}
-                      <Route
-                        path="/nayagara-water"
-                        element={
-                          <PageWrapper>
-                            <NayagaraWaterHome />
-                          </PageWrapper>
-                        }
-                      />
-                      {/* Seller Routes */}
-                      <Route
-                        path="/seller/login"
-                        element={
-                          <AuthRoute>
-                            <SellerLogin />
-                          </AuthRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/register"
-                        element={
-                          <AuthRoute>
-                            <SellerRegistration />
-                          </AuthRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/dashboard"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <Dashboard />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/products"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerProducts />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/products/add"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerAddProduct />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/products/edit/:id"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerEditProduct />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/orders"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerOrders />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/customers"
-                        element={<SellerCustomers />}
-                      />
-                      <Route
-                        path="/seller/payments"
-                        element={<SellerPayments />}
-                      />
-                      <Route
-                        path="/seller/analytics"
-                        element={<SellerAnalytics />}
-                      />
-                      <Route
-                        path="/seller/messages"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerMessages />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/settings"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerSettings />
-                          </ProtectedRoute>
-                        }
-                      />
-                      <Route
-                        path="/seller/help"
-                        element={
-                          <ProtectedRoute requiredRole="seller">
-                            <SellerHelp />
-                          </ProtectedRoute>
-                        }
-                      />
-                      {/* Error Routes */}
-                      <Route path="/error/server" element={<ServerError />} />
-                      <Route path="/error/network" element={<NetworkError />} />
-                      <Route
-                        path="/error/access-denied"
-                        element={<AccessDenied />}
-                      />
-                      <Route path="*" element={<NotFound />} />
+                          }
+                        />
+                        <Route
+                          path="/flash-sale"
+                          element={
+                            <PageWrapper>
+                              <NewArrivals />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/daily-deals"
+                          element={
+                            <PageWrapper>{/* <DailyDeals /> */}</PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/deals"
+                          element={
+                            <PageWrapper>{/* <DailyDeals /> */}</PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/top-rated"
+                          element={
+                            <PageWrapper>{/* <TopRated /> */}</PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/about-us"
+                          element={
+                            <PageWrapper>
+                              <AboutUs />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/our-business"
+                          element={
+                            <PageWrapper>
+                              <OurBusiness />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/buyer-protection"
+                          element={
+                            <PageWrapper>
+                              <BuyerProtection />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/chat/:sellerId/:productId"
+                          element={
+                            <ProtectedRoute requiredRole="customer">
+                              <ChatView />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/search"
+                          element={
+                            <PageWrapper>
+                              <SearchPage />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/shop"
+                          element={
+                            <PageWrapper>
+                              <ShopPage />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/advanced-search"
+                          element={
+                            <PageWrapper>
+                              <AdvancedSearch />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/account"
+                          element={
+                            <ProtectedRoute requiredRole="customer">
+                              <PageWrapper>
+                                <CustomerAccount />
+                              </PageWrapper>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/post-ad"
+                          element={
+                            <ProtectedRoute requiredRole="customer">
+                              <PageWrapper>
+                                <PostAd />
+                              </PageWrapper>
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/checkout"
+                          element={
+                            <ProtectedRoute
+                              requiredRole="customer"
+                              promptOnRedirect={true}
+                            >
+                              <PageWrapper>
+                                <Checkout />
+                              </PageWrapper>
+                            </ProtectedRoute>
+                          }
+                        />{" "}
+                        <Route
+                          path="/nayagara-water"
+                          element={
+                            <PageWrapper>
+                              <NayagaraWaterHome />
+                            </PageWrapper>
+                          }
+                        />
+                        {/* Seller Routes */}
+                        <Route
+                          path="/seller/login"
+                          element={
+                            <AuthRoute>
+                              <SellerLogin />
+                            </AuthRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/register"
+                          element={
+                            <AuthRoute>
+                              <SellerRegistration />
+                            </AuthRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/dashboard"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <Dashboard />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/products"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerProducts />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/products/add"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerAddProduct />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/products/edit/:id"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerEditProduct />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/orders"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerOrders />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/customers"
+                          element={<SellerCustomers />}
+                        />
+                        <Route
+                          path="/seller/payments"
+                          element={<SellerPayments />}
+                        />
+                        <Route
+                          path="/seller/analytics"
+                          element={<SellerAnalytics />}
+                        />
+                        <Route
+                          path="/seller/messages"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerMessages />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/settings"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerSettings />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route
+                          path="/seller/help"
+                          element={
+                            <ProtectedRoute requiredRole="seller">
+                              <SellerHelp />
+                            </ProtectedRoute>
+                          }
+                        />
+                        {/* Error Routes */}
+                        <Route path="/error/server" element={<ServerError />} />
+                        <Route
+                          path="/error/network"
+                          element={<NetworkError />}
+                        />
+                        <Route
+                          path="/error/access-denied"
+                          element={<AccessDenied />}
+                        />
+                        <Route path="*" element={<NotFound />} />
                       </Routes>
                     </SellerRedirect>
                   </CartProvider>

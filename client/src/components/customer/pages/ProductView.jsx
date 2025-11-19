@@ -122,10 +122,7 @@ export const ProductView = () => {
                   const imageUrl = img.image_url || img;
                   // If the URL starts with /, prepend the backend base URL
                   return imageUrl.startsWith("/")
-                    ? `${
-                        import.meta.env.VITE_API_URL?.replace("/api", "") ||
-                        "http://localhost:5001"
-                      }${imageUrl}`
+                    ? imageUrl
                     : imageUrl;
                 })
                 .filter(Boolean)
@@ -306,10 +303,7 @@ export const ProductView = () => {
   const sellerImageUrl = product.seller_image
     ? product.seller_image.startsWith("http")
       ? product.seller_image // Assuming this is the correct full URL
-      : `${
-          import.meta.env.VITE_API_URL?.replace("/api", "") ||
-          "http://localhost:5001"
-        }${product.seller_image}`
+      : product.seller_image
     : product.seller_profile_image; // Fallback to profile image
 
   const sellerName =

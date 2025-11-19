@@ -49,8 +49,9 @@ const authenticateAdmin = async (req, res, next) => {
       });
     }
 
-    jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
       if (err) {
+        console.error("JWT Verification Error:", err.message);
         return res.json({
           success: false,
           message: "Invalid or expired token",

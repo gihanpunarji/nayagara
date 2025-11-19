@@ -60,6 +60,14 @@ class Admin {
     );
     return rows[0]?.mobile || null;
   }
+
+  static async updateRefreshToken(adminId, refreshToken) {
+    const connection = getConnection();
+    await connection.execute(
+      `UPDATE admins SET refresh_token = ? WHERE admin_id = ?`,
+      [refreshToken, adminId]
+    );
+  }
 }
 
 module.exports = Admin;

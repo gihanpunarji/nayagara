@@ -1,22 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TrendingUp, Package, ShoppingCart, DollarSign, Eye,
   Users, Star, AlertCircle, Plus, BarChart3
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import SellerLayout from '../layout/SellerLayout';
+import { getSellerDashboardData } from '../../../api/seller';
 
 const Dashboard = () => {
-  const [stats, setStats] = useState({
-    totalProducts: 124,
-    totalOrders: 856,
-    totalRevenue: 2450000,
-    totalCustomers: 342,
-    avgRating: 4.6,
-    pendingOrders: 23,
-    lowStockProducts: 8,
-    monthlyGrowth: 12.5
-  });
+  const [stats, setStats] = useState(null);
+  const [recentOrders, setRecentOrders] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   // Verification status - always verified for enabled dashboard
   const [verificationStatus] = useState({
@@ -24,12 +19,26 @@ const Dashboard = () => {
     phoneVerified: true
   });
 
-  const [recentOrders] = useState([
-    { id: 'ORD-001', customer: 'John Doe', amount: 15000, status: 'pending', date: '2024-01-15' },
-    { id: 'ORD-002', customer: 'Jane Smith', amount: 32000, status: 'shipped', date: '2024-01-15' },
-    { id: 'ORD-003', customer: 'Mike Johnson', amount: 8500, status: 'delivered', date: '2024-01-14' },
-    { id: 'ORD-004', customer: 'Sarah Wilson', amount: 22000, status: 'processing', date: '2024-01-14' },
-  ]);
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoading(true);
+        const response = await getSellerDashboardData();
+        if (response.success) {
+          setStats(response.data);
+          setRecentOrders(response.data.recentOrders);
+        } else {
+          setError(response.message);
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to fetch dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
 
 
   // Check if seller is verified to enable dashboard functionality
@@ -80,6 +89,27 @@ const Dashboard = () => {
       </div>
     </div>
   );
+
+  if (loading) {
+    return (
+      <SellerLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+        </div>
+      </SellerLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <SellerLayout>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      </SellerLayout>
+    );
+  }
 
   return (
     <SellerLayout>

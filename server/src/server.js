@@ -14,6 +14,7 @@ const paymentRoutes = require("./routes/paymentRoute");
 const orderRoutes = require("./routes/orderRoute");
 const walletRoutes = require("./routes/walletRoutes");
 const adminReferralRoutes = require("./routes/adminReferralRoutes");
+const adminRoutes = require("./routes/adminRoutes"); // Import admin routes
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -48,6 +49,7 @@ app.use("/api/payment", paymentRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api", walletRoutes);
 app.use("/api", adminReferralRoutes);
+app.use("/api/admin", adminRoutes); // Use admin routes
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running successfully!" });

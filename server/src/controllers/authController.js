@@ -1024,22 +1024,53 @@ const verifyAdminSmsOtp = async (req, res) => {
       return res.status(400).json({ success: false, message: "Invalid SMS verification code" });
     }
 
-    // SMS code is valid, complete the login by generating a token
+    // SMS code is valid, complete the login by generating tokens
     const adminData = await Admin.checkAdmin(email);
-    const token = jwt.sign({ adminId: adminData.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '1h' });
+    const accessToken = jwt.sign({ adminId: adminData.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '1h', algorithm: 'HS256' });
+    const refreshToken = jwt.sign({ adminId: adminData.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '7d', algorithm: 'HS256' });
+
+    // Store refresh token in the database
+    await Admin.updateRefreshToken(adminData.admin_id, refreshToken);
 
     // Clear the mobile code after successful verification
     await Admin.updateMobileCode(email, null);
+    console.log("Admin SMS verification successful for:", email);
 
     res.json({ 
       success: true, 
       message: "Admin login successful",
-      token 
+      accessToken,
+      refreshToken
     });
 
   } catch (err) {
     console.error("Admin SMS verification error:", err);
     res.status(500).json({ success: false, message: "Internal server error" });
+  }
+};
+
+const refreshAdminToken = async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) {
+    return res.status(401).json({ success: false, message: "Refresh token required" });
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, JWT_SECRET, { algorithms: ['HS256'] });
+    const admin = await Admin.checkAdmin(decoded.email);
+
+    if (!admin || admin.refresh_token !== refreshToken) {
+      return res.status(403).json({ success: false, message: "Invalid refresh token" });
+    }
+
+    const accessToken = jwt.sign({ adminId: admin.admin_id, role: 'admin' }, JWT_SECRET, { expiresIn: '1h', algorithm: 'HS256' });
+
+    res.json({
+      success: true,
+      accessToken
+    });
+  } catch (error) {
+    return res.status(403).json({ success: false, message: "Invalid or expired refresh token" });
   }
 };
 
@@ -1054,5 +1085,6 @@ module.exports = {
   loginAdmin,
   verifyEmailOtp,
   sendEmail,
-  verifyAdminSmsOtp
+  verifyAdminSmsOtp,
+  refreshAdminToken
 };

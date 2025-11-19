@@ -13,104 +13,74 @@ import {
   Eye
 } from 'lucide-react';
 import SellerLayout from '../layout/SellerLayout';
+import { getSellerCustomers } from '../../../api/seller';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
   const [filteredCustomers, setFilteredCustomers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock customer data
-  const mockCustomers = [
-    {
-      id: 1,
-      name: 'John Doe',
-      email: 'john@example.com',
-      phone: '+94 77 123 4567',
-      location: 'Colombo, Western Province',
-      joinDate: '2023-12-15',
-      totalOrders: 5,
-      totalSpent: 850000,
-      avgRating: 4.8,
-      lastOrderDate: '2024-01-15',
-      status: 'active'
-    },
-    {
-      id: 2,
-      name: 'Jane Smith',
-      email: 'jane@example.com',
-      phone: '+94 71 987 6543',
-      location: 'Kandy, Central Province',
-      joinDate: '2023-11-20',
-      totalOrders: 8,
-      totalSpent: 1200000,
-      avgRating: 4.9,
-      lastOrderDate: '2024-01-14',
-      status: 'active'
-    },
-    {
-      id: 3,
-      name: 'Mike Johnson',
-      email: 'mike@example.com',
-      phone: '+94 75 555 1234',
-      location: 'Negombo, Western Province',
-      joinDate: '2024-01-05',
-      totalOrders: 2,
-      totalSpent: 45000,
-      avgRating: 5.0,
-      lastOrderDate: '2024-01-12',
-      status: 'new'
-    },
-    {
-      id: 4,
-      name: 'Sarah Wilson',
-      email: 'sarah@example.com',
-      phone: '+94 72 444 8888',
-      location: 'Galle, Southern Province',
-      joinDate: '2023-10-10',
-      totalOrders: 12,
-      totalSpent: 1850000,
-      avgRating: 4.7,
-      lastOrderDate: '2024-01-13',
-      status: 'vip'
-    },
-    {
-      id: 5,
-      name: 'David Brown',
-      email: 'david@example.com',
-      phone: '+94 76 777 9999',
-      location: 'Matara, Southern Province',
-      joinDate: '2023-09-25',
-      totalOrders: 3,
-      totalSpent: 125000,
-      avgRating: 4.3,
-      lastOrderDate: '2023-12-20',
-      status: 'inactive'
-    }
-  ];
-
-  const filterOptions = [
+  const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Customers', count: 0 },
     { key: 'active', label: 'Active', count: 0 },
     { key: 'new', label: 'New Customers', count: 0 },
     { key: 'vip', label: 'VIP Customers', count: 0 },
     { key: 'inactive', label: 'Inactive', count: 0 }
-  ];
+  ]);
 
   useEffect(() => {
-    setCustomers(mockCustomers);
+    const fetchCustomers = async () => {
+      try {
+        setLoading(true);
+        const data = await getSellerCustomers();
+        if (data.success) {
+          const processedCustomers = data.customers.map(customer => {
+            const lastOrderDate = new Date(customer.lastOrderDate);
+            const now = new Date();
+            const daysSinceLastOrder = (now - lastOrderDate) / (1000 * 60 * 60 * 24);
 
-    // Update filter counts
-    filterOptions.forEach(filter => {
-      if (filter.key === 'all') {
-        filter.count = mockCustomers.length;
-      } else {
-        filter.count = mockCustomers.filter(customer => customer.status === filter.key).length;
+            let status = 'active';
+            if (daysSinceLastOrder > 30) {
+              status = 'inactive';
+            } else if (daysSinceLastOrder <= 30) {
+              status = 'new';
+            }
+            
+            if (customer.totalSpent > 1000000) {
+              status = 'vip';
+            }
+
+            return { ...customer, status, avgRating: 0 };
+          });
+          setCustomers(processedCustomers);
+        } else {
+          setError(data.message);
+        }
+      } catch (err) {
+        setError(err.message || 'Failed to fetch customers');
+      } finally {
+        setLoading(false);
       }
-    });
+    };
+
+    fetchCustomers();
   }, []);
 
   useEffect(() => {
+    // Update filter counts
+    const newFilterOptions = [...filterOptions];
+    newFilterOptions.forEach(filter => {
+      if (filter.key === 'all') {
+        filter.count = customers.length;
+      } else {
+        filter.count = customers.filter(customer => customer.status === filter.key).length;
+      }
+    });
+    setFilterOptions(newFilterOptions);
+
     let filtered = [...customers];
 
     // Apply status filter
@@ -123,7 +93,7 @@ const Customers = () => {
       filtered = filtered.filter(customer =>
         customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.phone.includes(searchQuery)
+        (customer.phone && customer.phone.includes(searchQuery))
       );
     }
 
@@ -215,6 +185,27 @@ const Customers = () => {
     avgOrderValue: customers.length > 0 ? Math.round(customers.reduce((sum, c) => sum + (c.totalSpent / c.totalOrders), 0) / customers.length) : 0
   };
 
+  if (loading) {
+    return (
+      <SellerLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="loader ease-linear rounded-full border-8 border-t-8 border-gray-200 h-32 w-32"></div>
+        </div>
+      </SellerLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <SellerLayout>
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg" role="alert">
+          <strong className="font-bold">Error:</strong>
+          <span className="block sm:inline"> {error}</span>
+        </div>
+      </SellerLayout>
+    );
+  }
+
   return (
     <SellerLayout>
       <div className="space-y-6">
@@ -268,7 +259,7 @@ const Customers = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600 mb-1">Avg. Order Value</p>
-                <p className="text-2xl font-bold text-gray-900">{formatPrice(stats.avgOrderValue)}</p>
+                <p className="text-2xl font-bold text-gray-900">{stats.avgOrderValue > 0 ? formatPrice(stats.avgOrderValue) : 'Rs. 0'}</p>
               </div>
               <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center">
                 <ShoppingBag className="w-6 h-6 text-white" />

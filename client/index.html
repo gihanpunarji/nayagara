@@ -42,9 +42,9 @@
     </script>
     
     <!-- PayHere SDK loaded dynamically to intercept -->
-    <script>
+    <!-- <script>
       // Load PayHere script dynamically and patch it
-      fetch('https://www.payhere.lk/lib/payhere.js')
+      fetch('/payhere/lib/payhere.js')
         .then(response => response.text())
         .then(scriptContent => {
           // Remove all debugger statements from the script
@@ -59,10 +59,10 @@
           console.error('Failed to load PayHere script:', error);
           // Fallback to original script
           const script = document.createElement('script');
-          script.src = 'https://www.payhere.lk/lib/payhere.js';
+          script.src = '/payhere/lib/payhere.js';
           document.head.appendChild(script);
         });
-    </script>
+    </script> -->
   </head>
   <body>
     <div id="root"></div>

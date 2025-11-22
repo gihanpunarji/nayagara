@@ -10,6 +10,7 @@ const createProduct = async (req, res) => {
       title,
       description,
       price,
+      market_price,
       cost,
       category,
       subcategory,
@@ -23,10 +24,10 @@ const createProduct = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !description || !price || !category || !subcategory || !stock || !cost) {
+    if (!title || !description || !price || !market_price || !category || !subcategory || !stock || !cost) {
       return res.status(400).json({
         success: false,
-        message: "Title, description, price, category, subcategory, stock and cost are required"
+        message: "Title, description, price, market_price, category, subcategory, stock and cost are required"
       });
     }
 
@@ -65,6 +66,7 @@ const createProduct = async (req, res) => {
       subcategoryId: subcategory, // Store subcategory separately
       sellerId: sellerId,
       price: parseFloat(price),
+      market_price: parseFloat(market_price),
       cost: parseFloat(cost),
       currencyCode: 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : null,
@@ -322,6 +324,7 @@ const updateProduct = async (req, res) => {
       title,
       description,
       price,
+      market_price,
       cost,
       stock,
       dynamicFields,
@@ -333,10 +336,10 @@ const updateProduct = async (req, res) => {
     } = req.body;
 
     // Validate required fields
-    if (!title || !description || !price || stock === undefined) {
+    if (!title || !description || !price || !market_price || stock === undefined) {
       return res.status(400).json({
         success: false,
-        message: "Title, description, price, and stock are required"
+        message: "Title, description, price, market_price, and stock are required"
       });
     }
 
@@ -388,6 +391,7 @@ const updateProduct = async (req, res) => {
       productDescription: description,
       categoryId: existingProduct.category_id, // Keep original category
       price: parseFloat(price),
+      market_price: parseFloat(market_price),
       cost: parseFloat(cost),
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,

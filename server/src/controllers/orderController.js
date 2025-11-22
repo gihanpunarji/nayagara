@@ -1,5 +1,5 @@
 const Order = require("../models/Order");
-const { processReferralsAndDiscounts } = require("../utils/referralHelpers");
+const { processReferralCommissions } = require("../utils/referralHelpers");
 
 const createOrder = async (req, res) => {
   try {
@@ -133,7 +133,31 @@ const updateOrderPaymentStatus = async (req, res) => {
         
         // Attempt to process referrals, but don't let it break the order flow
         try {
-          await processReferralsAndDiscounts(order);
+          // Get order items with product cost information
+          const orderItems = await Order.getOrderItems(order.order_id);
+          
+          // Add product cost information to order items
+          const { getConnection } = require("../config/database");
+          const pool = getConnection();
+          let connection;
+
+          try {
+            connection = await pool.getConnection();
+            
+            for (let item of orderItems) {
+              const [productRows] = await connection.execute(
+                "SELECT cost FROM products WHERE product_id = ?",
+                [item.product_id]
+              );
+              item.product_cost = productRows[0]?.cost || 0;
+            }
+
+            // Process referral commissions with the new system
+            await processReferralCommissions(order.order_id, order.customer_id, orderItems);
+            console.log(`Referral commissions processed successfully for order ${order.order_number}`);
+          } finally {
+            if (connection) connection.release();
+          }
         } catch (referralError) {
           console.error(`[Non-blocking Error] Failed to process referrals for order ${order.order_number}:`, referralError);
         }

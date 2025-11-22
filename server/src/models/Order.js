@@ -109,10 +109,11 @@ class Order {
   static async getOrderItems(order_id) {
     const connection = getConnection();
     const [rows] = await connection.execute(
-      `SELECT *, pi.image_url as product_image_url 
+      `SELECT oi.*, pi.image_url as product_image_url 
       FROM order_items oi
-      LEFT JOIN product_images pi ON oi.product_id = pi.product_id 
-      WHERE order_id = ? `,
+      LEFT JOIN product_images pi ON oi.product_id = pi.product_id AND pi.is_primary = 1
+      WHERE oi.order_id = ?
+      GROUP BY oi.order_item_id`,
       [order_id]
     );    
     return rows;

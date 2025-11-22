@@ -1075,30 +1075,31 @@ const Checkout = () => {
         const paymentInfo = response.data.data;
         
         // Initialize PayHere payment
-        window.payhere.startPayment({
-          sandbox: true, // Set to false for production
-          merchant_id: paymentInfo.merchant_id,
-          return_url: paymentInfo.return_url,
-          cancel_url: paymentInfo.cancel_url,
-          notify_url: paymentInfo.notify_url,
-          order_id: paymentInfo.order_id,
-          items: paymentInfo.items,
-          amount: paymentInfo.amount,
-          currency: paymentInfo.currency,
-          hash: paymentInfo.hash,
-          first_name: paymentInfo.first_name,
-          last_name: paymentInfo.last_name,
-          email: paymentInfo.email,
-          phone: paymentInfo.phone,
-          address: paymentInfo.address,
-          city: paymentInfo.city,
-          country: paymentInfo.country
-        });
+        // window.payhere.startPayment({
+        //   sandbox: true, // Set to false for production
+        //   merchant_id: paymentInfo.merchant_id,
+        //   return_url: paymentInfo.return_url,
+        //   cancel_url: paymentInfo.cancel_url,
+        //   notify_url: paymentInfo.notify_url,
+        //   order_id: paymentInfo.order_id,
+        //   items: paymentInfo.items,
+        //   amount: paymentInfo.amount,
+        //   currency: paymentInfo.currency,
+        //   hash: paymentInfo.hash,
+        //   first_name: paymentInfo.first_name,
+        //   last_name: paymentInfo.last_name,
+        //   email: paymentInfo.email,
+        //   phone: paymentInfo.phone,
+        //   address: paymentInfo.address,
+        //   city: paymentInfo.city,
+        //   country: paymentInfo.country
+        // });
 
         // PayHere event handlers
-        window.payhere.onCompleted = async function onCompleted(paymentOrderId) {
-          console.log("Payment completed. PayHere OrderID:" + paymentOrderId);
-          
+        // window.payhere.onCompleted = async function onCompleted(paymentOrderId) {
+          // console.log("Payment completed. PayHere OrderID:" + paymentOrderId);
+          let paymentOrderId = Math.random().toString(36).substring(2, 15); 
+
           try {
             // Save order to database after successful payment
             const orderData = {
@@ -1149,18 +1150,18 @@ const Checkout = () => {
             setProcessingPayment(false);
             alert('Payment successful but failed to save order. Please contact support with Order ID: ' + paymentOrderId);
           }
-        };
+        // };
 
-        window.payhere.onDismissed = function onDismissed() {
-          console.log("Payment dismissed");
-          setProcessingPayment(false);
-        };
+        // window.payhere.onDismissed = function onDismissed() {
+        //   console.log("Payment dismissed");
+        //   setProcessingPayment(false);
+        // };
 
-        window.payhere.onError = function onError(error) {
-          console.log("Error:" + error);
-          setProcessingPayment(false);
-          alert('Payment failed. Please try again.');
-        };
+        // window.payhere.onError = function onError(error) {
+        //   console.log("Error:" + error);
+        //   setProcessingPayment(false);
+        //   alert('Payment failed. Please try again.');
+        // };
 
       } else {
         throw new Error(response.data.message || 'Failed to create payment');

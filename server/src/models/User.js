@@ -399,6 +399,148 @@ class User {
       if (connection) connection.release();
     }
   }
+
+  // Enhanced referral system methods
+
+  /**
+   * Gets all users with referral information for admin dashboard
+   */
+  static async getAllWithReferralInfo() {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(`
+        SELECT 
+          u.user_id,
+          u.first_name,
+          u.last_name,
+          u.user_email,
+          u.total_purchase_amount,
+          u.referral_link_unlocked,
+          u.referral_code,
+          u.referred_by_user_id,
+          referrer.first_name as referred_by_first_name,
+          referrer.last_name as referred_by_last_name,
+          (SELECT COUNT(*) FROM referral_chain rc WHERE rc.level_1_user_id = u.user_id) as direct_referrals,
+          (SELECT SUM(rc.commission_amount) FROM referral_commissions rc WHERE rc.referrer_user_id = u.user_id) as total_commissions
+        FROM users u 
+        LEFT JOIN users referrer ON u.referred_by_user_id = referrer.user_id
+        WHERE u.user_type = 'customer'
+        ORDER BY u.total_purchase_amount DESC
+      `);
+      return rows;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Creates a user with referral chain
+   */
+  static async createWithReferral({ mobile, email, password, firstName, lastName, role, referralCode }) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      await connection.beginTransaction();
+
+      // Create the user first
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const [result] = await connection.execute(
+        "INSERT INTO users (user_email, user_password, first_name, last_name, user_mobile, nic, user_type, user_status, email_verified, mobile_verified, profile_image, last_login, created_at, updated_at, mobile_verification_code, reset_token, reset_token_expires, total_purchase_amount, referral_link_unlocked) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+        [
+          email, hashedPassword, firstName, lastName, mobile, null, role, "active",
+          0, 0, null, new Date(), new Date(), new Date(), null, null, null, 0.00, false
+        ]
+      );
+
+      const newUserId = result.insertId;
+      
+      // Generate referral code for the new user
+      const crypto = require("crypto");
+      const timestamp = Date.now().toString();
+      const hash = crypto.createHash('md5').update(`${newUserId}${timestamp}`).digest('hex');
+      const newUserReferralCode = `REF${String(newUserId).padStart(6, '0')}${hash.substring(0, 6).toUpperCase()}`;
+      
+      await connection.execute(
+        "UPDATE users SET referral_code = ? WHERE user_id = ?",
+        [newUserReferralCode, newUserId]
+      );
+
+      // If referral code provided, create referral chain
+      if (referralCode) {
+        const [referrerRows] = await connection.execute(
+          "SELECT user_id FROM users WHERE referral_code = ? AND referral_link_unlocked = 1",
+          [referralCode]
+        );
+
+        if (referrerRows[0]) {
+          const referrerUserId = referrerRows[0].user_id;
+          
+          // Get the referrer's chain to extend it
+          const [referrerChainRows] = await connection.execute(
+            "SELECT * FROM referral_chain WHERE user_id = ?",
+            [referrerUserId]
+          );
+
+          let newUserChain = {
+            level_1_user_id: referrerUserId,
+            level_2_user_id: null, level_3_user_id: null, level_4_user_id: null, level_5_user_id: null,
+            level_6_user_id: null, level_7_user_id: null, level_8_user_id: null,
+          };
+
+          if (referrerChainRows[0]) {
+            const referrerChain = referrerChainRows[0];
+            newUserChain.level_2_user_id = referrerChain.level_1_user_id;
+            newUserChain.level_3_user_id = referrerChain.level_2_user_id;
+            newUserChain.level_4_user_id = referrerChain.level_3_user_id;
+            newUserChain.level_5_user_id = referrerChain.level_4_user_id;
+            newUserChain.level_6_user_id = referrerChain.level_5_user_id;
+            newUserChain.level_7_user_id = referrerChain.level_6_user_id;
+            newUserChain.level_8_user_id = referrerChain.level_7_user_id;
+          }
+
+          // Insert the new user's referral chain
+          await connection.execute(
+            `INSERT INTO referral_chain 
+             (user_id, level_1_user_id, level_2_user_id, level_3_user_id, level_4_user_id,
+              level_5_user_id, level_6_user_id, level_7_user_id, level_8_user_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              newUserId, newUserChain.level_1_user_id, newUserChain.level_2_user_id,
+              newUserChain.level_3_user_id, newUserChain.level_4_user_id, newUserChain.level_5_user_id,
+              newUserChain.level_6_user_id, newUserChain.level_7_user_id, newUserChain.level_8_user_id,
+            ]
+          );
+
+          // Update users table with referrer information
+          await connection.execute(
+            "UPDATE users SET referred_by_user_id = ? WHERE user_id = ?",
+            [referrerUserId, newUserId]
+          );
+
+          // Create entry in legacy referral table for backward compatibility
+          await connection.execute(
+            "INSERT INTO referral (users_user_id, referred_by) VALUES (?, ?)",
+            [newUserId, referrerUserId]
+          );
+        }
+      }
+
+      await connection.commit();
+      return this.findById(newUserId);
+    } catch (error) {
+      if (connection) await connection.rollback();
+      throw error;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Updates user purchase information and referral status
+   */
 }
 
 module.exports = User;

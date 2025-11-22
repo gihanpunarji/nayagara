@@ -85,6 +85,7 @@ import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx"
 import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx";
 import AdminAxiosInterceptor from "./api/AdminAxiosInterceptor.jsx";
 import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
+import OrderSuccess from "./components/customer/pages/OrderSuccess.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -282,6 +283,14 @@ createRoot(document.getElementById("root")).render(
                           element={
                             <AuthRoute>
                               <CustomerRegister />
+                            </AuthRoute>
+                          }
+                        />
+                        <Route
+                          path="/order-success"
+                          element={
+                            <AuthRoute>
+                              <OrderSuccess />
                             </AuthRoute>
                           }
                         />

@@ -4,7 +4,7 @@ import {
   LogOut, ChevronRight, Star, Truck, Clock, Shield, Eye,
   Edit, Copy, X, Check, AlertCircle, Phone, Mail, Calendar,
   Download, MessageCircle, FileText, Headphones, Plus, Minus,
-  Car, Home, Settings, Trash2, Save
+  Car, Home, Settings, Trash2, Save, Share2, Users, Gift, TrendingUp
 } from 'lucide-react';
 import { Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import AccountSidebar from '../layout/AccountSidebar';
@@ -64,6 +64,11 @@ const CustomerAccount = () => {
   const [walletTransactions, setWalletTransactions] = useState([]);
   const [loadingWallet, setLoadingWallet] = useState(false);
 
+  // Referral states
+  const [referralData, setReferralData] = useState(null);
+  const [loadingReferral, setLoadingReferral] = useState(false);
+  const [copiedReferral, setCopiedReferral] = useState(false);
+
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
@@ -97,6 +102,30 @@ const CustomerAccount = () => {
       console.error('Error fetching wallet data:', error);
     } finally {
       setLoadingWallet(false);
+    }
+  };
+
+  const fetchReferralData = async () => {
+    if (!isAuthenticated) return;
+
+    setLoadingReferral(true);
+    try {
+      const response = await api.get('/referral/my-code');
+      if (response.data.success) {
+        setReferralData(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching referral data:', error);
+    } finally {
+      setLoadingReferral(false);
+    }
+  };
+
+  const copyReferralLink = () => {
+    if (referralData?.referralLink) {
+      navigator.clipboard.writeText(referralData.referralLink);
+      setCopiedReferral(true);
+      setTimeout(() => setCopiedReferral(false), 2000);
     }
   };
 
@@ -289,6 +318,7 @@ const CustomerAccount = () => {
     if (isAuthenticated) {
       fetchUserOrders();
       fetchWalletData();
+      fetchReferralData();
     }
   }, [isAuthenticated]);
 
@@ -736,6 +766,128 @@ const CustomerAccount = () => {
             Withdraw
           </button>
         </div>
+      </div>
+
+      {/* Referral Program Card */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+            <Gift className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">Referral Program</h3>
+            <p className="text-sm text-gray-500">Earn commissions by referring friends</p>
+          </div>
+        </div>
+
+        {loadingReferral ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="text-gray-500 text-sm mt-2">Loading referral info...</p>
+          </div>
+        ) : referralData ? (
+          <div className="space-y-4">
+            {/* Unlock Status */}
+            {!referralData.referralUnlocked ? (
+              <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg p-4">
+                <div className="flex items-start space-x-3">
+                  <AlertCircle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-orange-900 mb-1">Unlock Your Referral Link</h4>
+                    <p className="text-sm text-orange-700 mb-3">
+                      Purchase products worth Rs. {referralData.unlockThreshold.toLocaleString()} to unlock your referral link and start earning commissions!
+                    </p>
+
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-orange-800 font-medium">Progress</span>
+                        <span className="text-orange-900 font-bold">
+                          Rs. {referralData.totalPurchased.toLocaleString()} / Rs. {referralData.unlockThreshold.toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="w-full bg-orange-200 rounded-full h-3 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-orange-500 to-yellow-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.min((referralData.totalPurchased / referralData.unlockThreshold) * 100, 100)}%` }}
+                        ></div>
+                      </div>
+                      <p className="text-xs text-orange-600">
+                        Rs. {Math.max(0, referralData.unlockThreshold - referralData.totalPurchased).toLocaleString()} more to unlock
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {/* Unlocked - Show Referral Link */}
+                <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-4">
+                  <div className="flex items-center space-x-2 mb-3">
+                    <Check className="w-5 h-5 text-green-600" />
+                    <h4 className="font-semibold text-green-900">Referral Link Unlocked!</h4>
+                  </div>
+                  <p className="text-sm text-green-700 mb-4">
+                    Share your referral link and earn commissions on every purchase made by your referrals.
+                  </p>
+
+                  {/* Referral Code Display */}
+                  <div className="bg-white rounded-lg p-3 border border-green-200 mb-3">
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">Your Referral Code</label>
+                    <div className="flex items-center justify-between">
+                      <code className="text-lg font-bold text-primary-600 tracking-wider">{referralData.referralCode}</code>
+                      <button
+                        onClick={copyReferralLink}
+                        className="flex items-center space-x-1 bg-primary-600 hover:bg-primary-700 text-white px-3 py-1.5 rounded-lg transition-colors text-sm font-medium"
+                      >
+                        {copiedReferral ? (
+                          <>
+                            <Check className="w-4 h-4" />
+                            <span>Copied!</span>
+                          </>
+                        ) : (
+                          <>
+                            <Copy className="w-4 h-4" />
+                            <span>Copy Link</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Referral Link */}
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <label className="text-xs font-medium text-gray-600 mb-1 block">Shareable Link</label>
+                    <p className="text-xs text-gray-600 break-all font-mono">{referralData.referralLink}</p>
+                  </div>
+                </div>
+
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <Users className="w-4 h-4 text-purple-600" />
+                      <span className="text-xs font-medium text-purple-900">Total Purchases</span>
+                    </div>
+                    <p className="text-lg font-bold text-purple-900">Rs. {referralData.totalPurchased.toLocaleString()}</p>
+                  </div>
+                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200">
+                    <div className="flex items-center space-x-2 mb-1">
+                      <TrendingUp className="w-4 h-4 text-blue-600" />
+                      <span className="text-xs font-medium text-blue-900">Status</span>
+                    </div>
+                    <p className="text-lg font-bold text-blue-900">Active</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Unable to load referral information</p>
+          </div>
+        )}
       </div>
 
       {/* Transaction History */}

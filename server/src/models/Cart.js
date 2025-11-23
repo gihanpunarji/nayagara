@@ -7,7 +7,7 @@ class Cart {
     
     try {
       const [rows] = await connection.execute(`
-        SELECT 
+        SELECT
           sc.cart_id,
           sc.user_id,
           sc.product_id,
@@ -19,6 +19,7 @@ class Cart {
           p.price,
           p.stock_quantity,
           p.seller_id,
+          COALESCE(p.weight_kg, 1.0) as weight_kg,
           pi.image_url,
           u.first_name as seller_first_name,
           u.last_name as seller_last_name,

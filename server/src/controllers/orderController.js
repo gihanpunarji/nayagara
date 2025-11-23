@@ -339,7 +339,7 @@ const updateSellerOrderStatus = async (req, res) => {
     const orderItems = await Order.getSellerOrderItems(seller_id);
     const orderItem = orderItems.find(item => item.order_item_id == order_item_id);
     console.log('order item:', orderItem);
-    
+
     if (!orderItem) {
       return res.status(403).json({
         success: false,
@@ -349,7 +349,7 @@ const updateSellerOrderStatus = async (req, res) => {
 
     // Update the order item status
     const affectedRows = await Order.updateOrderItemStatus(order_item_id, status, tracking_number);
-    
+
     if (affectedRows > 0) {
       res.json({
         success: true,
@@ -377,6 +377,100 @@ const updateSellerOrderStatus = async (req, res) => {
   }
 };
 
+const calculateShipping = async (req, res) => {
+  try {
+    const { cartItems } = req.body;
+    console.log('Calculating shipping for cart items:', cartItems?.length);
+
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          totalWeight: 0,
+          amountPerKilo: 0,
+          shippingCost: 0
+        }
+      });
+    }
+
+    const { getConnection } = require('../config/database');
+    const pool = getConnection();
+    let connection;
+
+    try {
+      connection = await pool.getConnection();
+
+      // Get shipping rate per kilo from amount_per_kilo column
+      let [shippingSettings] = await connection.execute(
+        "SELECT amount_per_kilo FROM shipping_settings LIMIT 1"
+      );
+
+      if (!shippingSettings || !shippingSettings[0] || !shippingSettings[0].amount_per_kilo) {
+        // Use default rate if not set
+        console.log('No shipping settings found, using default 200');
+      }
+
+      const amountPerKilo = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
+      console.log('Shipping rate per kilo:', amountPerKilo);
+      let totalWeight = 0;
+
+      // Calculate total weight from all cart items
+      for (const item of cartItems) {
+        const productId = item.product_id || item.id;
+        const quantity = parseInt(item.quantity || 1);
+
+        if (!productId) continue;
+
+        try {
+          // Get product weight - default to 1kg if not set
+          const [productRows] = await connection.execute(
+            "SELECT COALESCE(weight_kg, 1.0) as weight_kg FROM products WHERE product_id = ?",
+            [productId]
+          );
+
+          if (productRows && productRows[0]) {
+            const weightKg = parseFloat(productRows[0].weight_kg || 1.0);
+            totalWeight += weightKg * quantity;
+          } else {
+            // If product not found, assume 1kg
+            totalWeight += 1.0 * quantity;
+          }
+        } catch (itemError) {
+          console.error(`Error getting weight for product ${productId}:`, itemError);
+          // Default to 1kg per item on error
+          totalWeight += 1.0 * quantity;
+        }
+      }
+
+      const shippingCost = totalWeight * amountPerKilo;
+
+      res.json({
+        success: true,
+        data: {
+          totalWeight: parseFloat(totalWeight.toFixed(2)),
+          amountPerKilo: amountPerKilo,
+          shippingCost: parseFloat(shippingCost.toFixed(2))
+        }
+      });
+
+    } finally {
+      if (connection) connection.release();
+    }
+
+  } catch (error) {
+    console.error('Error calculating shipping:', error);
+    // Return default shipping on error instead of failing
+    res.json({
+      success: true,
+      data: {
+        totalWeight: 0,
+        amountPerKilo: 200,
+        shippingCost: 1000 // Fallback to Rs. 1000
+      }
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderPaymentStatus,
@@ -384,5 +478,6 @@ module.exports = {
   getOrderDetails,
   getSellerOrders,
   getSellerOrderDetails,
-  updateSellerOrderStatus
+  updateSellerOrderStatus,
+  calculateShipping
 };

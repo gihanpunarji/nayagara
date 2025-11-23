@@ -637,7 +637,7 @@ const Checkout = () => {
   const location = useLocation();
   const { user, isAuthenticated } = useAuth();
 
-  const { items: cartItems = [], subtotal = 0, total = 0, itemCount = 0, shipping: shippingCost = 0 } = location.state || {};
+  const { items: cartItems = [], subtotal = 0, itemCount = 0, shipping: shippingCost = 0 } = location.state || {};
 
   useEffect(() => {
     if (!cartItems || cartItems.length === 0) {
@@ -648,16 +648,20 @@ const Checkout = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPayment, setSelectedPayment] = useState('card');
   const [promoCode, setPromoCode] = useState('');
-  const [appliedPromo, setAppliedPromo] = useState(null);
   const [sameAsBilling, setSameAsBilling] = useState(false);
   const [processingPayment, setProcessingPayment] = useState(false);
 
-  const processingFee = 30;
+  // Referral discount states
+  const [referralDiscount, setReferralDiscount] = useState(null);
+  const [loadingReferralDiscount, setLoadingReferralDiscount] = useState(false);
+
   let discount = 0;
-  if (appliedPromo) {
-    discount = appliedPromo.type === 'percentage' ? (subtotal * appliedPromo.value / 100) : appliedPromo.value;
-  }
-  const finalTotal = subtotal + shippingCost + processingFee - discount;
+
+  // Add referral discount if available
+  const referralDiscountAmount = referralDiscount?.eligible ? referralDiscount.discountAmount : 0;
+  const totalDiscount = discount + referralDiscountAmount;
+
+  const finalTotal = subtotal + shippingCost - totalDiscount;
 
   const [provinces, setProvinces] = useState([]);
   const [districts, setDistricts] = useState([]);
@@ -740,6 +744,34 @@ const Checkout = () => {
       loadUserAddresses();
     }
   }, [isAuthenticated, user]); // Remove loadUserAddresses dependency
+
+  // Fetch referral discount when checkout loads
+  useEffect(() => {
+    const fetchReferralDiscount = async () => {
+      if (!isAuthenticated || !cartItems || cartItems.length === 0) {
+        return;
+      }
+
+      setLoadingReferralDiscount(true);
+      try {
+        const response = await api.post('/referral/calculate-cart-discount', {
+          cartItems: cartItems
+        });
+
+        if (response.data.success) {
+          setReferralDiscount(response.data.data);
+        }
+      } catch (error) {
+        console.error('Error fetching referral discount:', error);
+        // Don't show error to user, just silently fail
+        setReferralDiscount(null);
+      } finally {
+        setLoadingReferralDiscount(false);
+      }
+    };
+
+    fetchReferralDiscount();
+  }, [isAuthenticated, cartItems]);
 
 
   // Address form states
@@ -1012,16 +1044,6 @@ const Checkout = () => {
     }
   }, [isAuthenticated, userAddresses, loadUserAddresses]);
 
-  const applyPromoCode = () => {
-    const promoCodes = {
-      'SAVE10': { type: 'percentage', value: 10, description: '10% off on orders above Rs. 50,000' },
-      'NEWUSER': { type: 'fixed', value: 5000, description: 'Rs. 5,000 off for new users' }
-    };
-
-    if (promoCodes[promoCode.toUpperCase()]) {
-      setAppliedPromo(promoCodes[promoCode.toUpperCase()]);
-    }
-  };
 
   const handlePlaceOrder = async () => {
     if (!isAuthenticated) {
@@ -1039,7 +1061,7 @@ const Checkout = () => {
     try {
       const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
       
-      const orderAmount = subtotal + shippingCost + processingFee - discount;
+      const orderAmount = subtotal + shippingCost - totalDiscount;
       
       const itemsDescription = cartItems.map(item => 
         `${item.product_title || item.name} (Qty: ${item.quantity})`
@@ -1110,7 +1132,7 @@ const Checkout = () => {
               subtotal: subtotal,
               shipping_cost: shippingCost,
               tax_amount: 0,
-              discount_amount: discount,
+              discount_amount: totalDiscount,
               total_amount: orderAmount
             };
 
@@ -1177,14 +1199,6 @@ const Checkout = () => {
       alert(`Payment Error: ${errorMessage}`);
     }
   };
-
-  // StepIndicator moved outside - removed duplicate
-
-  // Old AddressStep removed - now using external component
-
-  // Old PaymentStep removed - now using external component
-
-  // Old ReviewStep removed - now using external component
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -1262,34 +1276,7 @@ const Checkout = () => {
             <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Price Details</h3>
 
-              {/* Promo Code */}
-              <div className="mb-6">
-                <div className="flex space-x-2 mb-2">
-                  <input
-                    type="text"
-                    value={promoCode}
-                    onChange={(e) => setPromoCode(e.target.value)}
-                    placeholder="Enter promo code"
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  />
-                  <button
-                    onClick={applyPromoCode}
-                    className="px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors"
-                  >
-                    Apply
-                  </button>
-                </div>
-                {appliedPromo && (
-                  <div className="p-2 bg-green-50 border border-green-200 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Tag className="w-4 h-4 text-green-600" />
-                      <span className="text-sm text-green-700 font-medium">
-                        {appliedPromo.description}
-                      </span>
-                    </div>
-                  </div>
-                )}
-              </div>
+              
 
               {/* Price Breakdown */}
               <div className="space-y-3 mb-6">
@@ -1301,23 +1288,71 @@ const Checkout = () => {
                   <span>Shipping</span>
                   <span>Rs. {shippingCost.toLocaleString()}</span>
                 </div>
-                {processingFee > 0 && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>Processing Fee</span>
-                    <span>Rs. {processingFee.toLocaleString()}</span>
+
+                
+
+                {/* Referral Discount */}
+                {referralDiscountAmount > 0 && (
+                  <div className="flex justify-between text-purple-600">
+                    <div className="flex items-center space-x-1">
+                      <Gift className="w-3 h-3" />
+                      <span>Referral Discount ({referralDiscount.discountPercentage}%)</span>
+                    </div>
+                    <span>-Rs. {referralDiscountAmount.toLocaleString()}</span>
                   </div>
                 )}
-                {discount > 0 && (
-                  <div className="flex justify-between text-green-600">
-                    <span>Discount</span>
-                    <span>-Rs. {discount.toLocaleString()}</span>
+
+                {/* Referral Not Eligible Message */}
+                {referralDiscount && !referralDiscount.eligible && isAuthenticated && (
+                  <div className="p-3 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <Gift className="w-4 h-4 text-orange-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-orange-900">Unlock Referral Rewards!</p>
+                        <p className="text-xs text-orange-700 mt-1">
+                          Purchase Rs. {referralDiscount.unlockThreshold?.toLocaleString()} worth of products to unlock discounts on future orders.
+                        </p>
+                        <div className="mt-2">
+                          <div className="w-full bg-orange-200 rounded-full h-1.5">
+                            <div
+                              className="bg-gradient-to-r from-orange-500 to-yellow-500 h-1.5 rounded-full transition-all"
+                              style={{ width: `${Math.min((referralDiscount.totalPurchased / referralDiscount.unlockThreshold) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                          <p className="text-xs text-orange-600 mt-1">
+                            Rs. {referralDiscount.totalPurchased?.toLocaleString()} / Rs. {referralDiscount.unlockThreshold?.toLocaleString()} 
+                          </p>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
+
+                {/* Referral Eligible Celebration */}
+                {referralDiscountAmount > 0 && (
+                  <div className="p-3 bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                      <Check className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-xs font-semibold text-purple-900">Referral Discount Applied!</p>
+                        <p className="text-xs text-purple-700 mt-1">
+                          You saved Rs. {referralDiscountAmount.toLocaleString()}.00
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
                     <span>Rs. {finalTotal.toLocaleString()}</span>
                   </div>
+                  {totalDiscount > 0 && (
+                    <p className="text-xs text-green-600 mt-1 text-right">
+                      You saved Rs. {totalDiscount.toLocaleString()}!
+                    </p>
+                  )}
                 </div>
               </div>
 

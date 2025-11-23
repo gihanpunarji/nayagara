@@ -6,8 +6,7 @@ const getCart = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const cartItems = await Cart.getByUserId(userId);
-    console.log('Cart items:', cartItems);
-    
+
     const formattedItems = cartItems.map(item => ({
       id: item.product_id,
       product_id: item.product_id,
@@ -21,16 +20,48 @@ const getCart = async (req, res) => {
       seller_id: item.seller_id,
       stockCount: item.stock_quantity || 0,
       inStock: (item.stock_quantity !== undefined && item.stock_quantity > 0),
-      currency: item.currency_code || 'LKR'
+      currency: item.currency_code || 'LKR',
+      weight_kg: parseFloat(item.weight_kg || 1.0)
     }));
+
+    const subtotal = formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+    // Calculate shipping based on weight
+    let shipping = 0;
+    try {
+      const { getConnection } = require('../config/database');
+      const pool = getConnection();
+      const connection = await pool.getConnection();
+
+      try {
+        // Get shipping rate from amount_per_kilo column
+        const [shippingSettings] = await connection.execute(
+          "SELECT amount_per_kilo FROM shipping_settings LIMIT 1"
+        );
+
+        const ratePerKg = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
+        const totalWeight = formattedItems.reduce((sum, item) => sum + (item.weight_kg * item.quantity), 0);
+        shipping = totalWeight * ratePerKg;
+
+        console.log(`Cart shipping: weight=${totalWeight}kg, rate=${ratePerKg}, total=${shipping}`);
+      } finally {
+        connection.release();
+      }
+    } catch (shippingError) {
+      console.error('Error calculating shipping in cart:', shippingError);
+      shipping = subtotal > 50000 ? 0 : 1000; // Fallback
+    }
 
     res.json({
       success: true,
       items: formattedItems,
       itemCount: formattedItems.reduce((sum, item) => sum + item.quantity, 0),
-      subtotal: formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0)
+      subtotal: subtotal,
+      shipping: parseFloat(shipping.toFixed(2)),
+      total: subtotal + shipping
     });
   } catch (error) {
+    console.error('Error getting cart:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to get cart items'

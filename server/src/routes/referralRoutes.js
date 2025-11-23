@@ -21,4 +21,7 @@ router.post('/calculate-profit', authenticateToken, referralController.calculate
 router.post('/calculate-discount', authenticateToken, referralController.calculateUserDiscount);
 router.post('/simulate-commission', authenticateToken, referralController.simulateCommission);
 
+// Checkout discount calculation
+router.post('/calculate-cart-discount', authenticateToken, referralController.calculateCartDiscount);
+
 module.exports = router;

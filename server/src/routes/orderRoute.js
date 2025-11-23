@@ -1,16 +1,20 @@
 const express = require('express');
-const { 
-  createOrder, 
-  updateOrderPaymentStatus, 
-  getUserOrders, 
+const {
+  createOrder,
+  updateOrderPaymentStatus,
+  getUserOrders,
   getOrderDetails,
   getSellerOrders,
-  getSellerOrderDetails, // Import the new controller function
-  updateSellerOrderStatus
+  getSellerOrderDetails,
+  updateSellerOrderStatus,
+  calculateShipping
 } = require('../controllers/orderController');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Calculate shipping cost
+router.post('/calculate-shipping', calculateShipping);
 
 // Create order (protected)
 router.post('/create', authenticateToken, createOrder);

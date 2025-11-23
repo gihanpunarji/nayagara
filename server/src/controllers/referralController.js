@@ -152,7 +152,7 @@ const referralController = {
           totalPurchased: parseFloat(user.total_purchase_amount || 0),
           unlockThreshold: 5000,
           referralLink: user.referral_link_unlocked 
-            ? `${process.env.FRONTEND_URL || 'https://nayagara.lk'}/register?ref=${user.referral_code}`
+            ? `${process.env.FRONT_END_API}/register?ref=${user.referral_code}`
             : null
         }
       });
@@ -402,8 +402,8 @@ const referralController = {
       }
 
       const commissionData = await ProfitCalculator.calculateCommissionDistribution(
-        buyerUserId, 
-        netProfit, 
+        buyerUserId,
+        netProfit,
         isFirstPurchase || false
       );
 
@@ -416,6 +416,124 @@ const referralController = {
       res.status(500).json({
         success: false,
         message: 'Failed to simulate commission distribution'
+      });
+    }
+  },
+
+  /**
+   * Calculate referral discount for cart items at checkout
+   */
+  async calculateCartDiscount(req, res) {
+    try {
+      const userId = req.user.user_id;
+      const { cartItems } = req.body;
+
+      if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Cart items are required'
+        });
+      }
+
+      const { getConnection } = require('../config/database');
+      const pool = getConnection();
+      let connection;
+
+      try {
+        connection = await pool.getConnection();
+
+        // Get user's total purchase amount and referral status
+        const [userRows] = await connection.execute(
+          "SELECT total_purchase_amount, referral_link_unlocked FROM users WHERE user_id = ?",
+          [userId]
+        );
+
+        if (!userRows[0]) {
+          return res.status(404).json({
+            success: false,
+            message: 'User not found'
+          });
+        }
+
+        const user = userRows[0];
+        const totalPurchased = parseFloat(user.total_purchase_amount || 0);
+
+        // Check if user is eligible for discount (must have unlocked referral AND total >= 5000)
+        if (!user.referral_link_unlocked || totalPurchased < 5000) {
+          return res.json({
+            success: true,
+            data: {
+              eligible: false,
+              discountAmount: 0,
+              discountPercentage: 0,
+              totalPurchased: totalPurchased,
+              unlockThreshold: 5000,
+              message: 'Complete purchases worth Rs. 5,000 to unlock referral discounts'
+            }
+          });
+        }
+
+        // Calculate profit for each cart item and total discount
+        let totalDiscountAmount = 0;
+        const itemBreakdown = [];
+
+        for (const item of cartItems) {
+          // Get product cost
+          const [productRows] = await connection.execute(
+            "SELECT cost, price FROM products WHERE product_id = ?",
+            [item.product_id || item.id]
+          );
+
+          if (productRows[0]) {
+            const product = productRows[0];
+            const costPrice = parseFloat(product.cost || 0);
+            const sellingPrice = parseFloat(item.price || product.price || 0);
+            const quantity = parseInt(item.quantity || 1);
+
+            // Calculate profit for this item
+            const orderItem = {
+              unit_price: sellingPrice,
+              quantity: quantity,
+              product_cost: costPrice
+            };
+
+            const itemProfit = await ProfitCalculator.calculateOrderItemProfit(orderItem);
+            const discountData = await ProfitCalculator.calculateBuyerDiscount(userId, itemProfit.netProfit);
+
+            if (discountData.discountApplicable) {
+              totalDiscountAmount += discountData.discountAmount;
+              itemBreakdown.push({
+                product_id: item.product_id || item.id,
+                product_title: item.product_title || item.name,
+                netProfit: itemProfit.netProfit,
+                discountPercentage: discountData.discountPercentage,
+                discountAmount: discountData.discountAmount
+              });
+            }
+          }
+        }
+
+        res.json({
+          success: true,
+          data: {
+            eligible: true,
+            discountAmount: parseFloat(totalDiscountAmount.toFixed(2)),
+            discountPercentage: totalPurchased >= 10000 ? 30 : Math.round(15 + ((totalPurchased - 5000) / (10000 - 5000)) * 15),
+            totalPurchased: totalPurchased,
+            userTier: totalPurchased >= 10000 ? 3 : 2,
+            itemBreakdown: itemBreakdown,
+            message: 'Referral discount applied!'
+          }
+        });
+
+      } finally {
+        if (connection) connection.release();
+      }
+    } catch (error) {
+      console.error('Error calculating cart discount:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to calculate cart discount'
       });
     }
   }

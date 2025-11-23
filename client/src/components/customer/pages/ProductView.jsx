@@ -248,17 +248,23 @@ export const ProductView = () => {
       const itemToCheckout = { ...processedProduct, quantity: 1 };
       const subtotal = itemToCheckout.price;
       const itemCount = 1;
-      const shipping = 200;
+
+      // Calculate shipping based on weight (weight_kg × Rs. 200/kg)
+      const SHIPPING_RATE_PER_KG = 200;
+      const weight = parseFloat(product.weight_kg || 1.0);
+      const shipping = weight * SHIPPING_RATE_PER_KG;
+
       const total = subtotal + shipping;
 
-      navigate('/checkout', { 
-        state: { 
-          items: [itemToCheckout], 
-          subtotal, 
-          itemCount, 
-          shipping, 
-          total 
-        } 
+      navigate('/checkout', {
+        state: {
+          items: [itemToCheckout],
+          subtotal,
+          itemCount,
+          shipping,
+          total,
+          isDirectBuy: true
+        }
       });
     } catch (error) {
       console.error("Buy Now error:", error);

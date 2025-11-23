@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Search,
@@ -27,6 +28,7 @@ import AdminLayout from '../layout/AdminLayout';
 import { getAdminSellers } from '../../../api/admin';
 
 const Sellers = () => {
+  const navigate = useNavigate();
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -138,12 +140,16 @@ const Sellers = () => {
   };
 
   const SellerRow = ({ seller }) => (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr
+      className="hover:bg-gray-50 transition-colors cursor-pointer"
+      onClick={() => navigate(`/admin/seller/${seller.id}`)}
+    >
       <td className="px-6 py-4">
         <input
           type="checkbox"
           checked={selectedSellers.includes(seller.id)}
           onChange={(e) => {
+            e.stopPropagation(); // Prevent row click event
             if (e.target.checked) {
               setSelectedSellers([...selectedSellers, seller.id]);
             } else {
@@ -167,23 +173,6 @@ const Sellers = () => {
                 <UserCheck className="w-4 h-4 text-green-500" />
               )}
             </div>
-          </div>
-        </div>
-      </td>
-
-      <td className="px-6 py-4 text-sm text-gray-900">
-        <div className="space-y-1">
-          <div className="flex items-center space-x-2">
-            <Phone className="w-4 h-4 text-gray-400" />
-            <span>{seller.phone || 'N/A'}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <MapPin className="w-4 h-4 text-gray-400" />
-            <span>{seller.location || 'N/A'}</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Award className="w-4 h-4 text-gray-400" />
-            <span>NIC: {seller.nic || 'N/A'}</span>
           </div>
         </div>
       </td>
@@ -217,7 +206,10 @@ const Sellers = () => {
       <td className="px-6 py-4 text-right">
         <div className="flex items-center space-x-2">
           <button
-            onClick={() => handleSellerAction('view', seller.id)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSellerAction('view', seller.id);
+            }}
             className="text-gray-600 hover:text-green-600 transition-colors"
             title="View Details"
           >
@@ -225,21 +217,27 @@ const Sellers = () => {
           </button>
 
           <div className="relative group">
-            <button className="text-gray-600 hover:text-green-600 transition-colors">
+            <button className="text-gray-600 hover:text-green-600 transition-colors" onClick={(e) => e.stopPropagation()}>
               <MoreVertical className="w-4 h-4" />
             </button>
 
             <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
               <div className="py-1">
                 <button
-                  onClick={() => handleSellerAction('contact', seller.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSellerAction('contact', seller.id);
+                  }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                 >
                   <Mail className="w-4 h-4" />
                   <span>Contact Seller</span>
                 </button>
                 <button
-                  onClick={() => handleSellerAction('products', seller.id)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSellerAction('products', seller.id);
+                  }}
                   className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
                 >
                   <Package className="w-4 h-4" />
@@ -247,7 +245,10 @@ const Sellers = () => {
                 </button>
                 {seller.status !== 'suspended' ? (
                   <button
-                    onClick={() => handleSellerAction('suspend', seller.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSellerAction('suspend', seller.id);
+                    }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                   >
                     <Ban className="w-4 h-4" />
@@ -255,7 +256,10 @@ const Sellers = () => {
                   </button>
                 ) : (
                   <button
-                    onClick={() => handleSellerAction('activate', seller.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSellerAction('activate', seller.id);
+                    }}
                     className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
                   >
                     <UserCheck className="w-4 h-4" />
@@ -492,9 +496,6 @@ const Sellers = () => {
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Seller
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Contact & ID
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Dates

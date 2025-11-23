@@ -467,8 +467,43 @@ const getPublicProducts = async (req, res) => {
     
     const offset = (page - 1) * limit;
     
-    // First check if any products exist at all
-    const [countResult] = await connection.execute("SELECT COUNT(*) as total FROM products");
+    let whereClause = ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
+    const queryParams = [];
+
+    // Add search filter
+    if (search && search.trim()) {
+      whereClause += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      queryParams.push(searchTerm, searchTerm);
+    }
+
+    // Add category filter
+    if (category && category.trim() && category !== 'all') {
+      whereClause += ` AND (c.category_slug = ? OR c.category_name = ?)`;
+      queryParams.push(category.trim(), category.trim());
+    }
+
+    // Add subcategory filter
+    if (subcategory && subcategory.trim()) {
+      whereClause += ` AND sc.sub_category_id = ?`;
+      queryParams.push(parseInt(subcategory.trim()));
+    }
+
+    // Add featured filter
+    if (featured === 'true') {
+      whereClause += ` AND p.is_featured = 1`;
+    }
+    
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(DISTINCT p.product_id) as total
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
+      ${whereClause}
+    `;
+    const [countResult] = await connection.execute(countQuery, queryParams);
+    const totalProducts = countResult[0].total;
 
     let query = `
       SELECT p.*, 
@@ -487,35 +522,8 @@ const getPublicProducts = async (req, res) => {
       LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
       LEFT JOIN districts d ON c2.district_id = d.district_id
       LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      ${whereClause}
     `;
-    const queryParams = [];
-
-    // Only show products (including empty status and active status)
-    query += ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
-
-    // Add search filter
-    if (search && search.trim()) {
-      query += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
-      const searchTerm = `%${search.trim()}%`;
-      queryParams.push(searchTerm, searchTerm);
-    }
-
-    // Add category filter
-    if (category && category.trim() && category !== 'all') {
-      query += ` AND (c.category_slug = ? OR c.category_name = ?)`;
-      queryParams.push(category.trim(), category.trim());
-    }
-
-    // Add subcategory filter
-    if (subcategory && subcategory.trim()) {
-      query += ` AND sc.sub_category_id = ?`;
-      queryParams.push(parseInt(subcategory.trim()));
-    }
-
-    // Add featured filter
-    if (featured === 'true') {
-      query += ` AND p.is_featured = 1`;
-    }
 
     // Add GROUP BY for the image concatenation
     query += ` GROUP BY p.product_id`;
@@ -548,11 +556,11 @@ const getPublicProducts = async (req, res) => {
 
     // Add pagination
     query += ` LIMIT ? OFFSET ?`;
-    queryParams.push(parseInt(limit), offset);
+    const finalQueryParams = [...queryParams, parseInt(limit), offset];
 
-    const [products] = await connection.execute(query, queryParams);
+    const [products] = await connection.execute(query, finalQueryParams);
 
-    // Get images for each product
+    // Get images for each product (since GROUP_CONCAT can be unreliable)
     const ProductImage = require("../models/ProductImage");
     const Product = require("../models/Product");
     
@@ -575,7 +583,8 @@ const getPublicProducts = async (req, res) => {
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: productsWithImages.length
+        total: totalProducts,
+        totalPages: Math.ceil(totalProducts / limit)
       }
     });
 

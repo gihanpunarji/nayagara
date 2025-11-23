@@ -214,6 +214,63 @@ class Order {
       throw error;
     }
   }
+
+  static async getAllOrders({ page = 1, limit = 25 }) {
+    const connection = getConnection();
+    const offset = (page - 1) * parseInt(limit);
+
+    // Get total count
+    const countResult = await connection.execute("SELECT COUNT(*) as total FROM orders");
+    const total = countResult[0][0].total;
+    
+    // Get paginated orders
+    const [rows] = await connection.execute(
+      `SELECT 
+        o.*,
+        u.first_name as customer_first_name,
+        u.last_name as customer_last_name,
+        u.user_email as customer_email,
+        u.user_mobile as customer_phone,
+        osa.line1 as shipping_address_line1,
+        osa.city_name as shipping_city
+       FROM orders o
+       LEFT JOIN users u ON o.customer_id = u.user_id
+       LEFT JOIN order_shipping_addresses osa ON o.shipping_address_id = osa.shipping_address_id
+       ORDER BY o.order_datetime DESC
+       LIMIT ? OFFSET ?`,
+      [parseInt(limit), offset]
+    );
+
+    return {
+        orders: rows,
+        pagination: {
+            page: parseInt(page),
+            limit: parseInt(limit),
+            total: total,
+            totalPages: Math.ceil(total / parseInt(limit))
+        }
+    };
+  }
+
+  static async getOrderItemsForMultipleOrders(orderIds) {
+    if (orderIds.length === 0) return [];
+    const connection = getConnection();
+    const placeholders = orderIds.map(() => '?').join(',');
+    
+    const [rows] = await connection.execute(
+      `SELECT 
+        oi.*,
+        s_user.first_name as seller_first_name,
+        s_user.last_name as seller_last_name,
+        st.store_name as seller_store_name
+       FROM order_items oi
+       LEFT JOIN users s_user ON oi.seller_id = s_user.user_id
+       LEFT JOIN store st ON oi.seller_id = st.user_id
+       WHERE oi.order_id IN (${placeholders})`,
+      orderIds
+    );
+    return rows;
+  }
 }
 
 module.exports = Order;

@@ -471,6 +471,52 @@ const calculateShipping = async (req, res) => {
   }
 };
 
+const getAllOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 25 } = req.query;
+    const { orders, pagination } = await Order.getAllOrders({ page, limit });
+
+    if (orders.length > 0) {
+      const orderIds = orders.map(o => o.order_id);
+      const items = await Order.getOrderItemsForMultipleOrders(orderIds);
+      
+      const itemsByOrderId = items.reduce((acc, item) => {
+        if (!acc[item.order_id]) {
+          acc[item.order_id] = [];
+        }
+        acc[item.order_id].push(item);
+        return acc;
+      }, {});
+
+      const ordersWithItems = orders.map(order => ({
+        ...order,
+        items: itemsByOrderId[order.order_id] || []
+      }));
+
+      res.json({
+        success: true,
+        message: 'All orders retrieved successfully',
+        data: ordersWithItems,
+        pagination
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'No orders found',
+        data: [],
+        pagination
+      });
+    }
+  } catch (error) {
+    console.error('Get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve all orders',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderPaymentStatus,
@@ -479,5 +525,6 @@ module.exports = {
   getSellerOrders,
   getSellerOrderDetails,
   updateSellerOrderStatus,
-  calculateShipping
+  calculateShipping,
+  getAllOrders
 };

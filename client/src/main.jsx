@@ -74,6 +74,7 @@ import AdminNotifications from "./components/admin/pages/Notifications.jsx";
 import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
 import AdminBanners from "./components/admin/pages/BannerSlider.jsx";
 import Referral from "./components/admin/pages/Referral.jsx";
+import SellerDetails from "./components/admin/pages/SellerDetails.jsx";
 
 // Shared Components
 import NotFound from "./components/shared/error/NotFound.jsx";
@@ -123,6 +124,14 @@ createRoot(document.getElementById("root")).render(
                     element={
                       // <AdminProtectedRoute>
                         <AdminSellers />
+                      // </AdminProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/seller/:id"
+                    element={
+                      // <AdminProtectedRoute>
+                        <SellerDetails />
                       // </AdminProtectedRoute>
                     }
                   />

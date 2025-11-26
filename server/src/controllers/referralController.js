@@ -421,6 +421,73 @@ const referralController = {
   },
 
   /**
+   * Get user's referral network (who referred them and who they referred)
+   */
+  async getUserReferralNetwork(req, res) {
+    try {
+      const userId = req.user.user_id;
+      const { getConnection } = require('../config/database');
+      const pool = getConnection();
+      let connection;
+
+      try {
+        connection = await pool.getConnection();
+
+        // Get the user's referrer (top user)
+        const [referrerRows] = await connection.execute(`
+          SELECT
+            u.user_id,
+            u.first_name,
+            u.last_name,
+            u.user_email,
+            u.total_purchase_amount,
+            u.created_at,
+            rc.level_1_user_id
+          FROM referral_chain rc
+          JOIN users u ON rc.level_1_user_id = u.user_id
+          WHERE rc.user_id = ?
+        `, [userId]);
+
+        // Get users referred by this user (direct referrals only)
+        const [referredUsersRows] = await connection.execute(`
+          SELECT
+            u.user_id,
+            u.first_name,
+            u.last_name,
+            u.user_email,
+            u.total_purchase_amount,
+            u.created_at,
+            (SELECT SUM(rc.commission_amount)
+             FROM referral_commissions rc
+             WHERE rc.buyer_user_id = u.user_id AND rc.referrer_user_id = ?) as total_commissions_earned
+          FROM users u
+          JOIN referral_chain rc ON u.user_id = rc.user_id
+          WHERE rc.level_1_user_id = ?
+          ORDER BY u.created_at DESC
+        `, [userId, userId]);
+
+        res.json({
+          success: true,
+          data: {
+            topUser: referrerRows[0] || null,
+            referredUsers: referredUsersRows,
+            totalReferredUsers: referredUsersRows.length
+          }
+        });
+
+      } finally {
+        if (connection) connection.release();
+      }
+    } catch (error) {
+      console.error('Error getting referral network:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to get referral network'
+      });
+    }
+  },
+
+  /**
    * Calculate referral discount for cart items at checkout
    */
   async calculateCartDiscount(req, res) {

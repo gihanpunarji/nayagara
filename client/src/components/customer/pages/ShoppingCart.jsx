@@ -104,7 +104,7 @@ const ShoppingCart = () => {
 
               <div className="divide-y divide-gray-200">
                 {cartItems.map((item) => (
-                  <div key={item.id+item.product_id} className={`p-6 ${!item.inStock ? 'bg-gray-50' : ''}`}>
+                  <div key={item.cart_id || `cart-${item.product_id}-${Math.random()}`} className={`p-6 ${!item.inStock ? 'bg-gray-50' : ''}`}>
                     <div className="flex items-start space-x-4">
 
                       <div className="flex-shrink-0">

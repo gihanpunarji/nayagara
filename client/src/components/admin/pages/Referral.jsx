@@ -158,9 +158,17 @@ const UserReferralData = () => {
                     {user.referral_link_unlocked ? 'Yes' : 'No'}
                   </span>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.referred_by || 'N/A'}</td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.referral_link_unlocked ? `nayagara.lk/register?ref=${user.user_id}` : 'N/A'}
+                  {user.referred_by || (user.referral_link_unlocked ? (
+                    <span className="text-blue-600 font-medium">System</span>
+                  ) : 'N/A')}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.referral_link_unlocked && user.referral_link ? (
+                    <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
+                      {user.referral_link}
+                    </span>
+                  ) : 'N/A'}
                 </td>
               </tr>
             ))}

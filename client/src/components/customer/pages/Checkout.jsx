@@ -485,8 +485,8 @@ const ReviewStep = memo(({
 
         <div className="space-y-4">
           {cartItems && cartItems.length > 0 ? cartItems.map((item) => (
-            
-            <div key={item.product_id || item.id || Math.random()} className="flex items-center space-x-4">
+
+            <div key={item.cart_id || `cart-${item.product_id}-${Math.random()}`} className="flex items-center space-x-4">
               
               <img
                 src={

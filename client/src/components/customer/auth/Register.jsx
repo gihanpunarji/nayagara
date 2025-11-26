@@ -1,10 +1,11 @@
-import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, User, Check, MapPin } from 'lucide-react';
 import { useAuth } from "../../../context/AuthContext";
 
 
 function CustomerRegistration() {
+  const [searchParams] = useSearchParams();
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -27,6 +28,17 @@ function CustomerRegistration() {
 
   const navigate = useNavigate();
   const { registerCustomer } = useAuth();
+
+  // Extract referral code from URL on component mount
+  useEffect(() => {
+    const refCode = searchParams.get('ref');
+    if (refCode) {
+      setFormData(prev => ({
+        ...prev,
+        refCode: refCode
+      }));
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     setFormData({

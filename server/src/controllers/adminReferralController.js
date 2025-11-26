@@ -4,7 +4,24 @@ const Referral = require('../models/Referral');
 
 exports.getSettings = async (req, res) => {
   try {
-    const settings = await Settings.getAll();
+    const settingsMap = await Settings.getAll();
+
+    // Convert Map to plain object
+    const settings = {};
+    if (settingsMap instanceof Map) {
+      settingsMap.forEach((value, key) => {
+        // Convert string values to numbers for numeric fields
+        if (key.includes('percent') || key.includes('threshold')) {
+          settings[key] = parseFloat(value) || 0;
+        } else {
+          settings[key] = value;
+        }
+      });
+    } else {
+      // If it's already an object, use it directly
+      Object.assign(settings, settingsMap);
+    }
+
     res.json({ success: true, data: settings });
   } catch (error) {
     console.error('Error getting settings:', error);
@@ -26,7 +43,19 @@ exports.updateSettings = async (req, res) => {
 exports.getUsers = async (req, res) => {
   try {
     const users = await User.getAllWithReferralInfo();
-    res.json({ success: true, data: users });
+
+    // Add referral_link to each user
+    const usersWithLinks = users.map(user => ({
+      ...user,
+      referred_by: user.referred_by_first_name && user.referred_by_last_name
+        ? `${user.referred_by_first_name} ${user.referred_by_last_name}`
+        : null,
+      referral_link: user.referral_link_unlocked && user.referral_code
+        ? `${process.env.FRONT_END_API}/register?ref=${user.referral_code}`
+        : null
+    }));
+
+    res.json({ success: true, data: usersWithLinks });
   } catch (error) {
     console.error('Error getting users:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });

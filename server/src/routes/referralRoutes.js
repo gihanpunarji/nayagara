@@ -12,6 +12,7 @@ router.post('/register', referralController.registerWithReferralCode);
 router.get('/my-code', authenticateToken, referralController.getMyReferralCode);
 router.get('/my-earnings', authenticateToken, referralController.getMyEarnings);
 router.get('/my-referrals', authenticateToken, referralController.getMyReferrals);
+router.get('/my-network', authenticateToken, referralController.getUserReferralNetwork);
 
 // Order-related referral processing
 router.post('/process-order', authenticateToken, referralController.processOrderReferrals);

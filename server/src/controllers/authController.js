@@ -13,6 +13,7 @@ const nodeMailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const { getConnection } = require("../config/database");
 const { log } = require("console");
+const { getUserByReferralCode, createReferralChain } = require("../utils/referralHelpers");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
@@ -73,8 +74,25 @@ const register = async (req, res, role = "customer") => {
       role,
     });
 
+    // Handle referral code if provided
     if (refCode) {
-      await Referral.create({ userId: user.user_id, referrerId: refCode });
+      try {
+        // Get the referrer by referral code
+        const referrer = await getUserByReferralCode(refCode);
+
+        if (!referrer) {
+          console.warn(`Invalid referral code provided during registration: ${refCode}`);
+        } else if (!referrer.referral_link_unlocked) {
+          console.warn(`Referral code not unlocked: ${refCode}`);
+        } else {
+          // Create the referral chain
+          await createReferralChain(user.user_id, referrer.user_id);
+          console.log(`User ${user.user_id} registered with referral code ${refCode} from user ${referrer.user_id}`);
+        }
+      } catch (error) {
+        console.error('Error processing referral code during registration:', error);
+        // Don't fail the registration if referral processing fails
+      }
     }
 
     const token = generateToken(user.user_id, user.user_type);

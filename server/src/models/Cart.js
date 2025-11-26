@@ -20,17 +20,17 @@ class Cart {
           p.stock_quantity,
           p.seller_id,
           COALESCE(p.weight_kg, 1.0) as weight_kg,
-          pi.image_url,
+          (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1) as image_url,
           u.first_name as seller_first_name,
           u.last_name as seller_last_name,
           s.store_name as seller_business_name
         FROM shopping_cart sc
         LEFT JOIN shopping_cart_item sci ON sc.cart_id = sci.shopping_cart_cart_id
         LEFT JOIN products p ON sc.product_id = p.product_id
-        LEFT JOIN product_images pi ON p.product_id = pi.product_id AND pi.is_primary = 1
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         WHERE sc.user_id = ? AND sci.quantity IS NOT NULL
+        GROUP BY sc.cart_id, sci.cart_item_id
         ORDER BY sc.created_at DESC
       `, [userId]);
       

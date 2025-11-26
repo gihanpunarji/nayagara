@@ -68,6 +68,8 @@ const CustomerAccount = () => {
   const [referralData, setReferralData] = useState(null);
   const [loadingReferral, setLoadingReferral] = useState(false);
   const [copiedReferral, setCopiedReferral] = useState(false);
+  const [referralNetwork, setReferralNetwork] = useState(null);
+  const [loadingNetwork, setLoadingNetwork] = useState(false);
 
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -118,6 +120,22 @@ const CustomerAccount = () => {
       console.error('Error fetching referral data:', error);
     } finally {
       setLoadingReferral(false);
+    }
+  };
+
+  const fetchReferralNetwork = async () => {
+    if (!isAuthenticated) return;
+
+    setLoadingNetwork(true);
+    try {
+      const response = await api.get('/referral/my-network');
+      if (response.data.success) {
+        setReferralNetwork(response.data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching referral network:', error);
+    } finally {
+      setLoadingNetwork(false);
     }
   };
 
@@ -319,6 +337,7 @@ const CustomerAccount = () => {
       fetchUserOrders();
       fetchWalletData();
       fetchReferralData();
+      fetchReferralNetwork();
     }
   }, [isAuthenticated]);
 
@@ -886,6 +905,119 @@ const CustomerAccount = () => {
           <div className="text-center py-4">
             <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
             <p className="text-gray-500 text-sm">Unable to load referral information</p>
+          </div>
+        )}
+      </div>
+
+      {/* Referral Network */}
+      <div className="bg-white rounded-2xl p-6 border border-gray-200">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+            <Users className="w-5 h-5 text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-gray-900">My Referral Network</h3>
+            <p className="text-sm text-gray-500">Your referral connections</p>
+          </div>
+        </div>
+
+        {loadingNetwork ? (
+          <div className="text-center py-4">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="text-gray-500 text-sm mt-2">Loading network...</p>
+          </div>
+        ) : referralNetwork ? (
+          <div className="space-y-4">
+            {/* Top User (Who Referred Me) */}
+            {referralNetwork.topUser ? (
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-4 border border-indigo-200">
+                <div className="flex items-center space-x-2 mb-3">
+                  <TrendingUp className="w-5 h-5 text-indigo-600" />
+                  <h4 className="font-semibold text-indigo-900">Referred By</h4>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-900">
+                      {referralNetwork.topUser.first_name} {referralNetwork.topUser.last_name}
+                    </p>
+                    <p className="text-sm text-gray-600">{referralNetwork.topUser.user_email}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Total Purchases: Rs. {parseFloat(referralNetwork.topUser.total_purchase_amount || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="inline-block bg-indigo-100 text-indigo-800 text-xs font-medium px-2 py-1 rounded">
+                      Level 1
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <p className="text-gray-500 text-sm text-center">You were not referred by anyone</p>
+              </div>
+            )}
+
+            {/* Referred Users List */}
+            <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-lg p-4 border border-emerald-200">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center space-x-2">
+                  <Gift className="w-5 h-5 text-emerald-600" />
+                  <h4 className="font-semibold text-emerald-900">My Referrals</h4>
+                </div>
+                <span className="bg-emerald-600 text-white text-sm font-bold px-3 py-1 rounded-full">
+                  {referralNetwork.totalReferredUsers}
+                </span>
+              </div>
+
+              {referralNetwork.referredUsers && referralNetwork.referredUsers.length > 0 ? (
+                <div className="space-y-3 max-h-96 overflow-y-auto">
+                  {referralNetwork.referredUsers.map((user) => (
+                    <div key={user.user_id} className="bg-white rounded-lg p-3 border border-emerald-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2">
+                            <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
+                              <User className="w-4 h-4 text-white" />
+                            </div>
+                            <div>
+                              <p className="font-medium text-gray-900">
+                                {user.first_name} {user.last_name}
+                              </p>
+                              <p className="text-xs text-gray-500">{user.user_email}</p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center space-x-4 text-xs">
+                            <span className="text-gray-600">
+                              Purchases: Rs. {parseFloat(user.total_purchase_amount || 0).toLocaleString()}
+                            </span>
+                            <span className="text-emerald-600 font-medium">
+                              Earned: Rs. {parseFloat(user.total_commissions_earned || 0).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500">
+                            Joined {new Date(user.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4">
+                  <Users className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-gray-500 text-sm">No referrals yet</p>
+                  <p className="text-xs text-gray-400 mt-1">Share your referral link to start earning!</p>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-4">
+            <AlertCircle className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-500 text-sm">Unable to load referral network</p>
           </div>
         )}
       </div>

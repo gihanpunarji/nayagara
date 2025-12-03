@@ -111,7 +111,8 @@ export const ProductView = () => {
         shortDescription:
           product.product_description || "No description available",
         price: parseFloat(product.price) || 0,
-        originalPrice: null, // No original price field in current schema
+        originalPrice: parseFloat(product.cost) || 0,
+        cost: parseFloat(product.cost) || 0,
         discount: 0, // No discount calculation without original price
         rating: 4.5, // Default rating - you can implement actual ratings later
         reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy

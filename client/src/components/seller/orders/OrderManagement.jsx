@@ -60,7 +60,18 @@ const OrderManagement = () => {
           id: order.order_number,
           order_id: order.order_id,
           customer: {
-            name: `${order.customer_first_name} ${order.customer_last_name}`
+            name: `${order.customer_first_name} ${order.customer_last_name}`,
+            mobile: order.customer_mobile,
+            email: order.customer_email,
+            address: {
+              line1: order.shipping_line1,
+              line2: order.shipping_line2,
+              city: order.shipping_city,
+              district: order.shipping_district,
+              province: order.shipping_province,
+              postalCode: order.shipping_postal_code,
+              country: order.shipping_country
+            }
           },
           total: order.total_amount,
           status: order.order_status,
@@ -81,8 +92,8 @@ const OrderManagement = () => {
     }
   };
 
-  const fetchOrderItems = async (orderId) => {
-    if (orderItems[orderId]) return; // Already fetched
+  const fetchOrderItems = async (orderId, forceRefetch = false) => {
+    if (orderItems[orderId] && !forceRefetch) return; // Already fetched
 
     try {
       const response = await api.get(`/orders/seller/${orderId}`);
@@ -101,37 +112,31 @@ const OrderManagement = () => {
     try {
       const order = orders.find(o => o.id === orderId);
       if (!order) {
-        alert('Order not found');
-        return;
+        return { success: false, message: 'Order not found' };
       }
 
-      const items = orderItems[order.order_id];
-      if (!items || items.length === 0) {
-        alert('Order items not loaded or empty');
-        return;
-      }
-
-      // This logic might need refinement if a seller can have multiple items in one order
-      // For now, we update the first item found.
+      // Simple update - just send order_id, status, tracking_number
       const response = await api.put('/orders/seller/status', {
-        order_item_id: items[0].order_item_id,
+        order_id: order.order_id,
         status: newStatus,
         tracking_number: trackingNumber
       });
 
       if (response.data.success) {
+        // Update orders list
         setOrders(prev => prev.map(o =>
           o.id === orderId
             ? { ...o, status: newStatus, trackingNumber: trackingNumber || o.trackingNumber }
             : o
         ));
-        alert('Order status updated successfully');
+
+        return { success: true, message: 'Order status updated successfully' };
       } else {
-        alert(response.data.message || 'Failed to update order status');
+        return { success: false, message: response.data.message || 'Failed to update order status' };
       }
     } catch (error) {
       console.error('Error updating order status:', error);
-      alert('Failed to update order status. Please try again.');
+      return { success: false, message: error.response?.data?.message || 'Failed to update order status' };
     }
   };
 
@@ -289,12 +294,30 @@ const OrderManagement = () => {
   const OrderDetailsModal = ({ order, items, onClose, onUpdateStatus }) => {
     const [trackingNumber, setTrackingNumber] = useState(order?.trackingNumber || '');
     const [newStatus, setNewStatus] = useState(order?.status || '');
+    const [updateLoading, setUpdateLoading] = useState(false);
+    const [updateError, setUpdateError] = useState('');
+    const [updateSuccess, setUpdateSuccess] = useState('');
 
     if (!order) return null;
 
-    const handleStatusUpdate = () => {
-      onUpdateStatus(order.id, newStatus, trackingNumber || null);
-      onClose();
+    const handleStatusUpdate = async () => {
+      setUpdateLoading(true);
+      setUpdateError('');
+      setUpdateSuccess('');
+
+      const result = await onUpdateStatus(order.id, newStatus, trackingNumber || null);
+
+      setUpdateLoading(false);
+
+      if (result.success) {
+        setUpdateSuccess(result.message);
+        // Close modal after 1.5 seconds to show success message
+        setTimeout(() => {
+          onClose();
+        }, 1500);
+      } else {
+        setUpdateError(result.message);
+      }
     };
 
     return (
@@ -313,6 +336,18 @@ const OrderManagement = () => {
           </div>
 
           <div className="p-6 space-y-6">
+            {/* Success/Error Messages */}
+            {updateSuccess && (
+              <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-lg">
+                <p className="text-sm font-medium">{updateSuccess}</p>
+              </div>
+            )}
+            {updateError && (
+              <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                <p className="text-sm font-medium">{updateError}</p>
+              </div>
+            )}
+
             {/* Order Info */}
             <div className="grid grid-cols-2 gap-4">
               <div>
@@ -331,8 +366,45 @@ const OrderManagement = () => {
                 <User className="w-4 h-4 mr-2" />
                 Customer Information
               </h3>
-              <div className="space-y-2">
-                <p className="text-gray-900 font-medium">{order.customer.name}</p>
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm text-gray-600">Name</p>
+                  <p className="text-gray-900 font-medium">{order.customer.name}</p>
+                </div>
+                {order.customer.mobile && (
+                  <div className="flex items-center space-x-2">
+                    <Phone className="w-4 h-4 text-gray-500" />
+                    <div>
+                      <p className="text-sm text-gray-600">Mobile</p>
+                      <p className="text-gray-900">{order.customer.mobile}</p>
+                    </div>
+                  </div>
+                )}
+                {order.customer.email && (
+                  <div>
+                    <p className="text-sm text-gray-600">Email</p>
+                    <p className="text-gray-900">{order.customer.email}</p>
+                  </div>
+                )}
+                {order.customer.address && (
+                  <div className="flex items-start space-x-2">
+                    <MapPin className="w-4 h-4 text-gray-500 mt-1" />
+                    <div>
+                      <p className="text-sm text-gray-600 mb-1">Shipping Address</p>
+                      <p className="text-gray-900">{order.customer.address.line1}</p>
+                      {order.customer.address.line2 && (
+                        <p className="text-gray-900">{order.customer.address.line2}</p>
+                      )}
+                      <p className="text-gray-900">
+                        {order.customer.address.city}, {order.customer.address.district}
+                      </p>
+                      <p className="text-gray-900">
+                        {order.customer.address.province} {order.customer.address.postalCode}
+                      </p>
+                      <p className="text-gray-900">{order.customer.address.country}</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -410,15 +482,24 @@ const OrderManagement = () => {
           <div className="p-6 border-t border-gray-200 flex items-center justify-end space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={updateLoading}
+              className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
               onClick={handleStatusUpdate}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+              disabled={updateLoading}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
             >
-              Update Order
+              {updateLoading ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  <span>Updating...</span>
+                </>
+              ) : (
+                <span>Update Order</span>
+              )}
             </button>
           </div>
         </div>

@@ -54,8 +54,7 @@ const Dashboard = () => {
             <div className={`flex items-center mt-1 sm:mt-2 text-xs sm:text-sm ${
               changeType === 'positive' ? 'text-green-600' : 'text-red-600'
             }`}>
-              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 mr-1 flex-shrink-0" />
-              <span className="truncate">{change}% vs last month</span>
+              
             </div>
           )}
         </div>
@@ -164,7 +163,7 @@ const Dashboard = () => {
             <StatCard
               icon={DollarSign}
               title="Revenue"
-              value={`Rs. ${(stats.totalRevenue / 1000)}K`}
+              value={`Rs. ${stats.totalRevenue}`}
               change={15.2}
               changeType="positive"
               color="from-secondary-500 to-secondary-600"

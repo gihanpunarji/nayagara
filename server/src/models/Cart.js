@@ -17,6 +17,7 @@ class Cart {
           sc.created_at,
           p.product_title,
           p.price,
+          p.cost,
           p.stock_quantity,
           p.seller_id,
           COALESCE(p.weight_kg, 1.0) as weight_kg,

@@ -18,7 +18,6 @@ import CustomerRegister from "./components/customer/auth/Register.jsx";
 import ForgotPassword from "./components/customer/auth/ForgotPassword.jsx";
 import ResetPassword from "./components/customer/auth/ResetPassword.jsx";
 import ShoppingCart from "./components/customer/pages/ShoppingCart.jsx";
-import ProductDetails from "./components/customer/pages/ProductDetails.jsx";
 import SearchPage from "./components/customer/pages/SearchPage.jsx";
 import CustomerAccount from "./components/customer/pages/Account.jsx";
 import Checkout from "./components/customer/pages/Checkout.jsx";

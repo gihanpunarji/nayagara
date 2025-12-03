@@ -61,6 +61,8 @@ class Order {
     product_attributes_snapshot,
     product_image_url
   }) {
+    console.log("unit price ", unit_price);
+    
     const connection = getConnection();
     const [result] = await connection.execute(
       `INSERT INTO order_items (
@@ -142,14 +144,24 @@ class Order {
         o.order_datetime,
         o.total_amount,
         u.first_name as customer_first_name,
-        u.last_name as customer_last_name
+        u.last_name as customer_last_name,
+        u.user_mobile as customer_mobile,
+        u.user_email as customer_email,
+        osa.line1 as shipping_line1,
+        osa.line2 as shipping_line2,
+        osa.city_name as shipping_city,
+        osa.district_name as shipping_district,
+        osa.province_name as shipping_province,
+        osa.postal_code as shipping_postal_code,
+        osa.country_name as shipping_country
        FROM orders o
        JOIN order_items oi ON o.order_id = oi.order_id
        LEFT JOIN users u ON o.customer_id = u.user_id
+       LEFT JOIN order_shipping_addresses osa ON o.shipping_address_id = osa.shipping_address_id
        WHERE oi.seller_id = ?
        ORDER BY o.order_datetime DESC`,
       [seller_id]
-    );    
+    );
     return rows;
   }
 
@@ -169,17 +181,34 @@ class Order {
 
   static async updateOrderItemStatus(order_item_id, status, tracking_number = null) {
     const connection = getConnection();
-    let query = `UPDATE order_items SET item_status = ?`;
+    let query = `UPDATE order_items SET order_status = ?`;
     let params = [status];
-    
+
     if (tracking_number) {
       query += `, tracking_number = ?`;
       params.push(tracking_number);
     }
-    
+
     query += ` WHERE order_item_id = ?`;
     params.push(order_item_id);
-    
+
+    const [result] = await connection.execute(query, params);
+    return result.affectedRows;
+  }
+
+  static async updateOrderStatus(order_id, status, tracking_number = null) {
+    const connection = getConnection();
+    let query = `UPDATE orders SET order_status = ?`;
+    let params = [status];
+
+    if (tracking_number) {
+      query += `, tracking_number = ?`;
+      params.push(tracking_number);
+    }
+
+    query += ` WHERE order_id = ?`;
+    params.push(order_id);
+
     const [result] = await connection.execute(query, params);
     return result.affectedRows;
   }

@@ -14,6 +14,8 @@ const getCart = async (req, res) => {
       name: item.product_title,
       title: item.product_title,
       price: parseFloat(item.price || 0),
+      cost: parseFloat(item.cost || 0),
+      original_price: parseFloat(item.cost || 0),
       quantity: item.quantity,
       image: item.image_url,
       seller: item.seller_business_name || `${item.seller_first_name || ''} ${item.seller_last_name || ''}`.trim() || 'Unknown Seller',

@@ -3,7 +3,6 @@ const User = require("../models/User");
 const validMobileRegex = /^947[0-9]{8}$/;
 
 const mobile = async (req, res) => {
-  console.log("Mobile verification request received");
   try {
     const { mobile, email } = req.body;
     let newMobile;
@@ -14,8 +13,6 @@ const mobile = async (req, res) => {
       newMobile = mobile;
       newMobile = "94" + newMobile;
     }
-
-    console.log(newMobile);
     
     if (!newMobile) {
       return res.status(400).json({
@@ -60,12 +57,10 @@ const mobile = async (req, res) => {
         return response.json();
       })
       .then((data) => {
-        console.log(data);
       })
       .catch((error) => {
         console.error("Error sending SMS:", error);
       });
-      console.log(newMobile, email, verificationCode);
       
 
     User.updateSellerMobile({ newMobile, email, verificationCode });
@@ -86,7 +81,14 @@ const mobile = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { mobile, email, verificationCode } = req.body;
-    const newMobile = mobile.substring(1);
+    let newMobile;
+    if(mobile.startsWith("0")) {
+      newMobile = mobile.slice(1);
+      newMobile = "94" + newMobile;
+    } else {
+      newMobile = mobile;
+      newMobile = "94" + newMobile;
+    }
 
     if (!newMobile || !email || !verificationCode) {
       return res.status(400).json({
@@ -114,7 +116,7 @@ const verifyOtp = async (req, res) => {
       });
     }
     
-    await User.verifyOtp({newMobile, email, verificationCode});
+    await User.verifyOtp({mobile: newMobile, email, verificationCode});
 
     res.status(200).json({
       success: true,

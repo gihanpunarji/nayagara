@@ -15,6 +15,7 @@ import {
   Banknote,
   AlertCircle
 } from 'lucide-react';
+import api from '../../../api/axios';
 
 const PaymentDashboard = () => {
   const [walletBalance, setWalletBalance] = useState(0);
@@ -108,21 +109,27 @@ const PaymentDashboard = () => {
     { key: '365', label: 'Last year' }
   ];
 
-  // Initialize data
+  // Fetch real earnings data from API
   useEffect(() => {
+    const fetchEarnings = async () => {
+      try {
+        const response = await api.get('/orders/seller/earnings');
+        if (response.data.success) {
+          const earnings = response.data.data;
+          setWalletBalance(parseFloat(earnings.available_balance) || 0);
+          setPendingPayments(parseFloat(earnings.pending_payments) || 0);
+          setTotalEarnings(parseFloat(earnings.total_earnings) || 0);
+        }
+      } catch (error) {
+        console.error('Error fetching seller earnings:', error);
+        // Keep default values (0) on error
+      }
+    };
+
+    fetchEarnings();
+
+    // Still set mock transactions for transaction history (until real transaction API is implemented)
     setTransactions(mockTransactions);
-
-    // Calculate wallet balance and stats
-    const completedTransactions = mockTransactions.filter(t => t.status === 'completed');
-    const pendingTransactions = mockTransactions.filter(t => t.status === 'pending');
-
-    const balance = completedTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const pending = pendingTransactions.reduce((sum, t) => sum + t.amount, 0);
-    const total = completedTransactions.filter(t => t.amount > 0).reduce((sum, t) => sum + t.amount, 0);
-
-    setWalletBalance(balance);
-    setPendingPayments(pending);
-    setTotalEarnings(total);
   }, []);
 
   // Filter transactions
@@ -356,67 +363,7 @@ const PaymentDashboard = () => {
       )}
 
       {/* Transaction History */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-        <div className="p-6 border-b border-gray-200">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-            <h2 className="text-lg font-semibold text-gray-900">Transaction History</h2>
-
-            <div className="flex items-center space-x-3">
-              {/* Period Filter */}
-              <select
-                value={selectedPeriod}
-                onChange={(e) => setSelectedPeriod(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                {periodOptions.map(option => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
-                ))}
-              </select>
-
-              {/* Status Filter */}
-              <select
-                value={selectedFilter}
-                onChange={(e) => setSelectedFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-              >
-                {filterOptions.map(option => (
-                  <option key={option.key} value={option.key}>{option.label}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          {filteredTransactions.length === 0 ? (
-            <div className="text-center py-8">
-              <Wallet className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
-                No transactions found
-              </h3>
-              <p className="text-gray-600">
-                No transactions match your current filters.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Results Count */}
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-sm text-gray-600">
-                  Showing {filteredTransactions.length} transactions
-                </p>
-              </div>
-
-              {/* Transactions */}
-              <div className="space-y-3">
-                {filteredTransactions.map(transaction => (
-                  <TransactionCard key={transaction.id} transaction={transaction} />
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
+      
     </div>
   );
 };

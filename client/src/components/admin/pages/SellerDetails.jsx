@@ -78,7 +78,21 @@ const SellerDetails = () => {
                     {/* Seller Profile Card */}
                     <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
                         <div className="flex flex-col md:flex-row items-start md:items-center">
-                            <div className="w-24 h-24 rounded-full bg-green-600 flex items-center justify-center text-white text-4xl font-bold mb-4 md:mb-0 md:mr-6">
+                            {seller.profile_image ? (
+                                <img
+                                    src={seller.profile_image}
+                                    alt={seller.name}
+                                    className="w-24 h-24 rounded-full object-cover border-4 border-green-500 mb-4 md:mb-0 md:mr-6"
+                                    onError={(e) => {
+                                        e.target.style.display = 'none';
+                                        e.target.nextSibling.style.display = 'flex';
+                                    }}
+                                />
+                            ) : null}
+                            <div
+                                className="w-24 h-24 rounded-full bg-green-600 flex items-center justify-center text-white text-4xl font-bold mb-4 md:mb-0 md:mr-6"
+                                style={{ display: seller.profile_image ? 'none' : 'flex' }}
+                            >
                                 {seller.name.charAt(0)}
                             </div>
                             <div className="flex-grow">
@@ -139,10 +153,10 @@ const SellerDetails = () => {
                         </div>
                         <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
                             <div className="flex items-center">
-                                <Star className="w-8 h-8 text-yellow-500 mr-4" />
+                                <TrendingUp className="w-8 h-8 text-purple-500 mr-4" />
                                 <div>
-                                    <p className="text-sm text-gray-500">Average Rating</p>
-                                    <p className="text-2xl font-bold text-gray-800">{seller.avgProductRating}</p>
+                                    <p className="text-sm text-gray-500">Total Earned</p>
+                                    <p className="text-2xl font-bold text-gray-800">Rs. {seller.totalEarnings ? parseFloat(seller.totalEarnings).toLocaleString() : '0'}</p>
                                 </div>
                             </div>
                         </div>

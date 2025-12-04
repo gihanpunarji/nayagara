@@ -297,9 +297,9 @@ createRoot(document.getElementById("root")).render(
                         <Route
                           path="/order-success"
                           element={
-                            <AuthRoute>
+                            <ProtectedRoute>
                               <OrderSuccess />
-                            </AuthRoute>
+                            </ProtectedRoute>
                           }
                         />
                         <Route

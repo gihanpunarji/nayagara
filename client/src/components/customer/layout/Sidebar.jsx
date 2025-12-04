@@ -81,12 +81,16 @@ const Sidebar = ({ mainCategories }) => {
                 onMouseEnter={() => handleMouseEnter(idx)}
                 onMouseLeave={handleMouseLeave}
               >
-                <div 
+                <div
                   className="flex items-center justify-between p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors"
                   onClick={() => handleCategoryClick(category)}
                 >
                   <div className="flex items-center space-x-3">
-                    <span className="text-lg">{category.icon}</span>
+                    {category.icon && category.icon.startsWith('http') ? (
+                      <img src={category.icon} alt={category.name} className="w-6 h-6 object-cover rounded" />
+                    ) : (
+                      <span className="text-lg">{category.icon}</span>
+                    )}
                     <span className="font-medium text-gray-700 hover:text-primary-600">{category.name}</span>
                   </div>
                   <ChevronRight className="w-4 h-4 text-gray-400 hover:text-primary-500" />
@@ -143,11 +147,15 @@ const Sidebar = ({ mainCategories }) => {
           <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
             {mainCategories.map((category, idx) => (
               <div key={idx} className="flex-shrink-0">
-                <div 
+                <div
                   className="flex flex-col items-center p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors min-w-[80px]"
                   onClick={() => handleCategoryClick(category)}
                 >
-                  <span className="text-2xl mb-2">{category.icon}</span>
+                  {category.icon && category.icon.startsWith('http') ? (
+                    <img src={category.icon} alt={category.name} className="w-8 h-8 object-cover rounded mb-2" />
+                  ) : (
+                    <span className="text-2xl mb-2">{category.icon}</span>
+                  )}
                   <span className="text-xs font-medium text-gray-700 text-center leading-tight">{category.name}</span>
                 </div>
               </div>

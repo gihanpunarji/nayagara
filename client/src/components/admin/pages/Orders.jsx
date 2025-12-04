@@ -80,7 +80,7 @@ const Orders = () => {
         const now = new Date();
         const filterDate = new Date();
         switch (selectedDateRange) {
-            case 'today': filterDate.setDate(now.getDate() - 1); break;
+            case 'today': filterDate.setDate(now.getDate()); break;
             case '7d': filterDate.setDate(now.getDate() - 7); break;
             case '30d': filterDate.setDate(now.getDate() - 30); break;
             default: break;
@@ -99,6 +99,13 @@ const Orders = () => {
         (order.items && order.items.some(item => item.seller_store_name && item.seller_store_name.toLowerCase().includes(lowercasedQuery)))
       );
     }
+
+    // Sort by date (newest first)
+    filtered.sort((a, b) => {
+      const dateA = new Date(a.order_datetime);
+      const dateB = new Date(b.order_datetime);
+      return dateB - dateA; // Descending order (newest first)
+    });
 
     setFilteredOrders(filtered);
   }, [orders, selectedFilter, selectedDateRange, searchQuery]);
@@ -232,11 +239,14 @@ const Orders = () => {
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex flex-wrap gap-2 mb-4">
-            {filterOptions.map((filter) => (
-              <button key={filter.key} onClick={() => setSelectedFilter(filter.key)} className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                <span>{filter.label}</span><span className={`text-xs px-2 py-0.5 rounded-full ${selectedFilter === filter.key ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-200 text-gray-600'}`}>{stats[filter.key] || 0}</span>
-              </button>
-            ))}
+            {filterOptions.map((filter) => {
+              const count = filter.key === 'all' ? stats.total : (stats[filter.key] || 0);
+              return (
+                <button key={filter.key} onClick={() => setSelectedFilter(filter.key)} className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  <span>{filter.label}</span><span className={`text-xs px-2 py-0.5 rounded-full ${selectedFilter === filter.key ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-200 text-gray-600'}`}>{count}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="flex items-center space-x-4 mb-4"> {/* Added space-x-4 for spacing */}
             <select value={selectedDateRange} onChange={(e) => setSelectedDateRange(e.target.value)} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500">

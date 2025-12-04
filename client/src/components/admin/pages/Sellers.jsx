@@ -54,9 +54,11 @@ const Sellers = () => {
             ...seller,
             status: seller.status || 'active', // Default to active if not provided
             verified: seller.email_verified === 1 && seller.mobile_verified === 1,
-            avgProductRating: seller.avgProductRating ? parseFloat(seller.avgProductRating).toFixed(1) : 0,
+            avgProductRating: seller.avgProductRating ? parseFloat(seller.avgProductRating).toFixed(1) : '0.0',
             totalProducts: seller.totalProducts || 0,
             totalSales: seller.totalSales || 0,
+            profile_image: seller.profile_image || null,
+            store_name: seller.store_name || null
           }));
           setSellers(processedSellers);
         } else {
@@ -162,7 +164,21 @@ const Sellers = () => {
 
       <td className="px-6 py-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-700 rounded-full flex items-center justify-center text-white font-medium">
+          {seller.profile_image ? (
+            <img
+              src={seller.profile_image}
+              alt={seller.name}
+              className="w-10 h-10 rounded-full object-cover border-2 border-green-500"
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'flex';
+              }}
+            />
+          ) : null}
+          <div
+            className="w-10 h-10 bg-gradient-to-r from-green-600 to-green-700 rounded-full flex items-center justify-center text-white font-medium"
+            style={{ display: seller.profile_image ? 'none' : 'flex' }}
+          >
             {seller.name.split(' ').map(n => n[0]).join('')}
           </div>
           <div>

@@ -18,6 +18,8 @@ import {
   Image as ImageIcon
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
+import { getAdminCategories } from '../../../api/admin';
+import AddCategoryModal from '../categories/AddCategoryModal';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -26,163 +28,71 @@ const Categories = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
-
-  // Mock category data
-  const mockCategories = [
-    {
-      id: 1,
-      name: 'Electronics',
-      description: 'Electronic devices, gadgets, and accessories',
-      parentCategory: null,
-      subCategories: ['Mobile Phones', 'Laptops', 'Cameras', 'Audio'],
-      totalProducts: 12500,
-      activeProducts: 11200,
-      totalSales: 4200000,
-      icon: '📱',
-      status: 'active',
-      featured: true,
-      createdDate: '2023-01-15',
-      lastUpdated: '2024-01-10'
-    },
-    {
-      id: 2,
-      name: 'Fashion',
-      description: 'Clothing, accessories, and footwear',
-      parentCategory: null,
-      subCategories: ['Men\'s Wear', 'Women\'s Wear', 'Kids', 'Accessories'],
-      totalProducts: 8900,
-      activeProducts: 8100,
-      totalSales: 2800000,
-      icon: '👗',
-      status: 'active',
-      featured: true,
-      createdDate: '2023-01-15',
-      lastUpdated: '2024-01-12'
-    },
-    {
-      id: 3,
-      name: 'Home & Garden',
-      description: 'Home decor, furniture, and garden supplies',
-      parentCategory: null,
-      subCategories: ['Furniture', 'Decor', 'Kitchen', 'Garden'],
-      totalProducts: 6700,
-      activeProducts: 6200,
-      totalSales: 1900000,
-      icon: '🏡',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-02-20',
-      lastUpdated: '2024-01-08'
-    },
-    {
-      id: 4,
-      name: 'Automotive',
-      description: 'Car parts, accessories, and maintenance',
-      parentCategory: null,
-      subCategories: ['Parts', 'Accessories', 'Tools', 'Oils'],
-      totalProducts: 5400,
-      activeProducts: 5100,
-      totalSales: 1500000,
-      icon: '🚗',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-03-10',
-      lastUpdated: '2024-01-11'
-    },
-    {
-      id: 5,
-      name: 'Books',
-      description: 'Books, magazines, and educational materials',
-      parentCategory: null,
-      subCategories: ['Fiction', 'Non-fiction', 'Academic', 'Children'],
-      totalProducts: 3200,
-      activeProducts: 3000,
-      totalSales: 1000000,
-      icon: '📚',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-04-05',
-      lastUpdated: '2024-01-09'
-    },
-    {
-      id: 6,
-      name: 'Health & Beauty',
-      description: 'Healthcare, beauty, and personal care products',
-      parentCategory: null,
-      subCategories: ['Skincare', 'Makeup', 'Healthcare', 'Fragrance'],
-      totalProducts: 4500,
-      activeProducts: 4200,
-      totalSales: 1200000,
-      icon: '💄',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-05-15',
-      lastUpdated: '2024-01-13'
-    },
-    {
-      id: 7,
-      name: 'Sports & Outdoors',
-      description: 'Sports equipment and outdoor gear',
-      parentCategory: null,
-      subCategories: ['Fitness', 'Outdoor', 'Team Sports', 'Cycling'],
-      totalProducts: 2800,
-      activeProducts: 2500,
-      totalSales: 850000,
-      icon: '⚽',
-      status: 'inactive',
-      featured: false,
-      createdDate: '2023-06-20',
-      lastUpdated: '2023-12-15'
-    },
-    {
-      id: 8,
-      name: 'Mobile Phones',
-      description: 'Smartphones and mobile accessories',
-      parentCategory: 'Electronics',
-      subCategories: [],
-      totalProducts: 3500,
-      activeProducts: 3200,
-      totalSales: 1800000,
-      icon: '📱',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-01-15',
-      lastUpdated: '2024-01-10'
-    }
-  ];
-
-  const filterOptions = [
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Categories', count: 0, color: 'gray' },
     { key: 'active', label: 'Active', count: 0, color: 'green' },
     { key: 'inactive', label: 'Inactive', count: 0, color: 'red' },
     { key: 'parent', label: 'Parent Categories', count: 0, color: 'blue' },
     { key: 'subcategory', label: 'Subcategories', count: 0, color: 'purple' },
     { key: 'featured', label: 'Featured', count: 0, color: 'orange' }
-  ];
+  ]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await getAdminCategories();
+      if (response.success) {
+        // Map backend data to frontend format
+        const mappedCategories = response.categories.map(cat => ({
+          id: cat.id,
+          name: cat.name,
+          description: `Category for ${cat.name}`, // Default description
+          parentCategory: null, // All are parent categories for now
+          subCategories: cat.subCategories || [],
+          totalProducts: cat.totalProducts || 0,
+          activeProducts: cat.activeProducts || 0,
+          totalSales: cat.totalSales || 0,
+          icon: cat.icon || '📁', // Use icon from database or default
+          status: cat.status || 'active',
+          featured: false, // Default to not featured
+          createdDate: new Date().toISOString(), // Placeholder
+          lastUpdated: new Date().toISOString() // Placeholder
+        }));
+        setCategories(mappedCategories);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setCategories(mockCategories);
-
-      // Update filter counts
-      filterOptions.forEach(filter => {
-        if (filter.key === 'all') {
-          filter.count = mockCategories.length;
-        } else if (filter.key === 'parent') {
-          filter.count = mockCategories.filter(cat => cat.parentCategory === null).length;
-        } else if (filter.key === 'subcategory') {
-          filter.count = mockCategories.filter(cat => cat.parentCategory !== null).length;
-        } else if (filter.key === 'featured') {
-          filter.count = mockCategories.filter(cat => cat.featured).length;
-        } else {
-          filter.count = mockCategories.filter(cat => cat.status === filter.key).length;
-        }
-      });
-
-      setLoading(false);
-    }, 1000);
+    fetchCategories();
   }, []);
+
+  // Update filter counts when categories change
+  useEffect(() => {
+    if (categories.length > 0) {
+      const newFilterOptions = filterOptions.map(filter => {
+        let count = 0;
+        if (filter.key === 'all') {
+          count = categories.length;
+        } else if (filter.key === 'parent') {
+          count = categories.filter(cat => cat.parentCategory === null).length;
+        } else if (filter.key === 'subcategory') {
+          count = categories.filter(cat => cat.parentCategory !== null).length;
+        } else if (filter.key === 'featured') {
+          count = categories.filter(cat => cat.featured).length;
+        } else {
+          count = categories.filter(cat => cat.status === filter.key).length;
+        }
+        return { ...filter, count };
+      });
+      setFilterOptions(newFilterOptions);
+    }
+  }, [categories]);
 
   useEffect(() => {
     let filtered = [...categories];
@@ -236,8 +146,16 @@ const Categories = () => {
   };
 
   const handleCategoryAction = (action, categoryId) => {
-    console.log(`${action} category:`, categoryId);
-    // Handle category actions here
+    if (action === 'add') {
+      setIsAddModalOpen(true);
+    } else {
+      console.log(`${action} category:`, categoryId);
+      // Handle other category actions here
+    }
+  };
+
+  const handleAddSuccess = () => {
+    fetchCategories(); // Refresh categories list
   };
 
   const handleBulkAction = (action) => {
@@ -264,8 +182,12 @@ const Categories = () => {
 
       <td className="px-6 py-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center text-2xl">
-            {category.icon}
+          <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center overflow-hidden">
+            {category.icon && category.icon.startsWith('http') ? (
+              <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-2xl">{category.icon || '📁'}</span>
+            )}
           </div>
           <div>
             <div className="font-medium text-gray-900 flex items-center space-x-2">
@@ -427,6 +349,11 @@ const Categories = () => {
 
   return (
     <AdminLayout>
+      <AddCategoryModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+        onSuccess={handleAddSuccess}
+      />
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">

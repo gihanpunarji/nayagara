@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const User = require("../models/User");
 const { processReferralCommissions } = require("../utils/referralHelpers");
 
 const createOrder = async (req, res) => {
@@ -129,104 +130,80 @@ const updateOrderPaymentStatus = async (req, res) => {
         
         // Attempt to process referrals, but don't let it break the order flow
         try {
+          const Product = require("../models/Product");
+
           // Get order items with product cost information
           const orderItems = await Order.getOrderItems(order.order_id);
-          
-          // Add product cost information to order items
-          const { getConnection } = require("../config/database");
-          const pool = getConnection();
-          let connection;
 
-          try {
-            connection = await pool.getConnection();
-            
-            for (let item of orderItems) {
-              const [productRows] = await connection.execute(
-                "SELECT cost FROM products WHERE product_id = ?",
-                [item.product_id]
-              );
-              item.product_cost = productRows[0]?.cost || 0;
-            }
-
-            // Process referral commissions with the new system
-            await processReferralCommissions(order.order_id, order.customer_id, orderItems);
-            console.log(`Referral commissions processed successfully for order ${order.order_number}`);
-          } finally {
-            if (connection) connection.release();
+          // Add product cost information to order items using Product model
+          for (let item of orderItems) {
+            item.product_cost = await Product.getCostById(item.product_id);
           }
+
+          // Process referral commissions with the new system
+          await processReferralCommissions(order.order_id, order.customer_id, orderItems);
+          console.log(`Referral commissions processed successfully for order ${order.order_number}`);
         } catch (referralError) {
           console.error(`[Non-blocking Error] Failed to process referrals for order ${order.order_number}:`, referralError);
         }
 
         // Send confirmation email and SMS
         try {
-          const { getConnection } = require("../config/database");
-          const pool = getConnection();
-          const connection = await pool.getConnection();
 
-          try {
-            // Get customer details
-            const [customerRows] = await connection.execute(
-              "SELECT u.user_email, u.user_mobile, u.first_name, u.last_name FROM users u WHERE u.user_id = ?",
-              [order.customer_id]
-            );
+          const customer = await User.findById(order.customer_id);
 
-            if (customerRows && customerRows[0]) {
-              const customer = customerRows[0];
-              const customerEmail = customer.user_email;
-              const customerMobile = customer.user_mobile;
-              const customerName = `${customer.first_name} ${customer.last_name}`;
+          if (customer) {
+            const customerEmail = customer.user_email;
+            const customerMobile = customer.user_mobile;
+            const customerName = `${customer.first_name} ${customer.last_name}`;
 
-              // Send confirmation email
-              if (customerEmail) {
-                const nodeMailer = require("nodemailer");
-                const transporter = nodeMailer.createTransport({
-                  service: "gmail",
-                  auth: {
-                    user: process.env.EMAIL_USERNAME,
-                    pass: process.env.EMAIL_PASSWORD,
-                  },
-                });
+            // Send confirmation email
+            if (customerEmail) {
+              const nodeMailer = require("nodemailer");
+              const transporter = nodeMailer.createTransport({
+                service: "gmail",
+                auth: {
+                  user: process.env.EMAIL_USERNAME,
+                  pass: process.env.EMAIL_PASSWORD,
+                },
+              });
 
-                await transporter.sendMail({
-                  from: `"Nayagara" <${process.env.EMAIL_USERNAME}>`,
-                  to: customerEmail,
-                  subject: `Order Confirmation - ${order.order_number}`,
-                  html: `
-                    <h2>Thank you for your order!</h2>
-                    <p>Dear ${customerName},</p>
-                    <p>Your order <strong>${order.order_number}</strong> has been confirmed.</p>
-                    <p><strong>Order Total:</strong> Rs. ${order.total_amount}</p>
-                    <p>We will notify you when your order is ready to ship.</p>
-                    <br>
-                    <p>Thank you for shopping with Nayagara!</p>
-                  `,
-                });
-                console.log(`Confirmation email sent to ${customerEmail}`);
-              }
-
-              // Send confirmation SMS
-              if (customerMobile) {
-                fetch("https://app.text.lk/api/v3/sms/send", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                    Authorization: `Bearer ${process.env.TEXTLK_API_KEY}`,
-                  },
-                  body: JSON.stringify({
-                    recipient: customerMobile,
-                    sender_id: process.env.TEXTLK_SENDER_ID,
-                    type: "plain",
-                    message: `Thank you for your order! Your order ${order.order_number} has been confirmed. Total: Rs. ${order.total_amount}. - Nayagara`,
-                  }),
-                })
-                  .then((response) => response.json())
-                  .then((data) => console.log(`Confirmation SMS sent to ${customerMobile}`))
-                  .catch((error) => console.error("Error sending SMS:", error));
-              }
+              await transporter.sendMail({
+                from: `"Nayagara" <${process.env.EMAIL_USERNAME}>`,
+                to: customerEmail,
+                subject: `Order Confirmation - ${order.order_number}`,
+                html: `
+                  <h2>Thank you for your order!</h2>
+                  <p>Dear ${customerName},</p>
+                  <p>Your order <strong>${order.order_number}</strong> has been confirmed.</p>
+                  <p><strong>Order Total:</strong> Rs. ${order.total_amount}</p>
+                  <p>We will notify you when your order is ready to ship.</p>
+                  <br>
+                  <p>Thank you for shopping with Nayagara!</p>
+                `,
+              });
+              console.log(`Confirmation email sent to ${customerEmail}`);
             }
-          } finally {
-            connection.release();
+
+            // Send confirmation SMS
+            if (customerMobile) {
+              fetch("https://app.text.lk/api/v3/sms/send", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${process.env.TEXTLK_API_KEY}`,
+                },
+                body: JSON.stringify({
+                  recipient: customerMobile,
+                  sender_id: process.env.TEXTLK_SENDER_ID,
+                  type: "plain",
+                  message: `Thank you for your order! Your order ${order.order_number} has been confirmed. Total: Rs. ${order.total_amount}. - Nayagara`,
+                }),
+              })
+                .then((response) => response.json())
+                .then((data) => console.log(`Confirmation SMS sent to ${customerMobile}`))
+                .catch((error) => console.error("Error sending SMS:", error));
+            }
           }
         } catch (notificationError) {
           console.error(`[Non-blocking Error] Failed to send notifications for order ${order.order_number}:`, notificationError);
@@ -586,6 +563,26 @@ const getAllOrders = async (req, res) => {
   }
 };
 
+const getSellerEarnings = async (req, res) => {
+  try {
+    const seller_id = req.user.user_id;
+    const earnings = await Order.getSellerEarnings(seller_id);
+
+    res.json({
+      success: true,
+      message: 'Seller earnings retrieved successfully',
+      data: earnings
+    });
+  } catch (error) {
+    console.error('Get seller earnings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve seller earnings',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderPaymentStatus,
@@ -595,5 +592,6 @@ module.exports = {
   getSellerOrderDetails,
   updateSellerOrderStatus,
   calculateShipping,
-  getAllOrders
+  getAllOrders,
+  getSellerEarnings
 };

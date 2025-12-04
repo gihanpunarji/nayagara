@@ -7,7 +7,8 @@ const {
   getSellerOrders,
   getSellerOrderDetails,
   updateSellerOrderStatus,
-  calculateShipping
+  calculateShipping,
+  getSellerEarnings
 } = require('../controllers/orderController');
 const { authenticateToken } = require('../middleware/auth');
 
@@ -27,6 +28,9 @@ router.get('/user', authenticateToken, getUserOrders);
 
 // Get seller orders (protected)
 router.get('/seller', authenticateToken, getSellerOrders);
+
+// Get seller earnings (protected)
+router.get('/seller/earnings', authenticateToken, getSellerEarnings);
 
 // Get seller order details (protected)
 router.get('/seller/:order_id', authenticateToken, getSellerOrderDetails);

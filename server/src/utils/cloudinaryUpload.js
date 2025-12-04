@@ -86,6 +86,20 @@ const uploadProductImage = async (fileBuffer, originalname, sellerId) => {
 };
 
 /**
+ * Upload category icon to Cloudinary
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {string} originalname - Original filename
+ * @param {string} categorySlug - Category slug for filename
+ * @returns {Promise<string>} - Cloudinary URL
+ */
+const uploadCategoryIcon = async (fileBuffer, originalname, categorySlug) => {
+  const timestamp = Date.now();
+  const ext = path.extname(originalname);
+  const filename = `${categorySlug}_${timestamp}${ext}`;
+  return await uploadToCloudinary(fileBuffer, originalname, 'categories', filename);
+};
+
+/**
  * Delete file from Cloudinary
  * @param {string} filePath - File path (e.g., 'uploads/products/39_1759662952916_4ixh3s.jpeg')
  * @returns {Promise<void>}
@@ -105,6 +119,7 @@ module.exports = {
   uploadToCloudinary,
   uploadProfilePicture,
   uploadProductImage,
+  uploadCategoryIcon,
   deleteFromCloudinary,
   generateProfileFilename,
   generateProductFilename

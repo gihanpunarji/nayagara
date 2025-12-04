@@ -41,12 +41,7 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           path: '/admin/dashboard',
           badge: null
         },
-        {
-          icon: Activity,
-          label: 'System Monitor',
-          path: '/admin/system',
-          badge: null
-        }
+        
       ]
     },
     {
@@ -63,12 +58,6 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           label: 'Sellers',
           path: '/admin/sellers',
           badge: '89'
-        },
-        {
-          icon: Shield,
-          label: 'Admin Users',
-          path: '/admin/admins',
-          badge: null
         }
       ]
     },
@@ -99,24 +88,18 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           path: '/admin/categories',
           badge: null
         },
-        {
-          icon: Database,
-          label: 'Inventory',
-          path: '/admin/inventory',
-          badge: null
-        },
-        {
-          icon: Star,
-          label: 'Reviews & Ratings',
-          path: '/admin/reviews',
-          badge: null
-        },
-        {
-          icon: Tag,
-          label: 'Promotions',
-          path: '/admin/promotions',
-          badge: null
-        },
+        // {
+        //   icon: Star,
+        //   label: 'Reviews & Ratings',
+        //   path: '/admin/reviews',
+        //   badge: null
+        // },
+        // {
+        //   icon: Tag,
+        //   label: 'Promotions',
+        //   path: '/admin/promotions',
+        //   badge: null
+        // },
         {
           icon: TrendingUp,
           label: 'Referrals',
@@ -129,30 +112,30 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           path: '/admin/payments',
           badge: null
         },
-        {
-          icon: Truck,
-          label: 'Shipping',
-          path: '/admin/shipping',
-          badge: null
-        },
+        // {
+        //   icon: Truck,
+        //   label: 'Shipping',
+        //   path: '/admin/shipping',
+        //   badge: null
+        // },
         {
           icon: RotateCcw,
           label: 'Returns & Refunds',
           path: '/admin/returns',
           badge: null
         },
-        {
-          icon: Image,
-          label: 'Banner & Slider',
-          path: '/admin/banners',
-          badge: null
-        },
-        {
-          icon: MessageSquare,
-          label: 'Disputes',
-          path: '/admin/disputes',
-          badge: '12'
-        }
+        // {
+        //   icon: Image,
+        //   label: 'Banner & Slider',
+        //   path: '/admin/banners',
+        //   badge: null
+        // },
+        // {
+        //   icon: MessageSquare,
+        //   label: 'Disputes',
+        //   path: '/admin/disputes',
+        //   badge: '12'
+        // }
       ]
     },
     {
@@ -187,24 +170,24 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           path: '/admin/notifications',
           badge: null
         },
-        {
-          icon: Globe,
-          label: 'Platform Settings',
-          path: '/admin/platform-settings',
-          badge: null
-        },
-        {
-          icon: Database,
-          label: 'Database',
-          path: '/admin/database',
-          badge: null
-        },
-        {
-          icon: AlertCircle,
-          label: 'Security Center',
-          path: '/admin/security',
-          badge: '3'
-        }
+        // {
+        //   icon: Globe,
+        //   label: 'Platform Settings',
+        //   path: '/admin/platform-settings',
+        //   badge: null
+        // },
+        // {
+        //   icon: Database,
+        //   label: 'Database',
+        //   path: '/admin/database',
+        //   badge: null
+        // },
+        // {
+        //   icon: AlertCircle,
+        //   label: 'Security Center',
+        //   path: '/admin/security',
+        //   badge: '3'
+        // }
       ]
     }
   ];
@@ -301,7 +284,7 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
             ))}
 
             {/* System Status Card */}
-            <div className="mt-8 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+            {/* <div className="mt-8 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-green-800">System Status</h3>
                 <Activity className="w-4 h-4 text-green-600" />
@@ -324,7 +307,7 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
                 </div>
                 <p className="text-xs text-green-600 mt-1">System performing well</p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Bottom Menu */}

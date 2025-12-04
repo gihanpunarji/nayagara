@@ -54,3 +54,13 @@ export const getAdminOrders = async ({ page = 1, limit = 25 }) => {
         throw error.response?.data || { message: 'An unknown error occurred' };
     }
 };
+
+export const getAdminCategories = async () => {
+    try {
+        const response = await api.get('/admin/categories');
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching admin categories:', error.response?.data || error.message);
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};

@@ -371,13 +371,18 @@ class User {
             u.user_email AS email,
             u.user_mobile AS phone,
             u.user_status AS status,
-            u.email_verified AS verified,
+            u.email_verified,
+            u.mobile_verified,
+            u.profile_image,
             u.created_at AS joinDate,
             u.nic,
+            s.store_name,
+            s.store_description,
             (SELECT COUNT(DISTINCT p.product_id) FROM products p WHERE p.seller_id = u.user_id) AS totalProducts,
             (SELECT SUM(oi.total_price) FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE oi.seller_id = u.user_id) AS totalSales,
             (SELECT AVG(pr.rating) FROM product_reviews pr JOIN products p ON pr.product_id = p.product_id WHERE p.seller_id = u.user_id) AS avgProductRating,
-            (SELECT 
+            (SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE oi.seller_id = u.user_id AND o.payment_status = 'completed') AS totalEarnings,
+            (SELECT
               CONCAT(a.line1, ', ', a.line2, ', ', c.city_name, ', ', d.district_name, ', ', p.province_name)
               FROM addresses a
               JOIN cities c ON a.city_id = c.city_id
@@ -387,6 +392,7 @@ class User {
               LIMIT 1) AS location
         FROM
             users u
+        LEFT JOIN store s ON u.user_id = s.user_id
         WHERE
             u.user_type = 'seller'
         GROUP BY

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Upload, Image as ImageIcon } from 'lucide-react';
 import api from '../../../api/axios';
 
-const AddCategoryModal = ({ isOpen, onClose, onSuccess }) => {
+const AddCategoryModal = ({ isOpen, onClose, onSuccess, editingCategory }) => {
   const [categoryName, setCategoryName] = useState('');
   const [categorySlug, setCategorySlug] = useState('');
   const [icon, setIcon] = useState(null);
@@ -11,6 +11,26 @@ const AddCategoryModal = ({ isOpen, onClose, onSuccess }) => {
   const [icoFileName, setIcoFileName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Pre-fill form when editing
+  React.useEffect(() => {
+    if (editingCategory) {
+      setCategoryName(editingCategory.name || '');
+      setCategorySlug(editingCategory.slug || editingCategory.category_slug || '');
+      // Set icon preview if it exists
+      if (editingCategory.icon) {
+        setIconPreview(editingCategory.icon);
+      }
+    } else {
+      // Reset form when not editing
+      setCategoryName('');
+      setCategorySlug('');
+      setIcon(null);
+      setIconPreview(null);
+      setIcoFile(null);
+      setIcoFileName('');
+    }
+  }, [editingCategory]);
 
   const handleNameChange = (e) => {
     const name = e.target.value;
@@ -82,18 +102,29 @@ const AddCategoryModal = ({ isOpen, onClose, onSuccess }) => {
         formData.append('icoFile', icoFile);
       }
 
-      const response = await api.post('/admin/categories', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
+      let response;
+      if (editingCategory) {
+        // Update existing category
+        response = await api.put(`/admin/categories/${editingCategory.id}`, formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      } else {
+        // Create new category
+        response = await api.post('/admin/categories', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        });
+      }
 
       if (response.data.success) {
         onSuccess();
         handleClose();
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add category');
+      setError(err.response?.data?.message || `Failed to ${editingCategory ? 'update' : 'add'} category`);
     } finally {
       setLoading(false);
     }
@@ -117,7 +148,9 @@ const AddCategoryModal = ({ isOpen, onClose, onSuccess }) => {
       <div className="bg-white rounded-xl shadow-lg max-w-md w-full mx-4">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-bold text-gray-900">Add New Category</h2>
+          <h2 className="text-xl font-bold text-gray-900">
+            {editingCategory ? 'Edit Category' : 'Add New Category'}
+          </h2>
           <button
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -283,7 +316,10 @@ const AddCategoryModal = ({ isOpen, onClose, onSuccess }) => {
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
               disabled={loading}
             >
-              {loading ? 'Adding...' : 'Add Category'}
+              {loading
+                ? (editingCategory ? 'Updating...' : 'Adding...')
+                : (editingCategory ? 'Update Category' : 'Add Category')
+              }
             </button>
           </div>
         </form>

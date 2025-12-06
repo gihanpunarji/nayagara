@@ -15,11 +15,14 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  XIcon as X
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 import { getAdminCategories } from '../../../api/admin';
 import AddCategoryModal from '../categories/AddCategoryModal';
+import SubCategoryModal from '../categories/SubCategoryModal';
+import api from '../../../api/axios';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -29,6 +32,11 @@ const Categories = () => {
   const [loading, setLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [isSubCategoryModalOpen, setIsSubCategoryModalOpen] = useState(false);
+  const [selectedCategoryForSubcategory, setSelectedCategoryForSubcategory] = useState(null);
+  const [actionError, setActionError] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
   const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Categories', count: 0, color: 'gray' },
     { key: 'active', label: 'Active', count: 0, color: 'green' },
@@ -43,21 +51,20 @@ const Categories = () => {
       setLoading(true);
       const response = await getAdminCategories();
       if (response.success) {
-        // Map backend data to frontend format
         const mappedCategories = response.categories.map(cat => ({
           id: cat.id,
           name: cat.name,
-          description: `Category for ${cat.name}`, // Default description
-          parentCategory: null, // All are parent categories for now
+          description: `Category for ${cat.name}`, 
+          parentCategory: null, 
           subCategories: cat.subCategories || [],
           totalProducts: cat.totalProducts || 0,
           activeProducts: cat.activeProducts || 0,
           totalSales: cat.totalSales || 0,
-          icon: cat.icon || '📁', // Use icon from database or default
+          icon: cat.icon || '📁', 
           status: cat.status || 'active',
-          featured: false, // Default to not featured
-          createdDate: new Date().toISOString(), // Placeholder
-          lastUpdated: new Date().toISOString() // Placeholder
+          featured: false, 
+          createdDate: new Date().toISOString(), 
+          lastUpdated: new Date().toISOString() 
         }));
         setCategories(mappedCategories);
       }
@@ -71,6 +78,20 @@ const Categories = () => {
   useEffect(() => {
     fetchCategories();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown !== null && !event.target.closest('.relative')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
 
   // Update filter counts when categories change
   useEffect(() => {
@@ -145,17 +166,60 @@ const Categories = () => {
     });
   };
 
-  const handleCategoryAction = (action, categoryId) => {
+  const handleCategoryAction = async (action, categoryId) => {
     if (action === 'add') {
+      setEditingCategory(null);
       setIsAddModalOpen(true);
+    } else if (action === 'edit') {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        setEditingCategory(category);
+        setIsAddModalOpen(true);
+      }
+    } else if (action === 'add_subcategory') {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        setSelectedCategoryForSubcategory(category);
+        setIsSubCategoryModalOpen(true);
+      }
+    } else if (action === 'deactivate' || action === 'activate') {
+      try {
+        setActionError('');
+        const response = await api.patch(`/admin/categories/${categoryId}/status`);
+        if (response.data.success) {
+          fetchCategories();
+        }
+      } catch (err) {
+        console.error('Error toggling category status:', err);
+        setActionError(err.response?.data?.message || 'Failed to update category status');
+      }
+    } else if (action === 'delete') {
+      if (!window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        setActionError('');
+        const response = await api.delete(`/admin/categories/${categoryId}`);
+        if (response.data.success) {
+          fetchCategories();
+        }
+      } catch (err) {
+        console.error('Error deleting category:', err);
+        const message = err.response?.data?.message || 'Failed to delete category';
+        setActionError(`⚠️ ${message}`);
+
+        // Scroll to top to show error
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     } else {
       console.log(`${action} category:`, categoryId);
-      // Handle other category actions here
     }
   };
 
   const handleAddSuccess = () => {
     fetchCategories(); // Refresh categories list
+    setEditingCategory(null);
   };
 
   const handleBulkAction = (action) => {
@@ -263,64 +327,76 @@ const Categories = () => {
             <Eye className="w-4 h-4" />
           </button>
 
-          <div className="relative group">
-            <button className="text-gray-600 hover:text-red-600 transition-colors">
+          <div className="relative">
+            <button
+              onClick={() => setOpenDropdown(openDropdown === category.id ? null : category.id)}
+              className="text-gray-600 hover:text-red-600 transition-colors"
+            >
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
-              <div className="py-1">
-                <button
-                  onClick={() => handleCategoryAction('edit', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit Category</span>
-                </button>
-
-                <button
-                  onClick={() => handleCategoryAction('add_subcategory', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Subcategory</span>
-                </button>
-
-                {category.status === 'active' ? (
+            {openDropdown === category.id && (
+              <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                <div className="py-1">
                   <button
-                    onClick={() => handleCategoryAction('deactivate', category.id)}
+                    onClick={() => {
+                      handleCategoryAction('edit', category.id);
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit Category</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleCategoryAction('add_subcategory', category.id);
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Subcategory</span>
+                  </button>
+
+                  {category.status === 'active' ? (
+                    <button
+                      onClick={() => {
+                        handleCategoryAction('deactivate', category.id);
+                        setOpenDropdown(null);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Deactivate</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        handleCategoryAction('activate', category.id);
+                        setOpenDropdown(null);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Activate</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      handleCategoryAction('delete', category.id);
+                      setOpenDropdown(null);
+                    }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                   >
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Deactivate</span>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Category</span>
                   </button>
-                ) : (
-                  <button
-                    onClick={() => handleCategoryAction('activate', category.id)}
-                    className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Activate</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleCategoryAction(category.featured ? 'unfeature' : 'feature', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 flex items-center space-x-2"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  <span>{category.featured ? 'Remove from Featured' : 'Add to Featured'}</span>
-                </button>
-
-                <button
-                  onClick={() => handleCategoryAction('delete', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete Category</span>
-                </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </td>
@@ -351,10 +427,45 @@ const Categories = () => {
     <AdminLayout>
       <AddCategoryModal
         isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingCategory(null);
+        }}
         onSuccess={handleAddSuccess}
+        editingCategory={editingCategory}
+      />
+      <SubCategoryModal
+        isOpen={isSubCategoryModalOpen}
+        onClose={() => {
+          setIsSubCategoryModalOpen(false);
+          setSelectedCategoryForSubcategory(null);
+        }}
+        onSuccess={handleAddSuccess}
+        category={selectedCategoryForSubcategory}
       />
       <div className="space-y-6">
+        {/* Error Message */}
+        {actionError && (
+          <div className="bg-red-50 border-2 border-red-300 text-red-800 px-5 py-4 rounded-lg flex items-start shadow-lg">
+            <div className="flex-shrink-0 mr-3">
+              <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-base">Error</p>
+              <p className="text-sm mt-1 leading-relaxed">{actionError}</p>
+            </div>
+            <button
+              onClick={() => setActionError('')}
+              className="flex-shrink-0 ml-3 text-red-500 hover:text-red-700 transition-colors"
+              title="Dismiss"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -494,12 +605,7 @@ const Categories = () => {
                 >
                   Bulk Activate
                 </button>
-                <button
-                  onClick={() => handleBulkAction('feature')}
-                  className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors"
-                >
-                  Add to Featured
-                </button>
+                
                 <button
                   onClick={() => handleBulkAction('delete')}
                   className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"

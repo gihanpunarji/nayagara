@@ -4,6 +4,7 @@ const Category = require("../models/Category");
 const SubCategory = require("../models/SubCategory");
 const Bank = require("../models/Bank");
 const Payment = require("../models/Payment");
+const SellerEarning = require("../models/SellerEarning");
 const { uploadCategoryIcon } = require("../utils/cloudinaryUpload");
 
 const getAdminProfile = async (req, res) => {
@@ -514,22 +515,50 @@ const getSellerBankDetails = async (req, res) => {
   }
 };
 
-const recordPayment = async (req, res) => {
+const getSellerEarnings = async (req, res) => {
   try {
-    const { sellerId, amount } = req.body;
+    const { sellerId } = req.params;
 
-    if (!sellerId || !amount) {
-      return res.status(400).json({
+    // Check if seller exists
+    const seller = await User.findById(sellerId);
+    if (!seller) {
+      return res.status(404).json({
         success: false,
-        message: "Seller ID and amount are required"
+        message: "Seller not found"
       });
     }
 
-    // Validate amount is positive number
-    if (isNaN(amount) || parseFloat(amount) <= 0) {
+    // Get seller's orders
+    const orders = await SellerEarning.getSellerOrders(sellerId);
+    const paymentHistory = await SellerEarning.getPaymentHistory(sellerId);
+    const stats = await SellerEarning.getStats(sellerId);
+
+    res.json({
+      success: true,
+      data: {
+        orders,
+        paymentHistory,
+        stats
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching seller earnings:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch seller earnings",
+      error: error.message
+    });
+  }
+};
+
+const recordPayment = async (req, res) => {
+  try {
+    const { sellerId, earningIds } = req.body;
+
+    if (!sellerId || !earningIds || !Array.isArray(earningIds) || earningIds.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Amount must be a positive number"
+        message: "Seller ID and earning IDs are required"
       });
     }
 
@@ -542,18 +571,43 @@ const recordPayment = async (req, res) => {
       });
     }
 
-    // Record payment
+    // Validate earnings belong to seller and are unpaid
+    const earnings = await SellerEarning.getByIds(earningIds);
+    const invalidEarnings = earnings.filter(e => e.seller_id !== parseInt(sellerId) || e.payment_status !== 'unpaid');
+
+    if (invalidEarnings.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Some earnings are invalid or already paid"
+      });
+    }
+
+    // Calculate total amount
+    const totalAmount = await SellerEarning.calculateTotal(earningIds);
+
+    if (totalAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Total amount must be greater than 0"
+      });
+    }
+
+    // Create payment record
     const result = await Payment.create({
       userId: sellerId,
-      amount: parseFloat(amount)
+      amount: totalAmount
     });
+
+    // Mark earnings as paid
+    await SellerEarning.markAsPaid(earningIds, result.insertId);
 
     res.status(201).json({
       success: true,
       message: "Payment recorded successfully",
       data: {
-        id: result.insertId,
-        amount: parseFloat(amount),
+        paymentId: result.insertId,
+        amount: totalAmount,
+        ordersCount: earningIds.length,
         sellerId
       }
     });
@@ -581,5 +635,6 @@ module.exports = {
   toggleCategoryStatus,
   deleteCategory,
   getSellerBankDetails,
+  getSellerEarnings,
   recordPayment,
 };

@@ -127,7 +127,7 @@ const updateOrderPaymentStatus = async (req, res) => {
       // If payment is completed, update order status to confirmed
       if (payment_status === 'completed') {
         await Order.updateOrderStatus(order.order_id, 'confirmed');
-        
+
         // Attempt to process referrals, but don't let it break the order flow
         try {
           const Product = require("../models/Product");
@@ -397,6 +397,34 @@ const updateSellerOrderStatus = async (req, res) => {
     const affectedRows = await Order.updateOrderStatus(order_id, status, tracking_number);
 
     if (affectedRows > 0) {
+      // If order is delivered, increment total_earned for sellers
+      if (status === 'delivered') {
+        try {
+          const orderItems = await Order.getOrderItems(order_id);
+
+          // Group order items by seller and calculate earnings
+          const sellerEarnings = {};
+          orderItems.forEach(item => {
+            const sellerId = item.seller_id;
+            const earnings = parseFloat(item.unit_price) * parseInt(item.quantity);
+
+            if (sellerEarnings[sellerId]) {
+              sellerEarnings[sellerId] += earnings;
+            } else {
+              sellerEarnings[sellerId] = earnings;
+            }
+          });
+
+          // Update total_earned for each seller
+          for (const [sellerId, earnings] of Object.entries(sellerEarnings)) {
+            await User.incrementTotalEarned(sellerId, earnings);
+            console.log(`Order ${order_id} delivered: incremented total_earned for seller ${sellerId} by Rs. ${earnings}`);
+          }
+        } catch (earningsError) {
+          console.error(`[Non-blocking Error] Failed to update total_earned for order ${order_id}:`, earningsError);
+        }
+      }
+
       res.json({
         success: true,
         message: 'Order status updated successfully',

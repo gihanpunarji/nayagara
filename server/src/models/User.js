@@ -381,7 +381,9 @@ class User {
             (SELECT COUNT(DISTINCT p.product_id) FROM products p WHERE p.seller_id = u.user_id) AS totalProducts,
             (SELECT SUM(oi.total_price) FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE oi.seller_id = u.user_id) AS totalSales,
             (SELECT AVG(pr.rating) FROM product_reviews pr JOIN products p ON pr.product_id = p.product_id WHERE p.seller_id = u.user_id) AS avgProductRating,
-            (SELECT COALESCE(SUM(oi.unit_price * oi.quantity), 0) FROM order_items oi JOIN orders o ON oi.order_id = o.order_id WHERE oi.seller_id = u.user_id AND o.payment_status = 'completed') AS totalEarnings,
+            COALESCE(u.total_earned, 0) AS totalEarnings,
+            COALESCE((SELECT p.total_paid FROM payments p WHERE p.user_id = u.user_id ORDER BY p.paid_at DESC LIMIT 1), 0) AS totalPaid,
+            COALESCE(u.total_earned, 0) - COALESCE((SELECT p.total_paid FROM payments p WHERE p.user_id = u.user_id ORDER BY p.paid_at DESC LIMIT 1), 0) AS availableBalance,
             (SELECT
               CONCAT(a.line1, ', ', a.line2, ', ', c.city_name, ', ', d.district_name, ', ', p.province_name)
               FROM addresses a
@@ -547,6 +549,64 @@ class User {
   /**
    * Updates user purchase information and referral status
    */
+
+  /**
+   * Adds to seller's total earned amount (when orders complete)
+   */
+  static async incrementTotalEarned(userId, amountToAdd) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [result] = await connection.execute(
+        "UPDATE users SET total_earned = COALESCE(total_earned, 0) + ? WHERE user_id = ?",
+        [amountToAdd, userId]
+      );
+      return result;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+
+  /**
+   * Gets seller's total earned amount
+   */
+  static async getTotalEarned(userId) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(
+        "SELECT COALESCE(total_earned, 0) as total_earned FROM users WHERE user_id = ?",
+        [userId]
+      );
+      return rows[0]?.total_earned || 0;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Gets seller's available balance (total_earned - total_paid from payments table)
+   */
+  static async getAvailableBalance(userId) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(
+        `SELECT
+          COALESCE(u.total_earned, 0) - COALESCE((SELECT total_paid FROM payments WHERE user_id = ? ORDER BY paid_at DESC LIMIT 1), 0) as available_balance
+         FROM users u
+         WHERE u.user_id = ?`,
+        [userId, userId]
+      );
+      return rows[0]?.available_balance || 0;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
 }
 
 module.exports = User;

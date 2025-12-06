@@ -305,12 +305,15 @@ class Order {
     const connection = getConnection();
     const [rows] = await connection.execute(
       `SELECT
-        COALESCE(SUM(oi.unit_price * oi.quantity), 0) as total_earnings,
-        COALESCE(SUM(CASE WHEN o.payment_status = 'completed' THEN oi.unit_price * oi.quantity ELSE 0 END), 0) as available_balance,
-        COALESCE(SUM(CASE WHEN o.payment_status = 'pending' THEN oi.unit_price * oi.quantity ELSE 0 END), 0) as pending_payments
-       FROM order_items oi
-       JOIN orders o ON oi.order_id = o.order_id
-       WHERE oi.seller_id = ?`,
+        u.total_earned as total_earnings,
+        u.total_earned - COALESCE((SELECT p.total_paid FROM payments p WHERE p.user_id = u.user_id ORDER BY p.paid_at DESC LIMIT 1), 0) as available_balance,
+        COALESCE(SUM(CASE WHEN o.payment_status = 'pending' THEN oi.unit_price * oi.quantity ELSE 0 END), 0) as pending_payments,
+        COALESCE((SELECT p.total_paid FROM payments p WHERE p.user_id = u.user_id ORDER BY p.paid_at DESC LIMIT 1), 0) as total_withdrawn
+       FROM users u
+       LEFT JOIN order_items oi ON oi.seller_id = u.user_id
+       LEFT JOIN orders o ON oi.order_id = o.order_id
+       WHERE u.user_id = ?
+       GROUP BY u.user_id, u.total_earned`,
       [seller_id]
     );
     return rows[0];

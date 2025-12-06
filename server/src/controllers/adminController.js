@@ -621,6 +621,94 @@ const recordPayment = async (req, res) => {
   }
 };
 
+const getAllSellerPayments = async (req, res) => {
+  try {
+    const { getConnection } = require("../config/database");
+    const connection = getConnection();
+
+    const [payments] = await connection.execute(
+      `SELECT
+        p.payment_id,
+        p.user_id as seller_id,
+        p.amount as payment_amount,
+        p.paid_at,
+        p.total_paid,
+        CONCAT(u.first_name, ' ', u.last_name) as seller_name,
+        u.user_email as seller_email
+       FROM payments p
+       JOIN users u ON p.user_id = u.user_id
+       WHERE u.user_type = 'seller'
+       ORDER BY p.paid_at DESC`
+    );
+
+    res.json({
+      success: true,
+      data: payments
+    });
+  } catch (error) {
+    console.error("Error fetching all seller payments:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch seller payments",
+      error: error.message
+    });
+  }
+};
+
+const recordSellerPayment = async (req, res) => {
+  try {
+    const { sellerId, amount } = req.body;
+
+    if (!sellerId || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Seller ID and amount are required"
+      });
+    }
+
+    // Validate amount
+    const paymentAmount = parseFloat(amount);
+    if (paymentAmount <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Payment amount must be greater than 0"
+      });
+    }
+
+    // Check if seller exists
+    const seller = await User.findById(sellerId);
+    if (!seller || seller.user_type !== 'seller') {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found"
+      });
+    }
+
+    // Create payment record
+    const result = await Payment.create({
+      userId: sellerId,
+      amount: paymentAmount
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Payment recorded successfully",
+      data: {
+        paymentId: result.insertId,
+        amount: paymentAmount,
+        sellerId
+      }
+    });
+  } catch (error) {
+    console.error("Error recording seller payment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to record payment",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAdminProfile,
   updateAdminProfile,
@@ -637,4 +725,6 @@ module.exports = {
   getSellerBankDetails,
   getSellerEarnings,
   recordPayment,
+  getAllSellerPayments,
+  recordSellerPayment,
 };

@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { authenticateAdmin } = require("../middleware/auth");
-const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment } = require("../controllers/adminController");
+const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment, getAllSellerPayments, recordSellerPayment } = require("../controllers/adminController");
 const { getAllOrders } = require("../controllers/orderController");
 
 const router = express.Router();
@@ -60,5 +60,7 @@ router.delete("/subcategories/:subcategoryId", deleteSubCategory);
 router.get("/sellers/:sellerId/bank", getSellerBankDetails);
 router.get("/sellers/:sellerId/earnings", getSellerEarnings);
 router.post("/payments", recordPayment);
+router.get("/payments/sellers", getAllSellerPayments);
+router.post("/payments/seller", recordSellerPayment);
 
 module.exports = router;

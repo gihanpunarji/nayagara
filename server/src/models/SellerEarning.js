@@ -62,12 +62,11 @@ class SellerEarning {
         p.payment_id,
         p.amount as payment_amount,
         p.paid_at,
-        COUNT(se.earning_id) as orders_count,
-        GROUP_CONCAT(se.order_number ORDER BY se.order_number SEPARATOR ', ') as order_numbers
+        p.total_paid,
+        0 as orders_count,
+        '' as order_numbers
        FROM payments p
-       LEFT JOIN seller_earnings se ON se.payment_id = p.payment_id
        WHERE p.user_id = ?
-       GROUP BY p.payment_id, p.amount, p.paid_at
        ORDER BY p.paid_at DESC
        LIMIT 20`,
       [sellerId]

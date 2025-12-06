@@ -118,12 +118,12 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
         //   path: '/admin/shipping',
         //   badge: null
         // },
-        {
-          icon: RotateCcw,
-          label: 'Returns & Refunds',
-          path: '/admin/returns',
-          badge: null
-        },
+        // {
+        //   icon: RotateCcw,
+        //   label: 'Returns & Refunds',
+        //   path: '/admin/returns',
+        //   badge: null
+        // },
         // {
         //   icon: Image,
         //   label: 'Banner & Slider',
@@ -147,18 +147,18 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           path: '/admin/analytics',
           badge: null
         },
-        {
-          icon: TrendingUp,
-          label: 'Reports',
-          path: '/admin/reports',
-          badge: null
-        },
-        {
-          icon: FileText,
-          label: 'Audit Logs',
-          path: '/admin/audit-logs',
-          badge: null
-        }
+        // {
+        //   icon: TrendingUp,
+        //   label: 'Reports',
+        //   path: '/admin/reports',
+        //   badge: null
+        // },
+        // {
+        //   icon: FileText,
+        //   label: 'Audit Logs',
+        //   path: '/admin/audit-logs',
+        //   badge: null
+        // }
       ]
     },
     {
@@ -192,18 +192,18 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
     }
   ];
 
-  const bottomMenuItems = [
-    {
-      icon: Settings,
-      label: 'Settings',
-      path: '/admin/settings'
-    },
-    {
-      icon: HelpCircle,
-      label: 'Support',
-      path: '/admin/support'
-    }
-  ];
+  // const bottomMenuItems = [
+  //   {
+  //     icon: Settings,
+  //     label: 'Settings',
+  //     path: '/admin/settings'
+  //   },
+  //   {
+  //     icon: HelpCircle,
+  //     label: 'Support',
+  //     path: '/admin/support'
+  //   }
+  // ];
 
   const isActivePath = (path) => {
     if (path === '/admin/dashboard') {
@@ -313,13 +313,13 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           {/* Bottom Menu */}
           <div className="border-t border-gray-200 px-4 py-4">
             <nav className="space-y-1">
-              {bottomMenuItems.map((item, index) => (
+              {/* {bottomMenuItems.map((item, index) => (
                 <MenuLink
                   key={index}
                   item={item}
                   onClick={showMobileMenu ? onMenuToggle : undefined}
                 />
-              ))}
+              ))} */}
             </nav>
           </div>
         </div>

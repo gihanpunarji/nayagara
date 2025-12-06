@@ -20,6 +20,7 @@ const SellerDetails = () => {
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState('');
     const [paymentError, setPaymentError] = useState('');
+    const [paymentAmount, setPaymentAmount] = useState('');
 
     // Pagination states
     const [currentPage, setCurrentPage] = useState(1);
@@ -104,6 +105,54 @@ const SellerDetails = () => {
             }
         } catch (err) {
             console.error('Failed to fetch earnings:', err);
+        }
+    };
+
+    const handlePayment = async () => {
+        // Clear previous messages
+        setPaymentSuccess('');
+        setPaymentError('');
+
+        const amount = parseFloat(paymentAmount);
+
+        if (!amount || amount <= 0) {
+            setPaymentError('Please enter a valid payment amount');
+            return;
+        }
+
+        if (amount > parseFloat(seller.availableBalance || 0)) {
+            setPaymentError('Payment amount cannot exceed available balance');
+            return;
+        }
+
+        try {
+            setPaymentLoading(true);
+            const response = await api.post('/admin/payments/seller', {
+                sellerId: id,
+                amount: amount
+            });
+
+            if (response.data.success) {
+                setPaymentSuccess(`Payment of Rs. ${amount.toLocaleString()} has been successfully recorded!`);
+                setPaymentAmount('');
+
+                // Refresh seller data and earnings
+                const sellersResponse = await getAdminSellers();
+                if (sellersResponse.success) {
+                    const updatedSeller = sellersResponse.sellers.find(s => s.id.toString() === id);
+                    if (updatedSeller) {
+                        setSeller(updatedSeller);
+                    }
+                }
+                await fetchEarnings();
+
+                // Clear success message after 5 seconds
+                setTimeout(() => setPaymentSuccess(''), 5000);
+            }
+        } catch (err) {
+            setPaymentError(err.response?.data?.message || 'Failed to process payment');
+        } finally {
+            setPaymentLoading(false);
         }
     };
 
@@ -280,6 +329,78 @@ const SellerDetails = () => {
                                     <p className="text-sm text-gray-600">Available Balance</p>
                                     <p className="text-2xl font-bold text-purple-700">Rs. {seller.availableBalance ? parseFloat(seller.availableBalance).toLocaleString() : '0'}</p>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Payment Section */}
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <DollarSign className="mr-2 text-green-600" />
+                            Pay Seller
+                        </h3>
+
+                        {paymentSuccess && (
+                            <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 flex items-center">
+                                <Check className="w-5 h-5 mr-2" />
+                                {paymentSuccess}
+                            </div>
+                        )}
+
+                        {paymentError && (
+                            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                                {paymentError}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="md:col-span-2">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Payment Amount
+                                </label>
+                                <div className="relative">
+                                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">Rs.</span>
+                                    <input
+                                        type="number"
+                                        value={paymentAmount}
+                                        onChange={(e) => setPaymentAmount(e.target.value)}
+                                        placeholder="0.00"
+                                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                        min="0"
+                                        step="0.01"
+                                    />
+                                </div>
+                                <div className="mt-2 flex items-center justify-between text-sm">
+                                    <span className="text-gray-600">
+                                        Available Balance: <span className="font-semibold text-purple-600">Rs. {seller.availableBalance ? parseFloat(seller.availableBalance).toLocaleString() : '0'}</span>
+                                    </span>
+                                    <button
+                                        onClick={() => setPaymentAmount(seller.availableBalance || 0)}
+                                        className="text-green-600 hover:text-green-700 font-medium"
+                                    >
+                                        Pay Full Amount
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-end">
+                                <button
+                                    onClick={handlePayment}
+                                    disabled={paymentLoading || !paymentAmount || parseFloat(paymentAmount) <= 0}
+                                    className="w-full px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                                >
+                                    {paymentLoading ? (
+                                        <>
+                                            <Loader className="w-5 h-5 animate-spin" />
+                                            <span>Processing...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <CreditCard className="w-5 h-5" />
+                                            <span>Submit Payment</span>
+                                        </>
+                                    )}
+                                </button>
                             </div>
                         </div>
                     </div>

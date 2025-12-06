@@ -67,10 +67,10 @@ import AdminReviewsRatings from "./components/admin/pages/ReviewsRatings.jsx";
 import AdminPromotions from "./components/admin/pages/PromotionsDiscounts.jsx";
 import AdminPayments from "./components/admin/pages/Payments.jsx";
 import AdminShipping from "./components/admin/pages/Shipping.jsx";
-import AdminSupport from "./components/admin/pages/Support.jsx";
-import AdminSettings from "./components/admin/pages/Settings.jsx";
+// import AdminSupport from "./components/admin/pages/Support.jsx";
+// import AdminSettings from "./components/admin/pages/Settings.jsx";
 import AdminNotifications from "./components/admin/pages/Notifications.jsx";
-import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
+// import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
 import AdminBanners from "./components/admin/pages/BannerSlider.jsx";
 import Referral from "./components/admin/pages/Referral.jsx";
 import SellerDetails from "./components/admin/pages/SellerDetails.jsx";
@@ -214,22 +214,22 @@ createRoot(document.getElementById("root")).render(
                       // </AdminProtectedRoute>
                     }
                   />
-                  <Route
+                  {/* <Route
                     path="/support"
                     element={
                       // <AdminProtectedRoute>
                         <AdminSupport />
                       // </AdminProtectedRoute>
                     }
-                  />
-                  <Route
+                  /> */}
+                  {/* <Route
                     path="/settings"
                     element={
                       // <AdminProtectedRoute>
                         <AdminSettings />
                       // </AdminProtectedRoute>
                     }
-                  />
+                  /> */}
                   <Route
                     path="/notifications"
                     element={
@@ -238,14 +238,14 @@ createRoot(document.getElementById("root")).render(
                       // </AdminProtectedRoute>
                     }
                   />
-                  <Route
+                  {/* <Route
                     path="/returns"
                     element={
                       // <AdminProtectedRoute>
                         <AdminReturns />
                       // </AdminProtectedRoute>
                     }
-                  />
+                  /> */}
                   <Route
                     path="/banners"
                     element={

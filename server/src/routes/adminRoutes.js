@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { authenticateAdmin } = require("../middleware/auth");
-const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory } = require("../controllers/adminController");
+const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, recordPayment } = require("../controllers/adminController");
 const { getAllOrders } = require("../controllers/orderController");
 
 const router = express.Router();
@@ -11,11 +11,9 @@ const storage = multer.memoryStorage();
 const categoryIconUpload = multer({
   storage: storage,
   fileFilter: (req, file, cb) => {
-    // Allow image files for 'icon' field
     if (file.fieldname === 'icon' && file.mimetype.startsWith('image/')) {
       cb(null, true);
     }
-    // Allow .ico files for 'icoFile' field
     else if (file.fieldname === 'icoFile' && (file.mimetype === 'image/x-icon' || file.originalname.endsWith('.ico'))) {
       cb(null, true);
     }
@@ -47,5 +45,19 @@ router.post("/categories", categoryIconUpload.fields([
   { name: 'icon', maxCount: 1 },
   { name: 'icoFile', maxCount: 1 }
 ]), addCategory);
+router.put("/categories/:categoryId", categoryIconUpload.fields([
+  { name: 'icon', maxCount: 1 },
+  { name: 'icoFile', maxCount: 1 }
+]), updateCategory);
+router.patch("/categories/:categoryId/status", toggleCategoryStatus);
+router.delete("/categories/:categoryId", deleteCategory);
+
+// Subcategory routes
+router.post("/subcategories", addSubCategory);
+router.delete("/subcategories/:subcategoryId", deleteSubCategory);
+
+// Payment routes
+router.get("/sellers/:sellerId/bank", getSellerBankDetails);
+router.post("/payments", recordPayment);
 
 module.exports = router;

@@ -2,13 +2,20 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import AdminLayout from '../layout/AdminLayout';
 import { getAdminSellers } from '../../../api/admin';
-import { Mail, Phone, MapPin, Calendar, ShoppingBag, Star, TrendingUp, User, Home, Briefcase, Info } from 'lucide-react';
+import api from '../../../api/axios';
+import { Mail, Phone, MapPin, Calendar, ShoppingBag, Star, TrendingUp, User, Home, Briefcase, Info, DollarSign, CreditCard, Loader } from 'lucide-react';
 
 const SellerDetails = () => {
     const { id } = useParams();
     const [seller, setSeller] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [bankDetails, setBankDetails] = useState(null);
+    const [bankLoading, setBankLoading] = useState(false);
+    const [paymentAmount, setPaymentAmount] = useState('');
+    const [paymentLoading, setPaymentLoading] = useState(false);
+    const [paymentSuccess, setPaymentSuccess] = useState('');
+    const [paymentError, setPaymentError] = useState('');
 
     useEffect(() => {
         const fetchSeller = async () => {
@@ -34,6 +41,55 @@ const SellerDetails = () => {
 
         fetchSeller();
     }, [id]);
+
+    useEffect(() => {
+        if (seller) {
+            fetchBankDetails();
+        }
+    }, [seller]);
+
+    const fetchBankDetails = async () => {
+        try {
+            setBankLoading(true);
+            const response = await api.get(`/admin/sellers/${id}/bank`);
+            if (response.data.success) {
+                setBankDetails(response.data.data);
+            }
+        } catch (err) {
+            console.error('Failed to fetch bank details:', err);
+        } finally {
+            setBankLoading(false);
+        }
+    };
+
+    const handlePaymentSubmit = async (e) => {
+        e.preventDefault();
+        setPaymentError('');
+        setPaymentSuccess('');
+
+        if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
+            setPaymentError('Please enter a valid amount');
+            return;
+        }
+
+        try {
+            setPaymentLoading(true);
+            const response = await api.post('/admin/payments', {
+                sellerId: id,
+                amount: parseFloat(paymentAmount)
+            });
+
+            if (response.data.success) {
+                setPaymentSuccess(`Payment of Rs. ${parseFloat(paymentAmount).toLocaleString()} recorded successfully!`);
+                setPaymentAmount('');
+                setTimeout(() => setPaymentSuccess(''), 5000);
+            }
+        } catch (err) {
+            setPaymentError(err.response?.data?.message || 'Failed to record payment');
+        } finally {
+            setPaymentLoading(false);
+        }
+    };
 
     const getStatusColor = (status) => {
         switch (status) {
@@ -160,6 +216,120 @@ const SellerDetails = () => {
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                    {/* Payment Section */}
+                    <div className="bg-white p-6 rounded-lg shadow-md mt-6 border border-gray-200">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                            <DollarSign className="mr-2 text-green-600" />
+                            Payment Management
+                        </h3>
+
+                        {bankLoading ? (
+                            <div className="flex items-center justify-center py-8">
+                                <Loader className="w-6 h-6 animate-spin text-green-600" />
+                            </div>
+                        ) : !bankDetails ? (
+                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                                <p className="text-yellow-800">No bank details found for this seller. Please ask the seller to add their bank information.</p>
+                            </div>
+                        ) : (
+                            <>
+                                {/* Bank Details */}
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-6">
+                                    <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
+                                        <CreditCard className="mr-2 text-blue-600" />
+                                        Bank Account Details
+                                    </h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                                        <div>
+                                            <p className="text-sm text-gray-500">Bank Name</p>
+                                            <p className="font-medium">{bankDetails.bank_name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Account Number</p>
+                                            <p className="font-medium">{bankDetails.account_number}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Account Holder</p>
+                                            <p className="font-medium">{bankDetails.holder_name}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-sm text-gray-500">Bank Code</p>
+                                            <p className="font-medium">{bankDetails.bank_code}</p>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <p className="text-sm text-gray-500">Branch Name</p>
+                                            <p className="font-medium">{bankDetails.branch_name}</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Payment Form */}
+                                <div className="bg-green-50 border border-green-200 rounded-lg p-5">
+                                    <h4 className="text-md font-semibold text-gray-800 mb-4">Record Payment</h4>
+
+                                    {/* Success Message */}
+                                    {paymentSuccess && (
+                                        <div className="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-4 flex items-center">
+                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                            </svg>
+                                            {paymentSuccess}
+                                        </div>
+                                    )}
+
+                                    {/* Error Message */}
+                                    {paymentError && (
+                                        <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-center">
+                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                                            </svg>
+                                            {paymentError}
+                                        </div>
+                                    )}
+
+                                    <form onSubmit={handlePaymentSubmit}>
+                                        <div className="mb-4">
+                                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                                                Payment Amount (Rs.)
+                                            </label>
+                                            <input
+                                                type="number"
+                                                step="0.01"
+                                                min="0"
+                                                value={paymentAmount}
+                                                onChange={(e) => setPaymentAmount(e.target.value)}
+                                                placeholder="Enter amount to pay"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                                disabled={paymentLoading}
+                                                required
+                                            />
+                                            <p className="text-xs text-gray-500 mt-1">
+                                                Enter the amount you have deposited to the seller's bank account
+                                            </p>
+                                        </div>
+                                        <button
+                                            type="submit"
+                                            disabled={paymentLoading || !paymentAmount}
+                                            className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 flex items-center justify-center space-x-2 font-medium"
+                                        >
+                                            {paymentLoading ? (
+                                                <>
+                                                    <Loader className="w-5 h-5 animate-spin" />
+                                                    <span>Recording Payment...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <DollarSign className="w-5 h-5" />
+                                                    <span>Record Payment</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </form>
+                                </div>
+                            </>
+                        )}
                     </div>
 
                     {/* Recent Activity (Placeholder) */}

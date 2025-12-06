@@ -322,7 +322,7 @@ const PaymentDashboard = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           icon={Wallet}
-          title="Wallet Balance"
+          title="Withdrawed Balance"
           value={formatPrice(walletBalance)}
           subtitle="Available for withdrawal"
           color="from-primary-500 to-primary-600"

@@ -18,6 +18,15 @@ class Category {
     return rows[0];
   }
 
+  static async findByIdIncludingInactive(categoryId) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      "SELECT * FROM categories WHERE category_id = ?",
+      [categoryId]
+    );
+    return rows[0];
+  }
+
   static async findBySlug(slug) {
     const connection = getConnection();
     const [rows] = await connection.execute(
@@ -30,17 +39,17 @@ class Category {
   static async create({ categoryName, categorySlug, icon = null, icoFile = null, isActive = 1 }) {
     const connection = getConnection();
     const [result] = await connection.execute(
-      "INSERT INTO categories (category_name, category_slug, icon, icon_image, is_active) VALUES (?, ?, ?, ?, ?)",
+      "INSERT INTO categories (category_name, category_slug, icon, image, is_active) VALUES (?, ?, ?, ?, ?)",
       [categoryName, categorySlug, icon, icoFile, isActive]
     );
     return result;
   }
 
-  static async update({ categoryId, categoryName, categorySlug, icon, isActive }) {
+  static async update({ categoryId, categoryName, categorySlug, icon, iconImage, isActive }) {
     const connection = getConnection();
     const [result] = await connection.execute(
-      "UPDATE categories SET category_name = ?, category_slug = ?, icon = ?, is_active = ? WHERE category_id = ?",
-      [categoryName, categorySlug, icon, isActive, categoryId]
+      "UPDATE categories SET category_name = ?, category_slug = ?, icon = ?, image = ?, is_active = ? WHERE category_id = ?",
+      [categoryName, categorySlug, icon, iconImage, isActive, categoryId]
     );
     return result.affectedRows;
   }
@@ -52,6 +61,24 @@ class Category {
       [categoryId]
     );
     return result.affectedRows;
+  }
+
+  static async updateStatus(categoryId, isActive) {
+    const connection = getConnection();
+    const [result] = await connection.execute(
+      "UPDATE categories SET is_active = ? WHERE category_id = ?",
+      [isActive, categoryId]
+    );
+    return result.affectedRows;
+  }
+
+  static async hasProducts(categoryId) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      "SELECT COUNT(*) as count FROM products WHERE category_id = ?",
+      [categoryId]
+    );
+    return rows[0].count > 0;
   }
 
   static async getAllCategoriesWithStats() {
@@ -75,6 +102,7 @@ class Category {
            JOIN products p ON oi.product_id = p.product_id
            WHERE p.category_id = c.category_id) AS total_sales
         FROM categories c
+        WHERE c.is_active = 1
         ORDER BY c.category_name;
       `);
       return rows;

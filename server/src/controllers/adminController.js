@@ -2,6 +2,8 @@ const User = require("../models/User");
 const AdminDashboard = require("../models/AdminDashboard");
 const Category = require("../models/Category");
 const SubCategory = require("../models/SubCategory");
+const Bank = require("../models/Bank");
+const Payment = require("../models/Payment");
 const { uploadCategoryIcon } = require("../utils/cloudinaryUpload");
 
 const getAdminProfile = async (req, res) => {
@@ -93,30 +95,30 @@ const addCategory = async (req, res) => {
       });
     }
 
+    let imageUrl = null;
     let iconUrl = null;
-    let icoFileUrl = null;
 
-    // If an image was uploaded, upload to Cloudinary
+    // If an image was uploaded, upload to Cloudinary (this goes to 'image' column)
     if (req.files && req.files['icon'] && req.files['icon'][0]) {
       try {
-        iconUrl = await uploadCategoryIcon(
+        imageUrl = await uploadCategoryIcon(
           req.files['icon'][0].buffer,
           req.files['icon'][0].originalname,
           categorySlug
         );
       } catch (uploadError) {
-        console.error("Error uploading category icon:", uploadError);
+        console.error("Error uploading category image:", uploadError);
         return res.status(500).json({
           success: false,
-          message: "Failed to upload category icon"
+          message: "Failed to upload category image"
         });
       }
     }
 
-    // If an .ico file was uploaded, upload to Cloudinary
+    // If an .ico file was uploaded, upload to Cloudinary (this goes to 'icon' column)
     if (req.files && req.files['icoFile'] && req.files['icoFile'][0]) {
       try {
-        icoFileUrl = await uploadCategoryIcon(
+        iconUrl = await uploadCategoryIcon(
           req.files['icoFile'][0].buffer,
           req.files['icoFile'][0].originalname,
           `${categorySlug}_ico`
@@ -134,8 +136,8 @@ const addCategory = async (req, res) => {
     const result = await Category.create({
       categoryName,
       categorySlug,
-      icon: iconUrl,
-      icoFile: icoFileUrl,
+      icon: iconUrl,        // .ico file goes to icon column
+      icoFile: imageUrl,    // image file goes to image column
       isActive: 1
     });
 
@@ -147,7 +149,7 @@ const addCategory = async (req, res) => {
         name: categoryName,
         slug: categorySlug,
         icon: iconUrl,
-        icoFile: icoFileUrl
+        image: imageUrl
       }
     });
   } catch (error) {
@@ -155,6 +157,411 @@ const addCategory = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to add category",
+      error: error.message
+    });
+  }
+};
+
+const updateCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+    const { categoryName, categorySlug } = req.body;
+
+    if (!categoryName || !categorySlug) {
+      return res.status(400).json({
+        success: false,
+        message: "Category name and slug are required"
+      });
+    }
+
+    // Get existing category to check what needs to be updated
+    const existingCategory = await Category.findById(categoryId);
+    if (!existingCategory) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    let iconUrl = existingCategory.icon;      // .ico file
+    let imageUrl = existingCategory.image;    // regular image
+
+    // If a new image was uploaded, upload to Cloudinary (this goes to 'image' column)
+    if (req.files && req.files['icon'] && req.files['icon'][0]) {
+      try {
+        imageUrl = await uploadCategoryIcon(
+          req.files['icon'][0].buffer,
+          req.files['icon'][0].originalname,
+          categorySlug
+        );
+      } catch (uploadError) {
+        console.error("Error uploading category image:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to upload category image"
+        });
+      }
+    }
+
+    // If a new .ico file was uploaded, upload to Cloudinary (this goes to 'icon' column)
+    if (req.files && req.files['icoFile'] && req.files['icoFile'][0]) {
+      try {
+        iconUrl = await uploadCategoryIcon(
+          req.files['icoFile'][0].buffer,
+          req.files['icoFile'][0].originalname,
+          `${categorySlug}_ico`
+        );
+      } catch (uploadError) {
+        console.error("Error uploading .ico file:", uploadError);
+        return res.status(500).json({
+          success: false,
+          message: "Failed to upload .ico file"
+        });
+      }
+    }
+
+    // Update category
+    const result = await Category.update({
+      categoryId,
+      categoryName,
+      categorySlug,
+      icon: iconUrl,        // .ico file goes to icon column
+      iconImage: imageUrl,  // image file goes to image column
+      isActive: existingCategory.is_active
+    });
+
+    if (result === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found or no changes made"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Category updated successfully",
+      data: {
+        id: categoryId,
+        name: categoryName,
+        slug: categorySlug,
+        icon: iconUrl,
+        image: imageUrl
+      }
+    });
+  } catch (error) {
+    console.error("Error updating category:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update category",
+      error: error.message
+    });
+  }
+};
+
+const addSubCategory = async (req, res) => {
+  try {
+    const { categoryId, subCategoryName } = req.body;
+
+    if (!categoryId || !subCategoryName) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ID and subcategory name are required"
+      });
+    }
+
+    // Check if category exists
+    const category = await Category.findById(categoryId);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    // Create subcategory
+    const result = await SubCategory.create({
+      categoryId,
+      subCategoryName
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Subcategory created successfully",
+      data: {
+        id: result.insertId,
+        name: subCategoryName,
+        categoryId
+      }
+    });
+  } catch (error) {
+    console.error("Error adding subcategory:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to add subcategory",
+      error: error.message
+    });
+  }
+};
+
+const deleteSubCategory = async (req, res) => {
+  try {
+    const { subcategoryId } = req.params;
+
+    if (!subcategoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Subcategory ID is required"
+      });
+    }
+
+    // Check if subcategory has products
+    const hasProducts = await SubCategory.hasProducts(subcategoryId);
+    if (hasProducts) {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete subcategory because it has products associated with it"
+      });
+    }
+
+    // Delete subcategory
+    const result = await SubCategory.delete(subcategoryId);
+
+    if (result === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Subcategory not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Subcategory deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting subcategory:", error);
+
+    // Check if error is a foreign key constraint
+    if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete subcategory because it has products associated with it"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete subcategory",
+      error: error.message
+    });
+  }
+};
+
+const toggleCategoryStatus = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ID is required"
+      });
+    }
+
+    // Get current category status (including inactive ones)
+    const category = await Category.findByIdIncludingInactive(categoryId);
+    if (!category) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    // Toggle status (1 to 0 or 0 to 1)
+    const newStatus = category.is_active === 1 ? 0 : 1;
+
+    // Update category status
+    const result = await Category.updateStatus(categoryId, newStatus);
+
+    if (result === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Category ${newStatus === 1 ? 'activated' : 'deactivated'} successfully`,
+      data: {
+        id: categoryId,
+        is_active: newStatus
+      }
+    });
+  } catch (error) {
+    console.error("Error toggling category status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update category status",
+      error: error.message
+    });
+  }
+};
+
+const deleteCategory = async (req, res) => {
+  try {
+    const { categoryId } = req.params;
+
+    if (!categoryId) {
+      return res.status(400).json({
+        success: false,
+        message: "Category ID is required"
+      });
+    }
+
+    // Check if category has subcategories
+    const subcategories = await SubCategory.findByCategoryId(categoryId);
+    if (subcategories.length > 0) {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete category because it has subcategories. Please delete all subcategories first."
+      });
+    }
+
+    // Check if category has products
+    const hasProducts = await Category.hasProducts(categoryId);
+    if (hasProducts) {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete category because it has products associated with it. Please remove or reassign the products first."
+      });
+    }
+
+    // Delete category (soft delete by setting is_active to 0)
+    const result = await Category.delete(categoryId);
+
+    if (result === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Category deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting category:", error);
+
+    // Check if error is a foreign key constraint
+    if (error.code === 'ER_ROW_IS_REFERENCED_2') {
+      return res.status(409).json({
+        success: false,
+        message: "Cannot delete category because it has related data (subcategories or products)"
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete category",
+      error: error.message
+    });
+  }
+};
+
+const getSellerBankDetails = async (req, res) => {
+  try {
+    const { sellerId } = req.params;
+
+    if (!sellerId) {
+      return res.status(400).json({
+        success: false,
+        message: "Seller ID is required"
+      });
+    }
+
+    // Check if seller exists
+    const seller = await User.findById(sellerId);
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found"
+      });
+    }
+
+    // Get bank details
+    const bankDetails = await Bank.findByUserId(sellerId);
+
+    if (!bankDetails) {
+      return res.json({
+        success: true,
+        data: null,
+        message: "No bank details found for this seller"
+      });
+    }
+
+    res.json({
+      success: true,
+      data: bankDetails
+    });
+  } catch (error) {
+    console.error("Error fetching seller bank details:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch bank details",
+      error: error.message
+    });
+  }
+};
+
+const recordPayment = async (req, res) => {
+  try {
+    const { sellerId, amount } = req.body;
+
+    if (!sellerId || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Seller ID and amount are required"
+      });
+    }
+
+    // Validate amount is positive number
+    if (isNaN(amount) || parseFloat(amount) <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Amount must be a positive number"
+      });
+    }
+
+    // Check if seller exists
+    const seller = await User.findById(sellerId);
+    if (!seller) {
+      return res.status(404).json({
+        success: false,
+        message: "Seller not found"
+      });
+    }
+
+    // Record payment
+    const result = await Payment.create({
+      userId: sellerId,
+      amount: parseFloat(amount)
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Payment recorded successfully",
+      data: {
+        id: result.insertId,
+        amount: parseFloat(amount),
+        sellerId
+      }
+    });
+  } catch (error) {
+    console.error("Error recording payment:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to record payment",
       error: error.message
     });
   }
@@ -168,4 +575,11 @@ module.exports = {
   getAdminDashboardData,
   getAdminCategories,
   addCategory,
+  updateCategory,
+  addSubCategory,
+  deleteSubCategory,
+  toggleCategoryStatus,
+  deleteCategory,
+  getSellerBankDetails,
+  recordPayment,
 };

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom';
 import AdminLayout from '../layout/AdminLayout';
 import { getAdminSellers } from '../../../api/admin';
 import api from '../../../api/axios';
-import { Mail, Phone, MapPin, Calendar, ShoppingBag, Star, TrendingUp, User, Home, Briefcase, Info, DollarSign, CreditCard, Loader } from 'lucide-react';
+import { Mail, Phone, MapPin, Calendar, ShoppingBag, TrendingUp, User, Home, Briefcase, Info, DollarSign, CreditCard, Loader, CheckSquare, Square, Check } from 'lucide-react';
 
 const SellerDetails = () => {
     const { id } = useParams();
@@ -12,10 +12,41 @@ const SellerDetails = () => {
     const [error, setError] = useState(null);
     const [bankDetails, setBankDetails] = useState(null);
     const [bankLoading, setBankLoading] = useState(false);
-    const [paymentAmount, setPaymentAmount] = useState('');
+
+    // Orders and payment states
+    const [orders, setOrders] = useState([]);
+    const [paymentHistory, setPaymentHistory] = useState([]);
+    const [stats, setStats] = useState(null);
     const [paymentLoading, setPaymentLoading] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState('');
     const [paymentError, setPaymentError] = useState('');
+
+    // Pagination states
+    const [currentPage, setCurrentPage] = useState(1);
+    const [itemsPerPage] = useState(10);
+
+    // Calculate pagination
+    const indexOfLastItem = currentPage * itemsPerPage;
+    const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+    const currentOrders = orders.slice(indexOfFirstItem, indexOfLastItem);
+    const totalPages = Math.ceil(orders.length / itemsPerPage);
+
+    // Pagination handlers
+    const handlePageChange = (pageNumber) => {
+        setCurrentPage(pageNumber);
+    };
+
+    const handlePrevious = () => {
+        if (currentPage > 1) {
+            setCurrentPage(currentPage - 1);
+        }
+    };
+
+    const handleNext = () => {
+        if (currentPage < totalPages) {
+            setCurrentPage(currentPage + 1);
+        }
+    };
 
     useEffect(() => {
         const fetchSeller = async () => {
@@ -45,6 +76,7 @@ const SellerDetails = () => {
     useEffect(() => {
         if (seller) {
             fetchBankDetails();
+            fetchEarnings();
         }
     }, [seller]);
 
@@ -62,33 +94,48 @@ const SellerDetails = () => {
         }
     };
 
-    const handlePaymentSubmit = async (e) => {
-        e.preventDefault();
-        setPaymentError('');
-        setPaymentSuccess('');
-
-        if (!paymentAmount || parseFloat(paymentAmount) <= 0) {
-            setPaymentError('Please enter a valid amount');
-            return;
-        }
-
+    const fetchEarnings = async () => {
         try {
-            setPaymentLoading(true);
-            const response = await api.post('/admin/payments', {
-                sellerId: id,
-                amount: parseFloat(paymentAmount)
-            });
-
+            const response = await api.get(`/admin/sellers/${id}/earnings`);
             if (response.data.success) {
-                setPaymentSuccess(`Payment of Rs. ${parseFloat(paymentAmount).toLocaleString()} recorded successfully!`);
-                setPaymentAmount('');
-                setTimeout(() => setPaymentSuccess(''), 5000);
+                setOrders(response.data.data.orders);
+                setPaymentHistory(response.data.data.paymentHistory);
+                setStats(response.data.data.stats);
             }
         } catch (err) {
-            setPaymentError(err.response?.data?.message || 'Failed to record payment');
-        } finally {
-            setPaymentLoading(false);
+            console.error('Failed to fetch earnings:', err);
         }
+    };
+
+    const getPaymentStatusBadge = (status) => {
+        const statusConfig = {
+            'completed': { bg: 'bg-green-100', text: 'text-green-700', label: 'Completed' },
+            'pending': { bg: 'bg-yellow-100', text: 'text-yellow-700', label: 'Pending' },
+            'failed': { bg: 'bg-red-100', text: 'text-red-700', label: 'Failed' },
+            'refunded': { bg: 'bg-gray-100', text: 'text-gray-700', label: 'Refunded' }
+        };
+        const config = statusConfig[status] || statusConfig['pending'];
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+                {config.label}
+            </span>
+        );
+    };
+
+    const getOrderStatusBadge = (status) => {
+        const statusConfig = {
+            'confirmed': { bg: 'bg-blue-100', text: 'text-blue-700', label: 'Confirmed' },
+            'processing': { bg: 'bg-purple-100', text: 'text-purple-700', label: 'Processing' },
+            'shipped': { bg: 'bg-indigo-100', text: 'text-indigo-700', label: 'Shipped' },
+            'delivered': { bg: 'bg-green-100', text: 'text-green-700', label: 'Delivered' },
+            'cancelled': { bg: 'bg-red-100', text: 'text-red-700', label: 'Cancelled' }
+        };
+        const config = statusConfig[status] || statusConfig['confirmed'];
+        return (
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.bg} ${config.text}`}>
+                {config.label}
+            </span>
+        );
     };
 
     const getStatusColor = (status) => {
@@ -109,6 +156,17 @@ const SellerDetails = () => {
         });
     };
 
+    const formatDateTime = (dateString) => {
+        if (!dateString) return 'N/A';
+        return new Date(dateString).toLocaleString('en-GB', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     if (loading) {
         return <AdminLayout><div className="flex justify-center items-center h-64">Loading...</div></AdminLayout>;
     }
@@ -124,7 +182,7 @@ const SellerDetails = () => {
     return (
         <AdminLayout>
             <div className="p-6 bg-gray-50 min-h-screen">
-                <div className="max-w-4xl mx-auto">
+                <div className="max-w-6xl mx-auto">
                     {/* Header */}
                     <div className="mb-6">
                         <h1 className="text-3xl font-bold text-gray-800">Seller Details</h1>
@@ -132,7 +190,7 @@ const SellerDetails = () => {
                     </div>
 
                     {/* Seller Profile Card */}
-                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-200 mb-6">
                         <div className="flex flex-col md:flex-row items-start md:items-center">
                             {seller.profile_image ? (
                                 <img
@@ -164,7 +222,6 @@ const SellerDetails = () => {
 
                         <div className="mt-6 border-t border-gray-200 pt-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                {/* Contact Info */}
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center"><User className="mr-2 text-green-600" />Personal Information</h3>
                                     <div className="space-y-2 text-gray-700">
@@ -173,8 +230,6 @@ const SellerDetails = () => {
                                         <div className="flex items-center"><MapPin className="w-4 h-4 mr-3 text-gray-400" /> {seller.location || 'N/A'}</div>
                                     </div>
                                 </div>
-
-                                {/* Business Info */}
                                 <div>
                                     <h3 className="text-lg font-semibold text-gray-800 mb-3 flex items-center"><Briefcase className="mr-2 text-green-600" />Business Details</h3>
                                     <div className="space-y-2 text-gray-700">
@@ -187,158 +242,181 @@ const SellerDetails = () => {
                         </div>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
                         <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
                             <div className="flex items-center">
-                                <ShoppingBag className="w-8 h-8 text-blue-500 mr-4" />
-                                <div>
-                                    <p className="text-sm text-gray-500">Total Products</p>
-                                    <p className="text-2xl font-bold text-gray-800">{seller.totalProducts}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                            <div className="flex items-center">
-                                <TrendingUp className="w-8 h-8 text-green-500 mr-4" />
-                                <div>
-                                    <p className="text-sm text-gray-500">Total Sales</p>
-                                    <p className="text-2xl font-bold text-gray-800">Rs. {seller.totalSales ? parseFloat(seller.totalSales).toLocaleString() : '0'}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                            <div className="flex items-center">
-                                <TrendingUp className="w-8 h-8 text-purple-500 mr-4" />
+                                <TrendingUp className="w-8 h-8 text-blue-500 mr-4" />
                                 <div>
                                     <p className="text-sm text-gray-500">Total Earned</p>
-                                    <p className="text-2xl font-bold text-gray-800">Rs. {seller.totalEarnings ? parseFloat(seller.totalEarnings).toLocaleString() : '0'}</p>
+                                    <p className="text-2xl font-bold text-gray-800">Rs. {stats ? parseFloat(stats.total_earned).toLocaleString() : '0'}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-5 rounded-lg shadow-md border border-yellow-200 bg-yellow-50">
+                            <div className="flex items-center">
+                                <DollarSign className="w-8 h-8 text-yellow-500 mr-4" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Pending Orders</p>
+                                    <p className="text-2xl font-bold text-yellow-700">Rs. {stats ? parseFloat(stats.unpaid_amount).toLocaleString() : '0'}</p>
+                                    <p className="text-xs text-gray-600">{stats ? stats.unpaid_count : 0} orders</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-5 rounded-lg shadow-md border border-green-200 bg-green-50">
+                            <div className="flex items-center">
+                                <Check className="w-8 h-8 text-green-500 mr-4" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Completed Orders</p>
+                                    <p className="text-2xl font-bold text-green-700">Rs. {stats ? parseFloat(stats.completed_amount).toLocaleString() : '0'}</p>
+                                    <p className="text-xs text-gray-600">{stats ? stats.completed_count : 0} orders</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-5 rounded-lg shadow-md border border-purple-200 bg-purple-50">
+                            <div className="flex items-center">
+                                <CreditCard className="w-8 h-8 text-purple-500 mr-4" />
+                                <div>
+                                    <p className="text-sm text-gray-600">Available Balance</p>
+                                    <p className="text-2xl font-bold text-purple-700">Rs. {seller.availableBalance ? parseFloat(seller.availableBalance).toLocaleString() : '0'}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Payment Section */}
-                    <div className="bg-white p-6 rounded-lg shadow-md mt-6 border border-gray-200">
+                    {/* Orders List Section */}
+                    <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
                         <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <DollarSign className="mr-2 text-green-600" />
-                            Payment Management
+                            <ShoppingBag className="mr-2 text-blue-600" />
+                            Seller Orders ({orders.length})
                         </h3>
 
-                        {bankLoading ? (
-                            <div className="flex items-center justify-center py-8">
-                                <Loader className="w-6 h-6 animate-spin text-green-600" />
-                            </div>
-                        ) : !bankDetails ? (
-                            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                                <p className="text-yellow-800">No bank details found for this seller. Please ask the seller to add their bank information.</p>
+                        {orders.length === 0 ? (
+                            <div className="text-center py-8 text-gray-500">
+                                No orders found for this seller
                             </div>
                         ) : (
                             <>
-                                {/* Bank Details */}
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-5 mb-6">
-                                    <h4 className="text-md font-semibold text-gray-800 mb-3 flex items-center">
-                                        <CreditCard className="mr-2 text-blue-600" />
-                                        Bank Account Details
-                                    </h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
-                                        <div>
-                                            <p className="text-sm text-gray-500">Bank Name</p>
-                                            <p className="font-medium">{bankDetails.bank_name}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Account Number</p>
-                                            <p className="font-medium">{bankDetails.account_number}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Account Holder</p>
-                                            <p className="font-medium">{bankDetails.holder_name}</p>
-                                        </div>
-                                        <div>
-                                            <p className="text-sm text-gray-500">Bank Code</p>
-                                            <p className="font-medium">{bankDetails.bank_code}</p>
-                                        </div>
-                                        <div className="md:col-span-2">
-                                            <p className="text-sm text-gray-500">Branch Name</p>
-                                            <p className="font-medium">{bankDetails.branch_name}</p>
-                                        </div>
-                                    </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full">
+                                        <thead className="bg-gray-50 border-b">
+                                            <tr>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order #</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Customer</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Seller Amount</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Payment Status</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Status</th>
+                                                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200">
+                                            {currentOrders.map((order) => (
+                                                <tr key={order.order_id} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-3 font-medium text-gray-900">{order.order_number}</td>
+                                                    <td className="px-4 py-3 text-gray-600">{order.customer_name}</td>
+                                                    <td className="px-4 py-3 font-semibold text-green-600">
+                                                        Rs. {parseFloat(order.seller_amount).toLocaleString()}
+                                                    </td>
+                                                    <td className="px-4 py-3">{getPaymentStatusBadge(order.payment_status)}</td>
+                                                    <td className="px-4 py-3">{getOrderStatusBadge(order.order_status)}</td>
+                                                    <td className="px-4 py-3 text-gray-600">{formatDateTime(order.order_datetime)}</td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
 
-                                {/* Payment Form */}
-                                <div className="bg-green-50 border border-green-200 rounded-lg p-5">
-                                    <h4 className="text-md font-semibold text-gray-800 mb-4">Record Payment</h4>
-
-                                    {/* Success Message */}
-                                    {paymentSuccess && (
-                                        <div className="bg-green-100 border border-green-300 text-green-800 px-4 py-3 rounded-lg mb-4 flex items-center">
-                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                            {paymentSuccess}
-                                        </div>
-                                    )}
-
-                                    {/* Error Message */}
-                                    {paymentError && (
-                                        <div className="bg-red-100 border border-red-300 text-red-800 px-4 py-3 rounded-lg mb-4 flex items-center">
-                                            <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                                            </svg>
-                                            {paymentError}
-                                        </div>
-                                    )}
-
-                                    <form onSubmit={handlePaymentSubmit}>
-                                        <div className="mb-4">
-                                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Payment Amount (Rs.)
-                                            </label>
-                                            <input
-                                                type="number"
-                                                step="0.01"
-                                                min="0"
-                                                value={paymentAmount}
-                                                onChange={(e) => setPaymentAmount(e.target.value)}
-                                                placeholder="Enter amount to pay"
-                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                                                disabled={paymentLoading}
-                                                required
-                                            />
-                                            <p className="text-xs text-gray-500 mt-1">
-                                                Enter the amount you have deposited to the seller's bank account
-                                            </p>
+                                {/* Pagination Controls */}
+                                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200">
+                                    <div className="text-sm text-gray-600">
+                                        Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, orders.length)} of {orders.length} orders
+                                    </div>
+                                    <div className="flex items-center space-x-2">
+                                        <button
+                                            onClick={handlePrevious}
+                                            disabled={currentPage === 1}
+                                            className={`px-3 py-1 rounded border ${
+                                                currentPage === 1
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                                            }`}
+                                        >
+                                            Previous
+                                        </button>
+                                        <div className="flex items-center space-x-1">
+                                            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNumber) => {
+                                                // Show first page, last page, current page, and pages around current page
+                                                if (
+                                                    pageNumber === 1 ||
+                                                    pageNumber === totalPages ||
+                                                    (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1)
+                                                ) {
+                                                    return (
+                                                        <button
+                                                            key={pageNumber}
+                                                            onClick={() => handlePageChange(pageNumber)}
+                                                            className={`px-3 py-1 rounded border ${
+                                                                currentPage === pageNumber
+                                                                    ? 'bg-blue-600 text-white border-blue-600'
+                                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                                                            }`}
+                                                        >
+                                                            {pageNumber}
+                                                        </button>
+                                                    );
+                                                } else if (
+                                                    pageNumber === currentPage - 2 ||
+                                                    pageNumber === currentPage + 2
+                                                ) {
+                                                    return <span key={pageNumber} className="px-2">...</span>;
+                                                }
+                                                return null;
+                                            })}
                                         </div>
                                         <button
-                                            type="submit"
-                                            disabled={paymentLoading || !paymentAmount}
-                                            className="w-full px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 flex items-center justify-center space-x-2 font-medium"
+                                            onClick={handleNext}
+                                            disabled={currentPage === totalPages}
+                                            className={`px-3 py-1 rounded border ${
+                                                currentPage === totalPages
+                                                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                                            }`}
                                         >
-                                            {paymentLoading ? (
-                                                <>
-                                                    <Loader className="w-5 h-5 animate-spin" />
-                                                    <span>Recording Payment...</span>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <DollarSign className="w-5 h-5" />
-                                                    <span>Record Payment</span>
-                                                </>
-                                            )}
+                                            Next
                                         </button>
-                                    </form>
+                                    </div>
                                 </div>
                             </>
                         )}
                     </div>
 
-                    {/* Recent Activity (Placeholder) */}
-                    <div className="bg-white p-6 rounded-lg shadow-md mt-6 border border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-                        <div className="text-gray-500">
-                            <p>Recent activity feed is not yet implemented.</p>
+                    {/* Bank Details */}
+                    {bankDetails && (
+                        <div className="bg-white p-6 rounded-lg shadow-md mb-6 border border-gray-200">
+                            <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                                <CreditCard className="mr-2 text-blue-600" />
+                                Bank Account Details
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                                <div>
+                                    <p className="text-sm text-gray-500">Bank Name</p>
+                                    <p className="font-medium">{bankDetails.bank_name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Account Number</p>
+                                    <p className="font-medium">{bankDetails.account_number}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Account Holder</p>
+                                    <p className="font-medium">{bankDetails.holder_name}</p>
+                                </div>
+                                <div>
+                                    <p className="text-sm text-gray-500">Branch</p>
+                                    <p className="font-medium">{bankDetails.branch_name}</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </AdminLayout>

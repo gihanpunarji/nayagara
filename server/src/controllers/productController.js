@@ -752,6 +752,213 @@ const getPublicProductById = async (req, res) => {
   }
 };
 
+// End of public functions
+
+// Get admin products with advanced filtering (cross-seller)
+const getAdminProducts = async (req, res) => {
+  const { getConnection } = require("../config/database");
+  const pool = getConnection();
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const { 
+      page = 1, 
+      limit = 25,
+      search,
+      status,
+      category,
+      sellerId,
+      sort = 'newest'
+    } = req.query;
+    
+    const offset = (page - 1) * limit;
+    
+    let whereClause = ' WHERE 1=1';
+    const queryParams = [];
+
+    // Add search filter
+    if (search && search.trim()) {
+      whereClause += ` AND (p.product_title LIKE ? OR p.product_description LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Add status filter
+    if (status && status !== 'all') {
+      if (status === 'out_of_stock') {
+        whereClause += ` AND p.stock_quantity = 0`;
+      } else {
+        whereClause += ` AND p.product_status = ?`;
+        queryParams.push(status);
+      }
+    }
+
+    // Add category filter
+    if (category && category !== 'all') {
+      whereClause += ` AND c.category_name = ?`;
+      queryParams.push(category);
+    }
+
+    // Add seller filter
+    if (sellerId) {
+      whereClause += ` AND p.seller_id = ?`;
+      queryParams.push(sellerId);
+    }
+    
+    // Get stats
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN product_status = 'active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN product_status = 'pending_approval' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN product_status = 'suspended' THEN 1 ELSE 0 END) as suspended,
+        SUM(CASE WHEN is_featured = 1 THEN 1 ELSE 0 END) as featured,
+        SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock
+      FROM products
+    `;
+    const [statsResult] = await connection.execute(statsQuery);
+    const stats = {
+        total: parseInt(statsResult[0].total) || 0,
+        active: parseInt(statsResult[0].active) || 0,
+        pending: parseInt(statsResult[0].pending) || 0,
+        suspended: parseInt(statsResult[0].suspended) || 0,
+        featured: parseInt(statsResult[0].featured) || 0,
+        out_of_stock: parseInt(statsResult[0].out_of_stock) || 0
+    };
+
+    // Get total count for pagination (respecting filters)
+    const countQuery = `
+      SELECT COUNT(DISTINCT p.product_id) as total
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN users u ON p.seller_id = u.user_id
+      ${whereClause}
+    `;
+    const [countResult] = await connection.execute(countQuery, queryParams);
+    const total = countResult[0].total;
+
+    let query = `
+      SELECT p.*, 
+             c.category_name,
+             sc.sub_category_name,
+             u.first_name as seller_first_name,
+             u.last_name as seller_last_name,
+             s.store_name,
+             GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
+      LEFT JOIN users u ON p.seller_id = u.user_id
+      LEFT JOIN store s ON u.user_id = s.user_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      ${whereClause}
+      GROUP BY p.product_id
+    `;
+
+    // Add sorting
+    switch (sort) {
+      case 'oldest':
+        query += ` ORDER BY p.created_at ASC`;
+        break;
+      case 'price_high':
+        query += ` ORDER BY p.price DESC`;
+        break;
+      case 'price_low':
+        query += ` ORDER BY p.price ASC`;
+        break;
+      case 'newest':
+      default:
+        query += ` ORDER BY p.created_at DESC`;
+        break;
+    }
+
+    // Add pagination
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(parseInt(limit), offset);
+
+    const [products] = await connection.execute(query, queryParams);
+
+    // Format products
+    const formattedProducts = products.map(product => {
+      const images = product.images 
+        ? product.images.split(',').map(url => ({ image_url: url.trim() }))
+        : [];
+        
+      return {
+        ...product,
+        images,
+        seller_name: product.store_name || `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
+      };
+    });
+
+    res.json({
+      success: true,
+      message: "Admin products fetched successfully",
+      data: formattedProducts,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      stats
+    });
+
+  } catch (error) {
+    console.error("Get admin products error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+// Update product status (Admin only)
+const updateProductStatus = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { status } = req.body;
+
+    if (!productId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID and status are required"
+      });
+    }
+
+    const allowedStatuses = ['active', 'pending_approval', 'inactive'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
+
+    const affectedRows = await Product.updateStatus(productId, status);
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Product status updated to ${status}`
+    });
+
+  } catch (error) {
+    console.error("Update product status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 module.exports = {
     createProduct,
     getSellerProducts,
@@ -759,5 +966,7 @@ module.exports = {
     updateProduct,
     getPublicProducts,
     filterProducts,
-    getPublicProductById
+    getPublicProductById,
+    getAdminProducts,
+    updateProductStatus
 }

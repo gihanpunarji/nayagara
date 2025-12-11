@@ -29,8 +29,21 @@ const getCustomers = async (req, res) => {
 
 const getSellers = async (req, res) => {
   try {
-    const sellers = await User.getAllSellersWithStats();
-    res.json({ success: true, sellers });
+    const { page = 1, limit = 25, search, status } = req.query;
+    const offset = (page - 1) * limit;
+
+    const { sellers, total } = await User.getAllSellersWithStats(limit, offset, search, status);
+    
+    res.json({ 
+      success: true, 
+      sellers, 
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error("Error fetching all sellers:", error);
     res.status(500).json({ success: false, message: "Failed to fetch sellers" });
@@ -709,6 +722,57 @@ const recordSellerPayment = async (req, res) => {
   }
 };
 
+const updateUserStatus = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { status } = req.body;
+
+    if (!userId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "User ID and status are required"
+      });
+    }
+
+    // Validate status value
+    const validStatuses = ['active', 'inactive', 'pending_verification', 'suspended', 'banned'];
+    if (!validStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value. Valid values are: " + validStatuses.join(', ')
+      });
+    }
+
+    // Check if user exists
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Update user status
+    await User.updateStatus(userId, status);
+
+    res.json({
+      success: true,
+      message: "User status updated successfully",
+      data: {
+        userId,
+        status
+      }
+    });
+  } catch (error) {
+    console.error("Error updating user status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update user status",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAdminProfile,
   updateAdminProfile,
@@ -727,4 +791,5 @@ module.exports = {
   recordPayment,
   getAllSellerPayments,
   recordSellerPayment,
+  updateUserStatus,
 };

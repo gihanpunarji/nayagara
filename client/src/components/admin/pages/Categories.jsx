@@ -51,21 +51,24 @@ const Categories = () => {
       setLoading(true);
       const response = await getAdminCategories();
       if (response.success) {
-        const mappedCategories = response.categories.map(cat => ({
-          id: cat.id,
-          name: cat.name,
-          description: `Category for ${cat.name}`, 
-          parentCategory: null, 
-          subCategories: cat.subCategories || [],
-          totalProducts: cat.totalProducts || 0,
-          activeProducts: cat.activeProducts || 0,
-          totalSales: cat.totalSales || 0,
-          icon: cat.icon || '📁', 
-          status: cat.status || 'active',
-          featured: false, 
-          createdDate: new Date().toISOString(), 
-          lastUpdated: new Date().toISOString() 
-        }));
+        const mappedCategories = response.categories.map(cat => {
+          const mappedStatus = (cat.status === 'inactive' || cat.is_active === 0) ? 'inactive' : 'active';
+          return {
+            id: cat.id,
+            name: cat.name,
+            description: `Category for ${cat.name}`, 
+            parentCategory: null, 
+            subCategories: cat.subCategories || [],
+            totalProducts: cat.totalProducts || 0,
+            activeProducts: cat.activeProducts || 0,
+            totalSales: cat.totalSales || 0,
+            icon: cat.icon || '📁', 
+            status: mappedStatus,
+            featured: false, 
+            createdDate: new Date().toISOString(), 
+            lastUpdated: new Date().toISOString() 
+          };
+        });
         setCategories(mappedCategories);
       }
     } catch (error) {
@@ -484,13 +487,13 @@ const Categories = () => {
               <span>Add Category</span>
             </button>
 
-            <button
+            {/* <button
               onClick={() => handleBulkAction('export')}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
             >
               <Download className="w-4 h-4" />
               <span>Export</span>
-            </button>
+            </button> */}
 
             <button
               onClick={() => window.location.reload()}

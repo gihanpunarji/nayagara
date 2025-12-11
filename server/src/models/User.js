@@ -359,12 +359,41 @@ class User {
     }
   }
 
-  static async getAllSellersWithStats() {
+  static async getAllSellersWithStats(limit = 25, offset = 0, search = '', status = 'all') {
     const pool = getConnection();
     let connection;
     try {
       connection = await pool.getConnection();
-      const [rows] = await connection.execute(`
+      
+      let whereClause = "WHERE u.user_type = 'seller'";
+      const queryParams = [];
+
+      // Add status filter
+      if (status && status !== 'all') {
+        whereClause += " AND u.user_status = ?";
+        queryParams.push(status);
+      }
+
+      // Add search filter
+      if (search && search.trim()) {
+        whereClause += " AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.user_email LIKE ? OR u.user_mobile LIKE ? OR s.store_name LIKE ?)";
+        const searchTerm = `%${search.trim()}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(DISTINCT u.user_id) as total
+        FROM users u
+        LEFT JOIN store s ON u.user_id = s.user_id
+        ${whereClause}
+      `;
+      
+      const [countResult] = await connection.execute(countQuery, queryParams);
+      const total = countResult[0].total;
+
+      // Get paginated data
+      const query = `
         SELECT
             u.user_id AS id,
             CONCAT(u.first_name, ' ', u.last_name) AS name,
@@ -395,14 +424,19 @@ class User {
         FROM
             users u
         LEFT JOIN store s ON u.user_id = s.user_id
-        WHERE
-            u.user_type = 'seller'
+        ${whereClause}
         GROUP BY
             u.user_id
         ORDER BY
-            u.created_at DESC;
-      `);
-      return rows;
+            u.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      // Copy query params and add limit/offset
+      const finalQueryParams = [...queryParams, parseInt(limit), parseInt(offset)];
+      
+      const [rows] = await connection.execute(query, finalQueryParams);
+      return { sellers: rows, total };
     } finally {
       if (connection) connection.release();
     }
@@ -603,6 +637,20 @@ class User {
         [userId, userId]
       );
       return rows[0]?.available_balance || 0;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+  static async updateStatus(userId, status) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [result] = await connection.execute(
+        "UPDATE users SET user_status = ? WHERE user_id = ?",
+        [status, userId]
+      );
+      return result;
     } finally {
       if (connection) connection.release();
     }

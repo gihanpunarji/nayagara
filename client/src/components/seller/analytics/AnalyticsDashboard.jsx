@@ -18,96 +18,12 @@ import {
   Target
 } from 'lucide-react';
 
+import { getSellerAnalytics } from '../../../api/seller';
+
 const AnalyticsDashboard = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('30');
   const [analytics, setAnalytics] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-
-  // Mock analytics data
-  const mockAnalytics = {
-    overview: {
-      totalViews: 15420,
-      totalOrders: 234,
-      conversionRate: 1.52,
-      totalRevenue: 2450000,
-      averageOrderValue: 10470,
-      newCustomers: 89,
-      returningCustomers: 145,
-      rating: 4.6,
-      ratingCount: 178
-    },
-    trends: {
-      views: { current: 15420, previous: 13200, change: 16.8 },
-      orders: { current: 234, previous: 198, change: 18.2 },
-      revenue: { current: 2450000, previous: 2100000, change: 16.7 },
-      customers: { current: 234, previous: 201, change: 16.4 }
-    },
-    topProducts: [
-      {
-        id: 1,
-        title: 'iPhone 14 Pro Max 256GB',
-        image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab?w=400',
-        views: 2340,
-        orders: 45,
-        revenue: 2025000,
-        conversionRate: 1.92
-      },
-      {
-        id: 2,
-        title: 'MacBook Pro 16" M2 512GB',
-        image: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=400',
-        views: 1876,
-        orders: 28,
-        revenue: 1820000,
-        conversionRate: 1.49
-      },
-      {
-        id: 3,
-        title: 'Toyota Prius 2020 Hybrid',
-        image: 'https://images.unsplash.com/photo-1549399163-1ba32edc4c84?w=400',
-        views: 1456,
-        orders: 3,
-        revenue: 255000,
-        conversionRate: 0.21
-      },
-      {
-        id: 4,
-        title: 'Samsung 65" 4K Smart TV',
-        image: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400',
-        views: 987,
-        orders: 12,
-        revenue: 222000,
-        conversionRate: 1.22
-      },
-      {
-        id: 5,
-        title: 'Nike Air Max 270 Black White',
-        image: 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400',
-        views: 756,
-        orders: 24,
-        revenue: 36000,
-        conversionRate: 3.17
-      }
-    ],
-    categoryPerformance: [
-      { category: 'Electronics', views: 8420, orders: 89, revenue: 1890000 },
-      { category: 'Vehicles', views: 3210, orders: 12, revenue: 4800000 },
-      { category: 'Fashion', views: 2456, orders: 78, revenue: 234000 },
-      { category: 'Home & Living', views: 1334, orders: 55, revenue: 445000 }
-    ],
-    chartData: {
-      daily: [
-        { date: '2024-01-08', views: 456, orders: 8, revenue: 89000 },
-        { date: '2024-01-09', views: 523, orders: 12, revenue: 156000 },
-        { date: '2024-01-10', views: 487, orders: 9, revenue: 134000 },
-        { date: '2024-01-11', views: 612, orders: 15, revenue: 234000 },
-        { date: '2024-01-12', views: 678, orders: 18, revenue: 278000 },
-        { date: '2024-01-13', views: 543, orders: 11, revenue: 187000 },
-        { date: '2024-01-14', views: 598, orders: 14, revenue: 205000 },
-        { date: '2024-01-15', views: 634, orders: 16, revenue: 289000 }
-      ]
-    }
-  };
 
   const periodOptions = [
     { key: '7', label: 'Last 7 days' },
@@ -116,35 +32,48 @@ const AnalyticsDashboard = () => {
     { key: '365', label: 'Last year' }
   ];
 
-  // Initialize analytics data
+  // Fetch analytics data
   useEffect(() => {
-    setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      // Ensure all values have defaults
-      const safeAnalytics = {
-        ...mockAnalytics,
-        overview: {
-          totalViews: mockAnalytics.overview?.totalViews || 0,
-          totalOrders: mockAnalytics.overview?.totalOrders || 0,
-          conversionRate: mockAnalytics.overview?.conversionRate || 0,
-          totalRevenue: mockAnalytics.overview?.totalRevenue || 0,
-          averageOrderValue: mockAnalytics.overview?.averageOrderValue || 0,
-          newCustomers: mockAnalytics.overview?.newCustomers || 0,
-          returningCustomers: mockAnalytics.overview?.returningCustomers || 0,
-          rating: mockAnalytics.overview?.rating || 0,
-          ratingCount: mockAnalytics.overview?.ratingCount || 0
-        },
-        trends: {
-          views: { current: mockAnalytics.trends?.views?.current || 0, previous: mockAnalytics.trends?.views?.previous || 0, change: mockAnalytics.trends?.views?.change || 0 },
-          orders: { current: mockAnalytics.trends?.orders?.current || 0, previous: mockAnalytics.trends?.orders?.previous || 0, change: mockAnalytics.trends?.orders?.change || 0 },
-          revenue: { current: mockAnalytics.trends?.revenue?.current || 0, previous: mockAnalytics.trends?.revenue?.previous || 0, change: mockAnalytics.trends?.revenue?.change || 0 },
-          customers: { current: mockAnalytics.trends?.customers?.current || 0, previous: mockAnalytics.trends?.customers?.previous || 0, change: mockAnalytics.trends?.customers?.change || 0 }
+    const fetchAnalytics = async () => {
+      try {
+        setIsLoading(true);
+        const response = await getSellerAnalytics(selectedPeriod);
+        
+        if (response.success && response.data) {
+          const data = response.data;
+          // Ensure all necessary fields exist with defaults
+          const sanitizedData = {
+            overview: {
+              totalViews: data.overview?.totalViews || 0,
+              totalOrders: data.overview?.totalOrders || 0,
+              conversionRate: data.overview?.conversionRate || 0,
+              totalRevenue: data.overview?.totalRevenue || 0,
+              averageOrderValue: data.overview?.averageOrderValue || 0,
+              newCustomers: data.overview?.newCustomers || 0,
+              returningCustomers: data.overview?.returningCustomers || 0,
+              rating: data.overview?.rating || 0,
+              ratingCount: data.overview?.ratingCount || 0
+            },
+            trends: {
+              views: data.trends?.views || { current: 0, previous: 0, change: 0 },
+              orders: data.trends?.orders || { current: 0, previous: 0, change: 0 },
+              revenue: data.trends?.revenue || { current: 0, previous: 0, change: 0 },
+              customers: data.trends?.customers || { current: 0, previous: 0, change: 0 }
+            },
+            topProducts: data.topProducts || [],
+            categoryPerformance: data.categoryPerformance || [],
+            chartData: data.chartData || { daily: [] }
+          };
+          setAnalytics(sanitizedData);
         }
-      };
-      setAnalytics(safeAnalytics);
-      setIsLoading(false);
-    }, 1000);
+      } catch (error) {
+        console.error("Failed to fetch analytics:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAnalytics();
   }, [selectedPeriod]);
 
   const formatPrice = (amount) => {
@@ -447,56 +376,7 @@ const AnalyticsDashboard = () => {
         </div>
       </div>
 
-      {/* Performance Goals */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Monthly Goals</h3>
-        <div className="space-y-4">
-          {/* Revenue Goal */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Revenue Target</span>
-              <span className="text-sm text-gray-600">Rs. 2.45M / Rs. 3.00M</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-primary-500 to-primary-600 h-2 rounded-full transition-all"
-                style={{ width: '82%' }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">82% of monthly target achieved</p>
-          </div>
 
-          {/* Orders Goal */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Orders Target</span>
-              <span className="text-sm text-gray-600">234 / 300</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full transition-all"
-                style={{ width: '78%' }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">78% of monthly target achieved</p>
-          </div>
-
-          {/* Views Goal */}
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-sm font-medium text-gray-700">Views Target</span>
-              <span className="text-sm text-gray-600">15.4K / 20K</span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full transition-all"
-                style={{ width: '77%' }}
-              />
-            </div>
-            <p className="text-xs text-gray-500 mt-1">77% of monthly target achieved</p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

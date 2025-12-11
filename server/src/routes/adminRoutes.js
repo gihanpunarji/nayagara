@@ -1,8 +1,10 @@
 const express = require("express");
 const multer = require("multer");
 const { authenticateAdmin } = require("../middleware/auth");
-const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment, getAllSellerPayments, recordSellerPayment } = require("../controllers/adminController");
+const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment, getAllSellerPayments, recordSellerPayment, updateUserStatus } = require("../controllers/adminController");
 const { getAllOrders } = require("../controllers/orderController");
+const { getAnalytics } = require("../controllers/analyticsController");
+// const { getAdminProducts, updateProductStatus } = require("../controllers/productController"); // Commented out - functions removed in revert
 
 const router = express.Router();
 
@@ -38,8 +40,12 @@ router.get("/profile", getAdminProfile);
 router.put("/profile", updateAdminProfile);
 router.get("/customers", getCustomers);
 router.get("/sellers", getSellers);
+router.patch("/users/:userId/status", updateUserStatus);
+router.get("/dashboard", getAdminDashboardData);
 router.get("/dashboard", getAdminDashboardData);
 router.get("/orders", getAllOrders);
+// router.get("/products", getAdminProducts); // Commented out - function removed in revert
+// router.patch("/products/:productId/status", updateProductStatus); // Commented out - function removed in revert
 router.get("/categories", getAdminCategories);
 router.post("/categories", categoryIconUpload.fields([
   { name: 'icon', maxCount: 1 },
@@ -62,5 +68,8 @@ router.get("/sellers/:sellerId/earnings", getSellerEarnings);
 router.post("/payments", recordPayment);
 router.get("/payments/sellers", getAllSellerPayments);
 router.post("/payments/seller", recordSellerPayment);
+
+// Analytics route
+router.get("/analytics", getAnalytics);
 
 module.exports = router;

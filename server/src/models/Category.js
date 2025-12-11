@@ -93,7 +93,7 @@ class Category {
           c.category_slug,
           c.icon,
           c.image,
-          c.is_active,
+          CAST(c.is_active AS UNSIGNED) as is_active,
           (SELECT COUNT(*) FROM sub_categories sc WHERE sc.categories_category_id = c.category_id) AS subcategory_count,
           (SELECT COUNT(*) FROM products p WHERE p.category_id = c.category_id AND p.product_status = 'active') AS active_products,
           (SELECT COUNT(*) FROM products p WHERE p.category_id = c.category_id) AS total_products,
@@ -102,7 +102,6 @@ class Category {
            JOIN products p ON oi.product_id = p.product_id
            WHERE p.category_id = c.category_id) AS total_sales
         FROM categories c
-        WHERE c.is_active = 1
         ORDER BY c.category_name;
       `);
       return rows;

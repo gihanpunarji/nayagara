@@ -366,10 +366,10 @@ const ReturnsRefunds = () => {
           </div>
 
           <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
+            {/* <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2">
               <Download className="w-4 h-4" />
               <span>Export</span>
-            </button>
+            </button> */}
 
             <button
               onClick={() => window.location.reload()}

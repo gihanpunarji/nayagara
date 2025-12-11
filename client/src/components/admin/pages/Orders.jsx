@@ -187,15 +187,6 @@ const Orders = () => {
           {order.delivered_at && <div>Delivered: {formatDate(order.delivered_at)}</div>}
         </div>
       </td>
-      <td className="px-6 py-4 text-right">
-        <div className="flex items-center space-x-2">
-          <button title="View Details" className="text-gray-600 hover:text-red-600 transition-colors"><Eye className="w-4 h-4" /></button>
-          <div className="relative group">
-            <button className="text-gray-600 hover:text-red-600 transition-colors"><MoreVertical className="w-4 h-4" /></button>
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10"></div>
-          </div>
-        </div>
-      </td>
     </tr>
   );
   
@@ -222,7 +213,7 @@ const Orders = () => {
             <p className="text-gray-600 mt-1">Monitor and manage all orders across the platform</p>
           </div>
           <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"><Download className="w-4 h-4" /><span>Export</span></button>
+            {/* <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"><Download className="w-4 h-4" /><span>Export</span></button> */}
             <button onClick={() => setCurrentPage(1)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"><RefreshCw className="w-4 h-4" /><span>Refresh</span></button>
           </div>
         </div>
@@ -279,7 +270,6 @@ const Orders = () => {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount & Payment</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Timeline</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">

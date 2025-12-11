@@ -3,29 +3,20 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Search,
-  Filter,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  ShoppingBag,
   Star,
   TrendingUp,
   Eye,
   Ban,
   UserCheck,
-  AlertTriangle,
-  Download,
   RefreshCw,
   MoreVertical,
   Package,
   DollarSign,
   Clock,
-  Award,
-
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
-import { getAdminSellers } from '../../../api/admin';
+import Pagination from '../../ui/Pagination';
+import { getAdminSellers, updateUserStatus } from '../../../api/admin';
 
 const Sellers = () => {
   const navigate = useNavigate();
@@ -35,7 +26,9 @@ const Sellers = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState(null);
   const [selectedSellers, setSelectedSellers] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Sellers', count: 0, color: 'gray' },
@@ -44,11 +37,18 @@ const Sellers = () => {
     { key: 'suspended', label: 'Suspended', count: 0, color: 'red' }
   ]);
 
+
   useEffect(() => {
     const fetchSellers = async () => {
       try {
         setLoading(true);
-        const response = await getAdminSellers();
+        const response = await getAdminSellers({
+          page: currentPage,
+          limit: 25,
+          search: searchQuery,
+          status: selectedFilter
+        });
+
         if (response.success) {
           const processedSellers = response.sellers.map(seller => ({
             ...seller,
@@ -61,6 +61,11 @@ const Sellers = () => {
             store_name: seller.store_name || null
           }));
           setSellers(processedSellers);
+          
+          // We don't filter client side anymore for the list, but we use server returned data
+          setFilteredSellers(processedSellers);
+          setPagination(response.pagination);
+          
         } else {
           setError(response.message);
         }
@@ -71,43 +76,15 @@ const Sellers = () => {
       }
     };
 
-    fetchSellers();
-  }, []);
+    const timer = setTimeout(() => {
+        fetchSellers();
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [currentPage, searchQuery, selectedFilter]);
 
-  useEffect(() => {
-    const newFilterOptions = [...filterOptions];
-    newFilterOptions.forEach(filter => {
-      if (filter.key === 'all') {
-        filter.count = sellers.length;
-      } else {
-        filter.count = sellers.filter(seller => seller.status === filter.key).length;
-      }
-    });
-    setFilterOptions(newFilterOptions);
-
-    let filtered = [...sellers];
-
-    // Apply status filter
-    if (selectedFilter !== 'all') {
-      filtered = filtered.filter(seller => seller.status === selectedFilter);
-    }
-
-    // Apply search filter
-    if (searchQuery) {
-      filtered = filtered.filter(seller =>
-        seller.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        seller.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (seller.phone && seller.phone.includes(searchQuery)) ||
-        (seller.location && seller.location.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (seller.nic && seller.nic.includes(searchQuery))
-      );
-    }
-
-    // Sort by total sales (highest first)
-    filtered.sort((a, b) => b.totalSales - a.totalSales);
-
-    setFilteredSellers(filtered);
-  }, [sellers, selectedFilter, searchQuery]);
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -131,9 +108,31 @@ const Sellers = () => {
     });
   };
 
-  const handleSellerAction = (action, sellerId) => {
-    console.log(`${action} seller:`, sellerId);
-    // Handle seller actions here
+  const handleSellerAction = async (action, sellerId) => {
+    try {
+      if (action === 'suspend') {
+        if (window.confirm('Are you sure you want to suspend this seller?')) {
+          await updateUserStatus(sellerId, 'suspended');
+          setSellers(sellers.map(seller =>
+            seller.id === sellerId ? { ...seller, status: 'suspended' } : seller
+          ));
+        }
+      } else if (action === 'activate') {
+        if (window.confirm('Are you sure you want to activate this seller?')) {
+          await updateUserStatus(sellerId, 'active');
+          setSellers(sellers.map(seller =>
+            seller.id === sellerId ? { ...seller, status: 'active' } : seller
+          ));
+        }
+      } else if (action === 'view') {
+        navigate(`/admin/seller/${sellerId}`);
+      } else if (action === 'products') {
+        navigate(`/admin/products?sellerId=${sellerId}`);
+      }
+    } catch (err) {
+      console.error('Failed to update seller status:', err);
+      setError('Failed to update seller status');
+    }
   };
 
   const handleBulkAction = (action) => {
@@ -237,28 +236,18 @@ const Sellers = () => {
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
+            <div className="absolute right-0 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
               <div className="py-1">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSellerAction('contact', seller.id);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Mail className="w-4 h-4" />
-                  <span>Contact Seller</span>
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSellerAction('products', seller.id);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Package className="w-4 h-4" />
-                  <span>View Products</span>
-                </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/admin/products?sellerId=${seller.id}&sellerName=${encodeURIComponent(seller.name)}`);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>View Products</span>
+                  </button>
                 {seller.status !== 'suspended' ? (
                   <button
                     onClick={(e) => {
@@ -333,13 +322,13 @@ const Sellers = () => {
           </div>
 
           <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-            <button
+            {/* <button
               onClick={() => handleBulkAction('export')}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
             >
               <Download className="w-4 h-4" />
               <span>Export</span>
-            </button>
+            </button> */}
 
             <button
               onClick={() => window.location.reload()}
@@ -465,12 +454,12 @@ const Sellers = () => {
                 >
                   Send Email
                 </button>
-                <button
+                {/* <button
                   onClick={() => handleBulkAction('export')}
                   className="px-3 py-1 bg-gray-600 text-white rounded text-sm hover:bg-gray-700 transition-colors"
                 >
                   Export Selected
-                </button>
+                </button> */}
               </div>
             </div>
           )}
@@ -539,20 +528,9 @@ const Sellers = () => {
               </div>
 
               {/* Pagination would go here */}
+              {/* Pagination */}
               <div className="px-6 py-4 border-t border-gray-200">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-700">
-                    Showing {filteredSellers.length} of {sellers.length} sellers
-                  </p>
-                  <div className="flex items-center space-x-2">
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Previous
-                    </button>
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Next
-                    </button>
-                  </div>
-                </div>
+                <Pagination pagination={pagination} onPageChange={handlePageChange} />
               </div>
             </>
           )}

@@ -10,9 +10,11 @@ export const getAdminCustomers = async () => {
     }
 };
 
-export const getAdminSellers = async () => {
+export const getAdminSellers = async ({ page = 1, limit = 25, search = '', status = 'all' } = {}) => {
     try {
-        const response = await api.get('/admin/sellers');
+        const response = await api.get('/admin/sellers', {
+            params: { page, limit, search, status }
+        });
         return response.data;
     } catch (error) {
         console.error('Error fetching admin sellers:', error.response?.data || error.message);
@@ -30,10 +32,10 @@ export const getAdminDashboardData = async () => {
     }
 };
 
-export const getAdminProducts = async ({ page = 1, limit = 25 }) => {
+export const getAdminProducts = async ({ page = 1, limit = 25, search = '', status = 'all', category = 'all', sellerId = null }) => {
     try {
-        const response = await api.get('/products/public', {
-            params: { page, limit }
+        const response = await api.get('/admin/products', {
+            params: { page, limit, search, status, category, sellerId }
         });
         // The API returns an object with 'data' (the products) and 'pagination'
         return response.data;
@@ -61,6 +63,26 @@ export const getAdminCategories = async () => {
         return response.data;
     } catch (error) {
         console.error('Error fetching admin categories:', error.response?.data || error.message);
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};
+
+export const updateProductStatus = async (productId, status) => {
+    try {
+        const response = await api.patch(`/admin/products/${productId}/status`, { status });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating product status:', error.response?.data || error.message);
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};
+
+export const updateUserStatus = async (userId, status) => {
+    try {
+        const response = await api.patch(`/admin/users/${userId}/status`, { status });
+        return response.data;
+    } catch (error) {
+        console.error('Error updating user status:', error.response?.data || error.message);
         throw error.response?.data || { message: 'An unknown error occurred' };
     }
 };

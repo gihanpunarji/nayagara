@@ -93,8 +93,10 @@ const ProductList = () => {
   // Calculate status filters based on actual data
   const getStatusFilters = () => [
     { key: 'all', label: 'All Products', count: products.length },
-    { key: 'approved', label: 'Approved', count: products.filter(p => p.status === 'approved').length },
-    { key: 'pending', label: 'Pending Approval', count: products.filter(p => p.status === 'pending').length },
+    { key: 'active', label: 'Active', count: products.filter(p => p.status === 'active').length },
+    { key: 'pending_approval', label: 'Pending Approval', count: products.filter(p => p.status === 'pending_approval').length },
+    { key: 'suspended', label: 'Suspended', count: products.filter(p => p.status === 'suspended').length },
+    { key: 'inactive', label: 'Inactive', count: products.filter(p => p.status === 'inactive').length },
     { key: 'out_of_stock', label: 'Out of Stock', count: products.filter(p => p.stock === 0).length }
   ];
 
@@ -122,8 +124,10 @@ const ProductList = () => {
   const getStatusColor = (status, stock) => {
     if (stock === 0) return 'text-red-600 bg-red-100';
     switch (status) {
-      case 'approved': return 'text-green-600 bg-green-100';
-      case 'pending': return 'text-yellow-600 bg-yellow-100';
+      case 'active': return 'text-green-600 bg-green-100';
+      case 'pending_approval': return 'text-yellow-600 bg-yellow-100';
+      case 'suspended': return 'text-red-600 bg-red-100';
+      case 'inactive': return 'text-gray-600 bg-gray-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -131,8 +135,10 @@ const ProductList = () => {
   const getStatusIcon = (status, stock) => {
     if (stock === 0) return <XCircle className="w-4 h-4" />;
     switch (status) {
-      case 'approved': return <CheckCircle className="w-4 h-4" />;
-      case 'pending': return <Clock className="w-4 h-4" />;
+      case 'active': return <CheckCircle className="w-4 h-4" />;
+      case 'pending_approval': return <Clock className="w-4 h-4" />;
+      case 'suspended': return <AlertTriangle className="w-4 h-4" />;
+      case 'inactive': return <XCircle className="w-4 h-4" />;
       default: return <AlertTriangle className="w-4 h-4" />;
     }
   };
@@ -164,8 +170,10 @@ const ProductList = () => {
             {getStatusIcon(product.status, product.stock)}
             <span>
               {product.stock === 0 ? 'Out of Stock' :
-               product.status === 'approved' ? 'Approved' :
-               product.status === 'pending' ? 'Pending' : product.status}
+               product.status === 'active' ? 'Active' :
+               product.status === 'pending_approval' ? 'Pending Approval' : 
+               product.status === 'suspended' ? 'Suspended' :
+               product.status === 'inactive' ? 'Inactive' : product.status}
             </span>
           </span>
         </div>
@@ -262,8 +270,10 @@ const ProductList = () => {
                 {getStatusIcon(product.status, product.stock)}
                 <span>
                   {product.stock === 0 ? 'Out of Stock' :
-                   product.status === 'approved' ? 'Approved' :
-                   product.status === 'pending' ? 'Pending' : product.status}
+                   product.status === 'active' ? 'Active' :
+                   product.status === 'pending_approval' ? 'Pending Approval' : 
+                   product.status === 'suspended' ? 'Suspended' :
+                   product.status === 'inactive' ? 'Inactive' : product.status}
                 </span>
               </span>
 

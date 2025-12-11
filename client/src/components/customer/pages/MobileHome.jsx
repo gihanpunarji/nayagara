@@ -57,12 +57,11 @@ const MobileHome = () => {
           id: product.product_id,
           name: product.product_title,
           price: product.price,
-          originalPrice: null, // You can calculate this if you have discount information
+          originalPrice: null, 
           image: product.images.length > 0 
-            ? `http://localhost:5001${product.images[0].image_url}` 
-            : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-          rating: 4.5, // You can add this field to your database if needed
-          reviews: Math.floor(Math.random() * 1000) + 100, // Random for now
+            ? product.images[0].image_url : '',
+          rating: 4.5, 
+          reviews: Math.floor(Math.random() * 1000) + 100, 
           discount: null,
           badge: product.is_featured ? 'Featured' : 'New',
           location: product.location_city_name || 'Sri Lanka'
@@ -71,7 +70,6 @@ const MobileHome = () => {
       }
     } catch (error) {
       console.error('Error fetching featured products:', error);
-      // Fallback to empty array on error
       setFeaturedProducts([]);
     } finally {
       setLoading(false);

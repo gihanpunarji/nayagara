@@ -231,13 +231,6 @@ export const ProductView = () => {
       verified: product.seller_verified || true,
       responseTime: "< 1 hour",
       image: product.seller_image
-        ? product.seller_image.startsWith("http")
-          ? product.seller_profile_image
-          : `${
-              import.meta.env.VITE_API_URL?.replace("/api", "") ||
-              "http://localhost:5001"
-            }${product.seller_image}`
-        : null,
     };
 
     openChat(sellerData, processedProduct);
@@ -447,17 +440,7 @@ export const ProductView = () => {
               <div className="flex items-center space-x-3">
                 <span className="text-3xl font-bold text-gray-900">
                   Rs. {processedProduct.price.toLocaleString()}
-                </span>
-                {processedProduct.originalPrice && (
-                  <>
-                    <span className="text-lg text-gray-500 line-through">
-                      Rs. {processedProduct.originalPrice.toLocaleString()}
-                    </span>
-                    <span className="bg-red-100 text-red-800 text-sm font-semibold px-2 py-1 rounded">
-                      -{processedProduct.discount}%
-                    </span>
-                  </>
-                )}
+                </span>         
               </div>
 
               {/* Actions */}

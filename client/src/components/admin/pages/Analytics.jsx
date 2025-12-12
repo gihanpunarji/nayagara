@@ -9,6 +9,18 @@ import {
   Download,
   RefreshCw
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Legend,
+  AreaChart,
+  Area
+} from 'recharts';
 import AdminLayout from '../layout/AdminLayout';
 import api from '../../../api/axios';
 
@@ -313,33 +325,118 @@ const Analytics = () => {
           </div>
         </div>
 
-        {/* Charts Placeholder */}
+        {/* Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">Revenue Over Time</h2>
               <BarChart3 className="w-5 h-5 text-gray-400" />
             </div>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">Revenue chart will be displayed here</p>
-                <p className="text-gray-400 text-sm">Integration with charting library needed</p>
-              </div>
+            
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={revenueOverTime} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#6b7280' }} 
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getDate()}/${date.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6b7280' }} 
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value) => `Rs.${(value/1000).toFixed(0)}k`}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    formatter={(value) => [`Rs. ${parseFloat(value).toLocaleString()}`, 'Revenue']}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                  />
+                  <Area 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#10b981" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorRevenue)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold text-gray-900">User Activity</h2>
-              <Users className="w-5 h-5 text-gray-400" />
-            </div>
-            <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-              <div className="text-center">
-                <Users className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-                <p className="text-gray-500">User activity chart will be displayed here</p>
-                <p className="text-gray-400 text-sm">Integration with charting library needed</p>
+              <div className="flex items-center space-x-2">
+                 <div className="flex items-center text-xs text-gray-500">
+                    <span className="w-2 h-2 rounded-full bg-blue-500 mr-1"></span>
+                    Customers
+                 </div>
+                 <div className="flex items-center text-xs text-gray-500">
+                    <span className="w-2 h-2 rounded-full bg-orange-500 mr-1"></span>
+                    Sellers
+                 </div>
               </div>
+            </div>
+            
+            <div className="h-80 w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={userActivityOverTime} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f3f4f6" />
+                  <XAxis 
+                    dataKey="date" 
+                    tick={{ fontSize: 12, fill: '#6b7280' }} 
+                    axisLine={false}
+                    tickLine={false}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return `${date.getDate()}/${date.getMonth() + 1}`;
+                    }}
+                  />
+                  <YAxis 
+                    tick={{ fontSize: 12, fill: '#6b7280' }} 
+                    axisLine={false}
+                    tickLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                    labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { dateStyle: 'medium' })}
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="customers" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                    name="New Customers"
+                  />
+                   <Line 
+                    type="monotone" 
+                    dataKey="sellers" 
+                    stroke="#f97316" 
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{ r: 6 }}
+                    name="New Sellers"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>

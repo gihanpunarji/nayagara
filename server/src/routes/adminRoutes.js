@@ -4,6 +4,7 @@ const { authenticateAdmin } = require("../middleware/auth");
 const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment, getAllSellerPayments, recordSellerPayment, updateUserStatus } = require("../controllers/adminController");
 const { getAllOrders } = require("../controllers/orderController");
 const { getAnalytics } = require("../controllers/analyticsController");
+const { getNotifications } = require("../controllers/notificationController");
 const { getAdminProducts, updateProductStatus } = require("../controllers/productController");
 
 const router = express.Router();
@@ -46,6 +47,7 @@ router.get("/orders", getAllOrders);
 router.get("/products", getAdminProducts);
 router.patch("/products/:productId/status", updateProductStatus);
 router.get("/categories", getAdminCategories);
+router.get("/notifications", getNotifications);
 router.post("/categories", categoryIconUpload.fields([
   { name: 'icon', maxCount: 1 },
   { name: 'icoFile', maxCount: 1 }

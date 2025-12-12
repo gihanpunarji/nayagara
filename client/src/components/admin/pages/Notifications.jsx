@@ -2,152 +2,61 @@ import React, { useState, useEffect } from 'react';
 import {
   Bell,
   Search,
-  Filter,
   RefreshCw,
-  Eye,
-  Trash2,
-  MoreVertical,
-  Send,
-  CheckCircle,
   AlertCircle,
   Info,
-  XCircle,
-  Mail,
-  MessageCircle,
-  ShoppingCart,
-  Package
+  CheckCircle,
+  Server,
+  AlertTriangle
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
+import api from '../../../api/axios';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [filteredNotifications, setFilteredNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
-  const [loading, setLoading] = useState(false);
-  const [selectedNotifications, setSelectedNotifications] = useState([]);
+  const [stats, setStats] = useState({
+    total: 0,
+    critical: 0,
+    update: 0,
+    system: 0
+  });
 
-  const mockNotifications = [
-    {
-      id: 1,
-      type: 'order',
-      title: 'New Order Received',
-      message: 'Order #ORD-2024-5432 has been placed by John Doe',
-      status: 'unread',
-      priority: 'high',
-      timestamp: '2024-01-15T10:30:00',
-      actionUrl: '/admin/orders/ORD-2024-5432'
-    },
-    {
-      id: 2,
-      type: 'payment',
-      title: 'Payment Successful',
-      message: 'Payment of Rs. 125,000 received for Order #ORD-2024-5433',
-      status: 'read',
-      priority: 'medium',
-      timestamp: '2024-01-15T11:45:00',
-      actionUrl: '/admin/payments/PAY-2024-001'
-    },
-    {
-      id: 3,
-      type: 'alert',
-      title: 'Low Stock Alert',
-      message: 'Product "iPhone 15 Pro" has only 5 units remaining in stock',
-      status: 'unread',
-      priority: 'high',
-      timestamp: '2024-01-15T09:20:00',
-      actionUrl: '/admin/inventory'
-    },
-    {
-      id: 4,
-      type: 'info',
-      title: 'System Update Available',
-      message: 'A new system update (v2.5.0) is available for installation',
-      status: 'read',
-      priority: 'low',
-      timestamp: '2024-01-14T14:30:00',
-      actionUrl: '/admin/settings'
-    },
-    {
-      id: 5,
-      type: 'order',
-      title: 'Order Shipped',
-      message: 'Order #ORD-2024-5430 has been shipped to customer',
-      status: 'read',
-      priority: 'medium',
-      timestamp: '2024-01-14T16:15:00',
-      actionUrl: '/admin/orders/ORD-2024-5430'
-    },
-    {
-      id: 6,
-      type: 'support',
-      title: 'New Support Ticket',
-      message: 'Support ticket #TKT-2024-001 created by Jane Smith',
-      status: 'unread',
-      priority: 'high',
-      timestamp: '2024-01-15T13:45:00',
-      actionUrl: '/admin/support/TKT-2024-001'
-    },
-    {
-      id: 7,
-      type: 'info',
-      title: 'Backup Completed',
-      message: 'Daily database backup completed successfully',
-      status: 'read',
-      priority: 'low',
-      timestamp: '2024-01-15T02:00:00',
-      actionUrl: null
-    },
-    {
-      id: 8,
-      type: 'alert',
-      title: 'Failed Login Attempt',
-      message: 'Multiple failed login attempts detected from IP 192.168.1.100',
-      status: 'unread',
-      priority: 'high',
-      timestamp: '2024-01-15T08:30:00',
-      actionUrl: '/admin/security'
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await api.get('/admin/notifications');
+      if (response.data.success) {
+        const data = response.data.data;
+        setNotifications(data);
+        
+        // Calculate stats
+        setStats({
+          total: data.length,
+          critical: data.filter(n => n.notification_type === 'critical').length,
+          update: data.filter(n => n.notification_type === 'update').length,
+          system: data.filter(n => n.notification_type === 'system').length
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch notifications:', error);
+    } finally {
+      setLoading(false);
     }
-  ];
-
-  const filterOptions = [
-    { key: 'all', label: 'All', count: 0 },
-    { key: 'unread', label: 'Unread', count: 0 },
-    { key: 'read', label: 'Read', count: 0 },
-    { key: 'order', label: 'Orders', count: 0 },
-    { key: 'payment', label: 'Payments', count: 0 },
-    { key: 'alert', label: 'Alerts', count: 0 },
-    { key: 'support', label: 'Support', count: 0 }
-  ];
+  };
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setNotifications(mockNotifications);
-
-      filterOptions.forEach(filter => {
-        if (filter.key === 'all') {
-          filter.count = mockNotifications.length;
-        } else if (filter.key === 'unread' || filter.key === 'read') {
-          filter.count = mockNotifications.filter(n => n.status === filter.key).length;
-        } else {
-          filter.count = mockNotifications.filter(n => n.type === filter.key).length;
-        }
-      });
-
-      setLoading(false);
-    }, 1000);
+    fetchNotifications();
   }, []);
 
   useEffect(() => {
     let filtered = [...notifications];
 
     if (selectedFilter !== 'all') {
-      if (selectedFilter === 'unread' || selectedFilter === 'read') {
-        filtered = filtered.filter(n => n.status === selectedFilter);
-      } else {
-        filtered = filtered.filter(n => n.type === selectedFilter);
-      }
+      filtered = filtered.filter(n => n.notification_type === selectedFilter);
     }
 
     if (searchQuery) {
@@ -157,43 +66,33 @@ const Notifications = () => {
       );
     }
 
-    filtered.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-
     setFilteredNotifications(filtered);
   }, [notifications, selectedFilter, searchQuery]);
 
   const getTypeIcon = (type) => {
     switch (type) {
-      case 'order': return <ShoppingCart className="w-5 h-5" />;
-      case 'payment': return <CheckCircle className="w-5 h-5" />;
-      case 'alert': return <AlertCircle className="w-5 h-5" />;
-      case 'info': return <Info className="w-5 h-5" />;
-      case 'support': return <MessageCircle className="w-5 h-5" />;
+      case 'critical': return <AlertTriangle className="w-5 h-5" />;
+      case 'update': return <RefreshCw className="w-5 h-5" />;
+      case 'system': return <Server className="w-5 h-5" />;
       default: return <Bell className="w-5 h-5" />;
     }
   };
 
   const getTypeColor = (type) => {
     switch (type) {
-      case 'order': return 'bg-blue-100 text-blue-600';
-      case 'payment': return 'bg-green-100 text-green-600';
-      case 'alert': return 'bg-red-100 text-red-600';
-      case 'info': return 'bg-gray-100 text-gray-600';
-      case 'support': return 'bg-purple-100 text-purple-600';
-      default: return 'bg-gray-100 text-gray-600';
+      case 'critical': return 'bg-red-100 text-red-600 border-red-200';
+      case 'update': return 'bg-blue-100 text-blue-600 border-blue-200';
+      case 'system': return 'bg-gray-100 text-gray-600 border-gray-200';
+      default: return 'bg-gray-100 text-gray-600 border-gray-200';
     }
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-orange-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
-    }
+  const getTypeLabel = (type) => {
+    return type.charAt(0).toUpperCase() + type.slice(1);
   };
 
   const formatDate = (dateString) => {
+    if (!dateString) return '';
     const date = new Date(dateString);
     const now = new Date();
     const diffMs = now - date;
@@ -202,125 +101,31 @@ const Notifications = () => {
     const diffDays = Math.floor(diffMs / 86400000);
 
     if (diffMins < 1) return 'Just now';
-    if (diffMins < 60) return `${diffMins} minute${diffMins > 1 ? 's' : ''} ago`;
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+    if (diffMins < 60) return `${diffMins} min ago`;
+    if (diffHours < 24) return `${diffHours} hr${diffHours > 1 ? 's' : ''} ago`;
     if (diffDays < 7) return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
 
     return date.toLocaleDateString('en-GB', {
       day: 'numeric',
       month: 'short',
-      year: 'numeric'
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
-  const handleNotificationAction = (action, notificationId) => {
-    console.log(`${action} notification:`, notificationId);
-    if (action === 'read') {
-      setNotifications(notifications.map(n =>
-        n.id === notificationId ? { ...n, status: 'read' } : n
-      ));
-    }
-  };
-
-  const handleMarkAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, status: 'read' })));
-  };
-
-  const NotificationCard = ({ notification }) => (
-    <div className={`bg-white rounded-lg border p-4 hover:shadow-md transition-all ${
-      notification.status === 'unread' ? 'border-green-300 bg-green-50' : 'border-gray-200'
-    }`}>
-      <div className="flex items-start space-x-3">
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTypeColor(notification.type)}`}>
-          {getTypeIcon(notification.type)}
-        </div>
-
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between mb-1">
-            <div className="flex-1">
-              <div className="flex items-center space-x-2">
-                <h3 className="font-semibold text-gray-900">{notification.title}</h3>
-                {notification.status === 'unread' && (
-                  <span className="w-2 h-2 bg-green-600 rounded-full"></span>
-                )}
-              </div>
-              <p className="text-sm text-gray-600 mt-1">{notification.message}</p>
-            </div>
-
-            <div className="relative group ml-2">
-              <button className="text-gray-400 hover:text-gray-600">
-                <MoreVertical className="w-5 h-5" />
-              </button>
-
-              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
-                <div className="py-1">
-                  {notification.status === 'unread' && (
-                    <button
-                      onClick={() => handleNotificationAction('read', notification.id)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                      <span>Mark as Read</span>
-                    </button>
-                  )}
-
-                  {notification.actionUrl && (
-                    <button
-                      onClick={() => handleNotificationAction('view', notification.id)}
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                    >
-                      <Eye className="w-4 h-4" />
-                      <span>View Details</span>
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => handleNotificationAction('delete', notification.id)}
-                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between mt-2">
-            <div className="flex items-center space-x-3">
-              <span className={`text-xs font-medium ${getPriorityColor(notification.priority)}`}>
-                {notification.priority.toUpperCase()}
-              </span>
-              <span className="text-xs text-gray-500">{formatDate(notification.timestamp)}</span>
-            </div>
-
-            {notification.actionUrl && (
-              <button
-                onClick={() => handleNotificationAction('view', notification.id)}
-                className="text-xs text-green-600 hover:text-green-700 font-medium"
-              >
-                View →
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
-  const stats = {
-    total: notifications.length,
-    unread: notifications.filter(n => n.status === 'unread').length,
-    highPriority: notifications.filter(n => n.priority === 'high').length,
-    orders: notifications.filter(n => n.type === 'order').length,
-    alerts: notifications.filter(n => n.type === 'alert').length
-  };
+  const filterOptions = [
+    { key: 'all', label: 'All', count: stats.total, color: 'bg-gray-800 text-white' },
+    { key: 'critical', label: 'Critical', count: stats.critical, color: 'bg-red-600 text-white' },
+    { key: 'update', label: 'Updates', count: stats.update, color: 'bg-blue-600 text-white' },
+    { key: 'system', label: 'System', count: stats.system, color: 'bg-gray-600 text-white' }
+  ];
 
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center h-64">
-          <RefreshCw className="w-8 h-8 animate-spin text-red-600" />
+        <div className="flex items-center justify-center h-screen">
+          <RefreshCw className="w-8 h-8 animate-spin text-green-600" />
         </div>
       </AdminLayout>
     );
@@ -328,118 +133,144 @@ const Notifications = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Notifications</h1>
-            <p className="text-gray-600 mt-1">Stay updated with system alerts and updates</p>
-          </div>
-
-          <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+      <div className="max-w-6xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">System Notifications</h1>
+            <p className="text-gray-500 mt-2 text-lg">Real-time alerts and system updates log</p>
+            </div>
+            
             <button
-              onClick={handleMarkAllAsRead}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
+            onClick={fetchNotifications}
+            className="px-5 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-all shadow-sm flex items-center space-x-2 font-medium"
             >
-              <CheckCircle className="w-4 h-4" />
-              <span>Mark All Read</span>
+            <RefreshCw className="w-4 h-4" />
+            <span>Refresh Log</span>
             </button>
-
-            <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center space-x-2"
-            >
-              <RefreshCw className="w-4 h-4" />
-              <span>Refresh</span>
-            </button>
-          </div>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Total</p>
-              <p className="text-xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Unread</p>
-              <p className="text-xl font-bold text-green-600">{stats.unread}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">High Priority</p>
-              <p className="text-xl font-bold text-red-600">{stats.highPriority}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Orders</p>
-              <p className="text-xl font-bold text-blue-600">{stats.orders}</p>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200">
-            <div className="text-center">
-              <p className="text-sm text-gray-600">Alerts</p>
-              <p className="text-xl font-bold text-orange-600">{stats.alerts}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <div className="flex flex-wrap gap-2 mb-4">
-            {filterOptions.map((filter) => (
-              <button
-                key={filter.key}
-                onClick={() => setSelectedFilter(filter.key)}
-                className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                  selectedFilter === filter.key
-                    ? 'bg-green-600 text-white'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <span>{filter.label}</span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  selectedFilter === filter.key
-                    ? 'bg-white bg-opacity-20 text-white'
-                    : 'bg-gray-200 text-gray-600'
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {filterOptions.filter(f => f.key !== 'all').map((stat) => (
+            <div key={stat.key} className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex items-center justify-between group hover:shadow-md transition-all">
+                <div>
+                <p className="text-gray-500 font-medium mb-1">{stat.label}</p>
+                <h3 className="text-3xl font-bold text-gray-900">{stat.count}</h3>
+                </div>
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                    stat.key === 'critical' ? 'bg-red-50 text-red-600' :
+                    stat.key === 'update' ? 'bg-blue-50 text-blue-600' : 
+                    'bg-gray-50 text-gray-600'
                 }`}>
-                  {filter.count}
-                </span>
-              </button>
+                    {getTypeIcon(stat.key)}
+                </div>
+            </div>
             ))}
-          </div>
+             <div className="bg-gradient-to-br from-green-500 to-green-600 p-5 rounded-2xl shadow-lg text-white flex items-center justify-between">
+                <div>
+                <p className="text-green-100 font-medium mb-1">Total Logs</p>
+                <h3 className="text-3xl font-bold">{stats.total}</h3>
+                </div>
+                <div className="w-12 h-12 rounded-xl bg-white bg-opacity-20 flex items-center justify-center backdrop-blur-sm">
+                    <Server className="w-6 h-6 text-white" />
+                </div>
+            </div>
+        </div>
 
-          <div className="relative">
+        {/* Controls */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-2 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex p-1 bg-gray-100 rounded-xl">
+                {filterOptions.map((filter) => (
+                <button
+                    key={filter.key}
+                    onClick={() => setSelectedFilter(filter.key)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedFilter === filter.key
+                        ? 'bg-white text-gray-900 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
+                    }`}
+                >
+                    {filter.label}
+                </button>
+                ))}
+            </div>
+
+            <div className="relative flex-1 md:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
-              type="text"
-              placeholder="Search notifications by title or message..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                type="text"
+                placeholder="Search logs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border-none rounded-xl focus:ring-2 focus:ring-green-500 text-gray-900 placeholder-gray-400"
             />
-          </div>
+            </div>
         </div>
 
-        {filteredNotifications.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center shadow-sm border border-gray-200">
-            <Bell className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No notifications found</h3>
-            <p className="text-gray-600">You're all caught up!</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {filteredNotifications.map(notification => (
-              <NotificationCard key={notification.id} notification={notification} />
-            ))}
-          </div>
-        )}
+        {/* Notifications List */}
+        <div className="space-y-4">
+          {filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-3xl border border-dashed border-gray-200">
+              <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+                <Bell className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900">No logs found</h3>
+              <p className="text-gray-500 text-sm mt-1">System is running smoothly</p>
+            </div>
+          ) : (
+            filteredNotifications.map((notification) => (
+              <div
+                key={notification.notification_id}
+                className="group bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden"
+              >
+                {/* Left Border Indicator */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${
+                     notification.notification_type === 'critical' ? 'bg-red-500' :
+                     notification.notification_type === 'update' ? 'bg-blue-500' : 
+                     'bg-gray-300'
+                }`}></div>
+
+                <div className="flex items-start gap-5 pl-2">
+                   {/* Icon */}
+                  <div className={`mt-1 w-12 h-12 rounded-full flex-shrink-0 flex items-center justify-center border ${getTypeColor(notification.notification_type)}`}>
+                    {getTypeIcon(notification.notification_type)}
+                  </div>
+
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                             <div className="flex items-center gap-3 mb-1">
+                                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold tracking-wide uppercase ${
+                                    notification.notification_type === 'critical' ? 'bg-red-50 text-red-700' :
+                                    notification.notification_type === 'update' ? 'bg-blue-50 text-blue-700' : 
+                                    'bg-gray-50 text-gray-700'
+                                }`}>
+                                    {notification.notification_type}
+                                </span>
+                                <span className="text-xs text-gray-400 font-medium">
+                                    LOG #{notification.notification_id}
+                                </span>
+                             </div>
+                             <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                                {notification.title}
+                             </h3>
+                        </div>
+                        <span className="text-sm text-gray-500 font-medium whitespace-nowrap bg-gray-50 px-3 py-1 rounded-lg">
+                            {formatDate(notification.created_at)}
+                        </span>
+                    </div>
+                    
+                    <p className="text-gray-600 mt-2 leading-relaxed">
+                        {notification.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </AdminLayout>
   );

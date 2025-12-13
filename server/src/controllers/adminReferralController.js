@@ -64,7 +64,22 @@ exports.getUsers = async (req, res) => {
 
 exports.getTiers = async (req, res) => {
   try {
-    const tiers = await Settings.getTiers();
+    const settingsMap = await Settings.getAll();
+    const tiers = {};
+    
+    // Convert Map to plain object and parse numbers
+    if (settingsMap instanceof Map) {
+      settingsMap.forEach((value, key) => {
+        if (key.includes('percent') || key.includes('threshold')) {
+          tiers[key] = parseFloat(value) || 0;
+        } else {
+          tiers[key] = value;
+        }
+      });
+    } else {
+      Object.assign(tiers, settingsMap);
+    }
+    
     res.json({ success: true, data: tiers });
   } catch (error) {
     console.error('Error getting tiers:', error);
@@ -75,7 +90,8 @@ exports.getTiers = async (req, res) => {
 exports.updateTiers = async (req, res) => {
   try {
     const { tiers } = req.body;
-    await Settings.updateTiers(tiers);
+    // Use updateAll to ensure we update by key regardless of category
+    await Settings.updateAll(tiers);
     res.json({ success: true, message: 'Tiers updated successfully' });
   } catch (error) {
     console.error('Error updating tiers:', error);

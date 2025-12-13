@@ -63,7 +63,6 @@ import AdminAnalytics from "./components/admin/pages/Analytics.jsx";
 import AdManagement from "./components/admin/pages/AdManagement.jsx";
 import AdminCategories from "./components/admin/pages/Categories.jsx";
 import AdminInventory from "./components/admin/pages/Inventory.jsx";
-import AdminReviewsRatings from "./components/admin/pages/ReviewsRatings.jsx";
 import AdminPromotions from "./components/admin/pages/PromotionsDiscounts.jsx";
 import AdminPayments from "./components/admin/pages/Payments.jsx";
 import AdminShipping from "./components/admin/pages/Shipping.jsx";
@@ -179,14 +178,6 @@ createRoot(document.getElementById("root")).render(
                     element={
                       // <AdminProtectedRoute>
                         <AdminInventory />
-                      // </AdminProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/reviews"
-                    element={
-                      // <AdminProtectedRoute>
-                        <AdminReviewsRatings />
                       // </AdminProtectedRoute>
                     }
                   />

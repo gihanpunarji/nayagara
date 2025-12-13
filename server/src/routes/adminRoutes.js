@@ -6,6 +6,7 @@ const { getAllOrders } = require("../controllers/orderController");
 const { getAnalytics } = require("../controllers/analyticsController");
 const { getNotifications } = require("../controllers/notificationController");
 const { getAdminProducts, updateProductStatus } = require("../controllers/productController");
+const { getAllReviews, updateReviewStatus, deleteReview } = require("../controllers/reviewController");
 
 const router = express.Router();
 
@@ -72,5 +73,10 @@ router.post("/payments/seller", recordSellerPayment);
 
 // Analytics route
 router.get("/analytics", getAnalytics);
+
+// Review routes
+router.get("/reviews", getAllReviews);
+router.patch("/reviews/:reviewId/status", updateReviewStatus);
+router.delete("/reviews/:reviewId", deleteReview);
 
 module.exports = router;

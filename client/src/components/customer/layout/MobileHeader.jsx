@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Bell, Menu, Heart, MapPin, Filter } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Search, Bell, Menu, MapPin } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
 const MobileHeader = ({
   searchQuery,
@@ -9,28 +9,18 @@ const MobileHeader = ({
   onMenuToggle,
   user = null
 }) => {
-  
+  const navigate = useNavigate();
 
-  // Placeholder functions for the new search bar
   const handleSearch = () => {
-    // Implement search logic here
-    console.log('Searching for:', searchQuery);
+    if (searchQuery.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
+    }
   };
 
   const handleKeyPress = (event) => {
     if (event.key === 'Enter') {
       handleSearch();
     }
-  };
-
-  const handleOpenAdvancedFilters = () => {
-    // Implement filter logic here
-    console.log('Opening advanced filters');
-  };
-
-  const getActiveFilterCount = () => {
-    // Return the number of active filters
-    return 0; 
   };
 
   return (
@@ -44,13 +34,13 @@ const MobileHeader = ({
               <MapPin className="w-3 h-3" />
               <span>Deliver to All Island</span>
             </div>
-            <span>Get 30% OFF your first order!</span>
+            
           </div>
         </div>
 
         {/* Main Header */}
         <div className="px-4 py-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <img
@@ -60,15 +50,13 @@ const MobileHeader = ({
               />
               <div>
                 <h1 className="text-lg font-heading font-bold text-primary-700">
-                  Nayagara
+                  Nayagara.lk
                 </h1>
               </div>
             </Link>
 
             {/* Actions */}
             <div className="flex items-center space-x-3">
-          
-
               {/* Notifications */}
               {user && (
                 <button className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors">
@@ -76,8 +64,6 @@ const MobileHeader = ({
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full"></span>
                 </button>
               )}
-
-             
 
               {/* Menu Toggle */}
               <button
@@ -89,7 +75,23 @@ const MobileHeader = ({
             </div>
           </div>
 
-          
+          {/* Search Bar */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search products..."
+              className="w-full h-10 px-4 pr-10 border border-gray-300 rounded-lg focus:outline-none focus:border-primary-500 focus:ring-1 focus:ring-primary-500 text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={handleKeyPress}
+            />
+            <button
+              onClick={handleSearch}
+              className="absolute right-0 top-0 h-10 w-10 flex items-center justify-center text-gray-500 hover:text-primary-600"
+            >
+              <Search className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
     </>

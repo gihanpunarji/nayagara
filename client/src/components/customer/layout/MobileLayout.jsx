@@ -2,12 +2,21 @@ import React, { useState } from 'react';
 import MobileHeader from './MobileHeader';
 import MobileBottomNav from './MobileBottomNav';
 import MobileMenu from './MobileMenu';
+import { useCart } from '../../../context/CartContext';
+import { useAuth } from '../../../context/AuthContext';
 
-const MobileLayout = ({ children, user = null }) => {
+const MobileLayout = ({ children, user = null, mainCategories = [] }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  const [cartCount] = useState(3); // This would come from cart context/state
-  const [wishlistCount] = useState(5); // This would come from wishlist context/state
+  
+  // Use real context data
+  const { itemCount: cartCount } = useCart();
+  const { user: contextUser } = useAuth(); // Fallback to context user if prop is null
+  
+  // Wishlist count would ideally come from a similar context, keeping 0 for now if no context exists
+  const wishlistCount = 0; 
+
+  const currentUser = user || contextUser;
 
   const handleMenuToggle = () => {
     setShowMobileMenu(!showMobileMenu);
@@ -22,7 +31,7 @@ const MobileLayout = ({ children, user = null }) => {
         cartCount={cartCount}
         wishlistCount={wishlistCount}
         onMenuToggle={handleMenuToggle}
-        user={user}
+        user={currentUser}
       />
 
       {/* Main Content */}
@@ -37,7 +46,8 @@ const MobileLayout = ({ children, user = null }) => {
       <MobileMenu
         isOpen={showMobileMenu}
         onClose={() => setShowMobileMenu(false)}
-        user={user}
+        user={currentUser}
+        mainCategories={mainCategories}
       />
     </div>
   );

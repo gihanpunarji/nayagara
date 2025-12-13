@@ -1296,7 +1296,7 @@ const Checkout = () => {
                   <div className="flex justify-between text-purple-600">
                     <div className="flex items-center space-x-1">
                       <Gift className="w-3 h-3" />
-                      <span>Referral Discount ({referralDiscount.discountPercentage}%)</span>
+                      <span>Promo Discount ({referralDiscount.discountPercentage}%)</span>
                     </div>
                     <span>-Rs. {referralDiscountAmount.toLocaleString()}</span>
                   </div>
@@ -1334,7 +1334,7 @@ const Checkout = () => {
                     <div className="flex items-start space-x-2">
                       <Check className="w-4 h-4 text-purple-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-xs font-semibold text-purple-900">Referral Discount Applied!</p>
+                        <p className="text-xs font-semibold text-purple-900">Promo Discount Applied!</p>
                         <p className="text-xs text-purple-700 mt-1">
                           You saved Rs. {referralDiscountAmount.toLocaleString()}.00
                         </p>

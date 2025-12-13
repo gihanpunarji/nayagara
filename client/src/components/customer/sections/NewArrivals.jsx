@@ -111,11 +111,11 @@ const NewArrivals = () => {
                 to={`/product/${product.product_id}`}
                 className="bg-white rounded-xl p-2 sm:p-4 text-gray-800 hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0 w-40 sm:w-56"
               >
-                <div className="relative mb-2 sm:mb-3">
+                <div className="relative mb-2 sm:mb-3 aspect-square w-full">
                   <img 
                     src={product.images[0]?.image_url}
                     alt={product.product_title} 
-                    className="w-full h-24 sm:h-32 object-cover rounded-lg"
+                    className="w-full h-full object-cover rounded-lg"
                   />
                 </div>
                 <h3 className="font-bold text-xs sm:text-sm mb-1 sm:mb-2 truncate">{product.product_title}</h3>

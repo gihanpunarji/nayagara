@@ -41,6 +41,7 @@ export const ProductView = () => {
   const [selectedReviewFilter, setSelectedReviewFilter] = useState("all");
   const [showAllReviews, setShowAllReviews] = useState(false);
   const [product, setProduct] = useState(null);
+  const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const reviewsContainerRef = useRef(null);
@@ -100,6 +101,43 @@ export const ProductView = () => {
 
     fetchProduct();
   }, [id]);
+
+  // Fetch similar products
+  useEffect(() => {
+    const fetchSimilarProducts = async () => {
+      if (!product?.category_slug) return;
+
+      try {
+        const response = await publicApi.get('/products/public', {
+          params: {
+            category: product.category_slug,
+            limit: 4
+          }
+        });
+
+        if (response.data.success) {
+          const formattedSimilar = response.data.data
+            .filter(p => p.product_id !== product.product_id)
+            .slice(0, 3)
+            .map(p => ({
+              id: p.product_id,
+              name: p.product_title,
+              image: p.images && p.images.length > 0 ? p.images[0].image_url : null,
+              price: parseFloat(p.price),
+              rating: 4.5, // Placeholder
+              reviews: p.inquiry_count || 0
+            }));
+          setSimilarProducts(formattedSimilar);
+        }
+      } catch (error) {
+        console.error("Error fetching similar products:", error);
+      }
+    };
+
+    if (product) {
+      fetchSimilarProducts();
+    }
+  }, [product]);
 
   // Process product data
   const processedProduct = product
@@ -162,9 +200,6 @@ export const ProductView = () => {
 
   // Mock reviews (you can implement actual reviews later)
   const reviews = [];
-
-  // Mock similar products (you can implement actual similar products later)
-  const similarProducts = [];
 
   // Review filters
   const reviewFilters = [
@@ -306,10 +341,7 @@ export const ProductView = () => {
       : product.seller_image
     : product.seller_profile_image; // Fallback to profile image
 
-  const sellerName =
-    `${product.seller_first_name || ""} ${
-      product.seller_last_name || ""
-    }`.trim() || "Unknown Seller";
+  const sellerName = product.seller_name || "Unknown Seller";
 
   return (
     <div className="min-h-screen max-w-7xl mx-auto bg-gray-50">
@@ -335,7 +367,7 @@ export const ProductView = () => {
             {/* Image Gallery */}
             <div className="space-y-4">
               <div 
-                className="relative bg-gray-50 lg:rounded-xl overflow-hidden h-64 sm:h-96"
+                className="relative bg-white lg:rounded-xl overflow-hidden aspect-square flex items-center justify-center p-4 border border-gray-100"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
@@ -580,33 +612,33 @@ export const ProductView = () => {
           <h3 className="text-lg font-bold text-gray-900 mb-6">
             Similar Products
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="flex overflow-x-auto pb-4 space-x-3 sm:grid sm:grid-cols-2 lg:grid-cols-3 sm:space-x-0 sm:gap-4 scrollbar-hide">
             {similarProducts.map((item) => (
               <Link
                 key={item.id}
                 to={`/product/${item.id}`}
-                className="bg-gray-50 rounded-xl p-4 hover:shadow-md transition-shadow"
+                className="bg-gray-50 rounded-xl p-3 sm:p-4 hover:shadow-md transition-shadow flex-shrink-0 w-36 sm:w-auto"
               >
-                <div className="aspect-square bg-white rounded-lg overflow-hidden mb-3">
+                <div className="aspect-square bg-white rounded-lg overflow-hidden mb-2 sm:mb-3 p-2">
                   <img
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-contain hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                <h4 className="font-semibold text-gray-900 mb-2 line-clamp-2">
+                <h4 className="font-semibold text-gray-900 mb-1 sm:mb-2 line-clamp-2 text-sm sm:text-base">
                   {item.name}
                 </h4>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="font-bold text-primary-600">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-1 sm:mb-2 gap-1">
+                  <span className="font-bold text-primary-600 text-sm sm:text-base">
                     Rs. {item.price.toLocaleString()}
                   </span>
                   <div className="flex items-center space-x-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-sm text-gray-600">{item.rating}</span>
+                    <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-400 fill-current" />
+                    <span className="text-xs sm:text-sm text-gray-600">{item.rating}</span>
                   </div>
                 </div>
-                <p className="text-xs text-gray-500">{item.reviews} reviews</p>
+                <p className="text-xs text-gray-500 hidden sm:block">{item.reviews} reviews</p>
               </Link>
             ))}
           </div>

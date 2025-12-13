@@ -37,6 +37,7 @@ const MobileMenu = ({
   handleNavClick = null,
   scrollToContact = null,
   setActiveTab = null,
+  mainCategories = [],
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const { user, logout } = useAuth();
@@ -54,7 +55,7 @@ const MobileMenu = ({
     };
   }, [isOpen]);
 
-  const mainCategories = [
+  const defaultCategories = [
     { name: 'Electronics' },
     { name: 'Vehicles' },
     { name: 'Fashion' },
@@ -64,6 +65,9 @@ const MobileMenu = ({
     { name: 'Books & Media' },
     { name: 'Services' },
   ];
+
+  // Use passed categories or fall back to default if empty
+  const categoriesToUse = (mainCategories && mainCategories.length > 0) ? mainCategories : defaultCategories;
 
   const companyMenuItems = [
     { label: 'About Us', icon: Info, path: '/about-us' },
@@ -370,7 +374,7 @@ const MobileMenu = ({
         onClose={() => setShowAdvancedFilters(false)}
         onFiltersApply={handleFiltersApply}
         selectedCategory="All Categories"
-        mainCategories={mainCategories}
+        mainCategories={categoriesToUse}
       />
     </>
   );

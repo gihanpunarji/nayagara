@@ -122,15 +122,15 @@ const createProduct = async (req, res) => {
 const getSellerProducts = async (req, res) => {
   try {
     const sellerId = req.user.user_id;
-    const { 
-      page = 1, 
+    const {
+      page = 1,
       limit = 50,
       search,
       status,
       category,
       sort = 'newest'
     } = req.query;
-    
+
     const offset = (page - 1) * limit;
 
     // If no filters are applied, use the simple method
@@ -164,7 +164,7 @@ const getSellerProducts = async (req, res) => {
     // For filtered queries, use custom SQL
     const { getConnection } = require("../config/database");
     const connection = getConnection();
-    
+
     let query = `
       SELECT p.*, 
              c.category_name,
@@ -451,12 +451,14 @@ const updateProduct = async (req, res) => {
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {
   const { getConnection } = require("../config/database");
+  const Product = require("../models/Product"); // Move requires to top of function or file if possible, but keeping scope is okay if needed. Better to rely on existing requires if available.
+
   const pool = getConnection();
   let connection;
   try {
     connection = await pool.getConnection();
-    const { 
-      page = 1, 
+    const {
+      page = 1,
       limit = 12,
       search,
       category,
@@ -464,9 +466,9 @@ const getPublicProducts = async (req, res) => {
       sort = 'newest',
       featured = false
     } = req.query;
-    
+
     const offset = (page - 1) * limit;
-    
+
     let whereClause = ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
     const queryParams = [];
 
@@ -493,7 +495,7 @@ const getPublicProducts = async (req, res) => {
     if (featured === 'true') {
       whereClause += ` AND p.is_featured = 1`;
     }
-    
+
     // Get total count
     const countQuery = `
       SELECT COUNT(DISTINCT p.product_id) as total
@@ -560,21 +562,20 @@ const getPublicProducts = async (req, res) => {
 
     const [products] = await connection.execute(query, finalQueryParams);
 
-    // Get images for each product (since GROUP_CONCAT can be unreliable)
-    const ProductImage = require("../models/ProductImage");
-    const Product = require("../models/Product");
-    
-    const productsWithImages = await Promise.all(
-      products.map(async (product) => {
-        const images = await ProductImage.findByProductId(product.product_id);
-        return {
-          ...product,
-          product_attributes: Product.parseProductAttributes(product.product_attributes),
-          images: images,
-          seller_name: `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
-        };
-      })
-    );
+    // Format products using the data we already fetched
+    const productsWithImages = products.map((product) => {
+      // Process images string back into array
+      const images = product.images
+        ? product.images.split(',').map(url => ({ image_url: url.trim() }))
+        : [];
+
+      return {
+        ...product,
+        product_attributes: Product.parseProductAttributes(product.product_attributes),
+        images: images,
+        seller_name: `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
+      };
+    });
 
     res.json({
       success: true,
@@ -612,14 +613,14 @@ const getPublicProductById = async (req, res) => {
   try {
     connection = await pool.getConnection();
     const { productId } = req.params;
-    
+
     if (!productId) {
       return res.status(400).json({
         success: false,
         message: "Product ID is required"
       });
     }
-    
+
     // Query to get product with all related data
     const query = `
       SELECT 
@@ -651,18 +652,18 @@ const getPublicProductById = async (req, res) => {
         AND (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)
       GROUP BY p.product_id
     `;
-    
+
     const [results] = await connection.execute(query, [productId]);
-    
+
     if (results.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
-    
+
     const product = results[0];
-    
+
     // Get category fields for this product's subcategory to provide field metadata
     let categoryFields = [];
     if (product.category_id) {
@@ -675,12 +676,12 @@ const getPublicProductById = async (req, res) => {
       const [fieldsResults] = await connection.execute(fieldsQuery, [product.category_id]);
       categoryFields = fieldsResults;
     }
-    
+
     // Process images
-    const images = product.images 
+    const images = product.images
       ? product.images.split(',').map(url => ({ image_url: url.trim() }))
       : [];
-    
+
     // Parse and enhance product attributes with field metadata
     let productAttributes = {};
     try {
@@ -689,12 +690,12 @@ const getPublicProductById = async (req, res) => {
       console.error('Error parsing product attributes:', error);
       productAttributes = {};
     }
-    
+
     // Enhance attributes with field metadata
     const enhancedAttributes = categoryFields.map(field => {
       const value = productAttributes[field.field_name] || '';
       let displayValue = value;
-      
+
       // Format display value based on field type
       if (field.field_type === 'select' && field.field_options) {
         try {
@@ -708,7 +709,7 @@ const getPublicProductById = async (req, res) => {
       } else if (field.field_type === 'number' && value) {
         displayValue = parseFloat(value).toLocaleString();
       }
-      
+
       return {
         field_name: field.field_name,
         field_label: field.field_label,
@@ -718,7 +719,7 @@ const getPublicProductById = async (req, res) => {
         has_value: value !== '' && value !== null && value !== undefined
       };
     }).filter(attr => attr.has_value); // Only include attributes that have values
-    
+
     // Format the response
     const formattedProduct = {
       ...product,
@@ -730,17 +731,17 @@ const getPublicProductById = async (req, res) => {
       category_attributes: enhancedAttributes,
       raw_product_attributes: productAttributes // Keep raw attributes for backwards compatibility
     };
-    
+
     // Remove individual seller name fields
     delete formattedProduct.seller_first_name;
     delete formattedProduct.seller_last_name;
-    
+
     res.json({
       success: true,
       message: "Product fetched successfully",
       data: formattedProduct
     });
-    
+
   } catch (error) {
     console.error("Get public product by ID error:", error);
     res.status(500).json({
@@ -761,8 +762,8 @@ const getAdminProducts = async (req, res) => {
   let connection;
   try {
     connection = await pool.getConnection();
-    const { 
-      page = 1, 
+    const {
+      page = 1,
       limit = 25,
       search,
       status,
@@ -770,9 +771,9 @@ const getAdminProducts = async (req, res) => {
       sellerId,
       sort = 'newest'
     } = req.query;
-    
+
     const offset = (page - 1) * limit;
-    
+
     let whereClause = ' WHERE 1=1';
     const queryParams = [];
 
@@ -804,7 +805,7 @@ const getAdminProducts = async (req, res) => {
       whereClause += ` AND p.seller_id = ?`;
       queryParams.push(sellerId);
     }
-    
+
     // Get stats
     const statsQuery = `
       SELECT 
@@ -818,12 +819,12 @@ const getAdminProducts = async (req, res) => {
     `;
     const [statsResult] = await connection.execute(statsQuery);
     const stats = {
-        total: parseInt(statsResult[0].total) || 0,
-        active: parseInt(statsResult[0].active) || 0,
-        pending: parseInt(statsResult[0].pending) || 0,
-        suspended: parseInt(statsResult[0].suspended) || 0,
-        featured: parseInt(statsResult[0].featured) || 0,
-        out_of_stock: parseInt(statsResult[0].out_of_stock) || 0
+      total: parseInt(statsResult[0].total) || 0,
+      active: parseInt(statsResult[0].active) || 0,
+      pending: parseInt(statsResult[0].pending) || 0,
+      suspended: parseInt(statsResult[0].suspended) || 0,
+      featured: parseInt(statsResult[0].featured) || 0,
+      out_of_stock: parseInt(statsResult[0].out_of_stock) || 0
     };
 
     // Get total count for pagination (respecting filters)
@@ -880,10 +881,10 @@ const getAdminProducts = async (req, res) => {
 
     // Format products
     const formattedProducts = products.map(product => {
-      const images = product.images 
+      const images = product.images
         ? product.images.split(',').map(url => ({ image_url: url.trim() }))
         : [];
-        
+
       return {
         ...product,
         images,
@@ -960,13 +961,13 @@ const updateProductStatus = async (req, res) => {
 };
 
 module.exports = {
-    createProduct,
-    getSellerProducts,
-    getProductById,
-    updateProduct,
-    getPublicProducts,
-    filterProducts,
-    getPublicProductById,
-    getAdminProducts,
-    updateProductStatus
+  createProduct,
+  getSellerProducts,
+  getProductById,
+  updateProduct,
+  getPublicProducts,
+  filterProducts,
+  getPublicProductById,
+  getAdminProducts,
+  updateProductStatus
 }

@@ -571,7 +571,7 @@ export const ProductView = () => {
                   <img
                     src={sellerImageUrl}
                     alt={`${sellerName}'s profile`}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-gray-100"
+                    className="w-16 h-16 rounded-full object-contain border-2 border-gray-100"
                   />
                 ) : (
                   <div className="w-16 h-16 bg-gradient-to-r from-primary-500 to-secondary-500 rounded-full flex items-center justify-center">

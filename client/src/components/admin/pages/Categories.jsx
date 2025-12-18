@@ -251,7 +251,7 @@ const Categories = () => {
         <div className="flex items-center space-x-3">
           <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center overflow-hidden">
             {category.icon && category.icon.startsWith('http') ? (
-              <img src={category.icon} alt={category.name} className="w-full h-full object-cover" />
+              <img src={category.icon} alt={category.name} className="w-full h-full object-contain" />
             ) : (
               <span className="text-2xl">{category.icon || '📁'}</span>
             )}

@@ -61,7 +61,7 @@ const createOrder = async (req, res) => {
         size: item.size || null,
         variant: item.variant || null
       };
-      
+
       console.log("item ", item);
 
       return await Order.createOrderItem({
@@ -122,7 +122,7 @@ const updateOrderPaymentStatus = async (req, res) => {
 
     // Update payment status
     const affectedRows = await Order.updateOrderPaymentStatus(order.order_id, payment_status);
-    
+
     if (affectedRows > 0) {
       // If payment is completed, update order status to confirmed
       if (payment_status === 'completed') {
@@ -161,7 +161,9 @@ const updateOrderPaymentStatus = async (req, res) => {
             if (customerEmail) {
               const nodeMailer = require("nodemailer");
               const transporter = nodeMailer.createTransport({
-                service: "gmail",
+                host: 'smtp.hostinger.com',
+                port: 465,
+                secure: true,
                 auth: {
                   user: process.env.EMAIL_USERNAME,
                   pass: process.env.EMAIL_PASSWORD,
@@ -211,7 +213,7 @@ const updateOrderPaymentStatus = async (req, res) => {
       }
 
       console.log(`Order ${order_number} payment status updated to ${payment_status}`);
-      
+
       res.json({
         success: true,
         message: 'Order payment status updated successfully',
@@ -276,7 +278,7 @@ const getOrderDetails = async (req, res) => {
     const customer_id = req.user.user_id;
 
     const order = await Order.getOrderByNumber(order_number);
-    
+
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -553,7 +555,7 @@ const getAllOrders = async (req, res) => {
     if (orders.length > 0) {
       const orderIds = orders.map(o => o.order_id);
       const items = await Order.getOrderItemsForMultipleOrders(orderIds);
-      
+
       const itemsByOrderId = items.reduce((acc, item) => {
         if (!acc[item.order_id]) {
           acc[item.order_id] = [];

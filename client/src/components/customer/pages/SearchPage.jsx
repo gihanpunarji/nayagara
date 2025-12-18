@@ -97,7 +97,7 @@ const SearchPage = () => {
             <img 
               src={image} 
               alt={product.product_title} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-gray-400">
@@ -177,7 +177,7 @@ const SearchPage = () => {
             <img 
                src={image || '/placeholder.png'} 
                alt={product.product_title} 
-               className="w-full h-full object-cover" 
+               className="w-full h-full object-contain" 
             />
              {discount > 0 && (
               <span className="absolute top-1 left-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded">

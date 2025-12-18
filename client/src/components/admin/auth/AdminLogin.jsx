@@ -31,10 +31,7 @@ const AdminLogin = () => {
     password: "",
   });
 
-  // Step 2 - Email OTP
-  const [emailOtp, setEmailOtp] = useState(["", "", "", "", "", ""]);
-  const [emailOtpTimer, setEmailOtpTimer] = useState(300); // 5 minutes
-  const [canResendEmail, setCanResendEmail] = useState(false);
+
 
   // Step 3 - Phone OTP
   const [phoneOtp, setPhoneOtp] = useState(["", "", "", "", "", ""]);
@@ -56,25 +53,11 @@ const AdminLogin = () => {
   }, [navigate]);
 
   // Timer effects
-  useEffect(() => {
-    let interval;
-    if (emailOtpTimer > 0 && currentStep === 2) {
-      interval = setInterval(() => {
-        setEmailOtpTimer((prev) => {
-          if (prev <= 1) {
-            setCanResendEmail(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    return () => clearInterval(interval);
-  }, [emailOtpTimer, currentStep]);
+
 
   useEffect(() => {
     let interval;
-    if (phoneOtpTimer > 0 && currentStep === 3) {
+    if (phoneOtpTimer > 0 && currentStep === 2) {
       interval = setInterval(() => {
         setPhoneOtpTimer((prev) => {
           if (prev <= 1) {
@@ -164,10 +147,23 @@ const AdminLogin = () => {
 
       if (res.data.success) {
         setSessionData({ email: loginData.email }); // Store email for display
-        await api.post("/auth/admin/send-email", { email: loginData.email });
-        setCurrentStep(2);
-        setEmailOtpTimer(300);
-        setCanResendEmail(false);
+        
+        // Skip email verification, send SMS directly
+        try {
+          const smsRes = await api.post("/auth/admin/send-sms", { email: loginData.email });
+          
+          if (smsRes.data.success) {
+            setSessionData(prev => ({ ...prev, phone: smsRes.data.maskedPhone }));
+            setCurrentStep(2); // Go to Phone Verification (Step 2)
+            setPhoneOtpTimer(300);
+            setCanResendPhone(false);
+          } else {
+            setError(smsRes.data.message || "Failed to send SMS verification code");
+          }
+        } catch (smsErr) {
+           setError(smsErr.response?.data?.message || "Failed to send SMS verification code");
+        }
+
       } else {
         setError(res.data.message || "Login failed");
       }
@@ -178,37 +174,7 @@ const AdminLogin = () => {
     }
   };
 
-  const handleEmailOtpVerification = async (e) => {
-    e.preventDefault();
-    const otpString = emailOtp.join("");
-    if (otpString.length !== 6) {
-      setError("Please enter the complete 6-digit code");
-      return;
-    }
-    setLoading(true);
-    setError("");
-    try {
-      const code = emailOtp.join("");
-      const res = await api.post("/auth/admin/email-otp-verify", {
-        code,
-        email: loginData.email,
-      });
-      
-      if (res.data.success) {
-        // Backend now sends SMS automatically, so we just move to the next step
-        setSessionData(prev => ({ ...prev, phone: res.data.maskedPhone })); // Assuming backend sends masked phone
-        setCurrentStep(3);
-        setPhoneOtpTimer(300);
-        setCanResendPhone(false);
-      } else {
-        setError(res.data.message || "Verification failed. Please try again.");
-      }
-    } catch (err) {
-      setError(err.response?.data?.message || "Verification failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+
 
   const handlePhoneOtpVerification = async (e) => {
       e.preventDefault();
@@ -245,14 +211,15 @@ const AdminLogin = () => {
   };
 
   const handleResendOtp = async (type) => {
-    if (type === "email" && canResendEmail) {
-      setEmailOtpTimer(300);
-      setCanResendEmail(false);
-      console.log("Resending email OTP");
-    } else if (type === "phone" && canResendPhone) {
+    if (type === "phone" && canResendPhone) {
       setPhoneOtpTimer(300);
       setCanResendPhone(false);
       console.log("Resending phone OTP");
+      try {
+        await api.post("/auth/admin/send-sms", { email: loginData.email });
+      } catch (e) {
+        setError("Failed to resend SMS");
+      }
     }
   };
   const goBack = () => {
@@ -265,7 +232,7 @@ const AdminLogin = () => {
   const renderStepIndicator = () => (
     <div className="flex justify-center mb-8">
       <div className="flex items-center space-x-4">
-        {[1, 2, 3].map((step) => (
+        {[1, 2].map((step) => (
           <React.Fragment key={step}>
             <div
               className={`flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all ${
@@ -282,7 +249,7 @@ const AdminLogin = () => {
                 <span className="text-sm font-medium">{step}</span>
               )}
             </div>
-            {step < 3 && (
+            {step < 2 && (
               <div
                 className={`w-8 h-0.5 ${
                   step < currentStep ? "bg-green-500" : "bg-gray-300"
@@ -401,102 +368,7 @@ const AdminLogin = () => {
     </div>
   );
 
-  const renderEmailOtp = () => (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <div className="w-16 h-16 bg-gradient-to-r from-green-600 to-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Mail className="w-8 h-8 text-white" />
-        </div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Email Verification
-        </h2>
-        <p className="text-gray-600">
-          Enter the 6-digit code sent to
-          <br />
-          <span className="font-medium">{sessionData?.email}</span>
-        </p>
-      </div>
 
-      <form onSubmit={handleEmailOtpVerification} className="space-y-6">
-        <div className="flex justify-center space-x-3">
-          {emailOtp.map((digit, index) => (
-            <input
-              key={index}
-              name={`otp-${index}`}
-              type="text"
-              maxLength="1"
-              value={digit}
-              onChange={(e) =>
-                handleOtpChange(index, e.target.value, setEmailOtp, emailOtp)
-              }
-              onKeyDown={(e) => handleKeyDown(e, index, setEmailOtp, emailOtp)}
-              className="w-12 h-12 text-center text-lg font-bold border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-            />
-          ))}
-        </div>
-
-        {error && (
-          <div className="flex items-center space-x-2 text-red-600 bg-red-50 p-3 rounded-lg">
-            <AlertTriangle className="w-5 h-5" />
-            <span className="text-sm">{error}</span>
-          </div>
-        )}
-
-        <div className="text-center">
-          {emailOtpTimer > 0 ? (
-            <p className="text-sm text-gray-600">
-              Code expires in{" "}
-              <span className="font-medium text-green-600">
-                {formatTime(emailOtpTimer)}
-              </span>
-            </p>
-          ) : (
-            <button
-              type="button"
-              onClick={() => handleResendOtp("email")}
-              disabled={!canResendEmail}
-              className="text-sm text-green-600 hover:text-green-700 font-medium"
-            >
-              Resend verification code
-            </button>
-          )}
-        </div>
-
-        <div className="flex space-x-3">
-          <button
-            type="button"
-            onClick={goBack}
-            className="flex-1 py-3 px-4 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-all flex items-center justify-center space-x-2"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span>Back</span>
-          </button>
-
-          <button
-            type="submit"
-            disabled={loading || emailOtp.join("").length !== 6}
-            className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all flex items-center justify-center space-x-2 ${
-              loading || emailOtp.join("").length !== 6
-                ? "bg-gray-400 cursor-not-allowed text-white"
-                : "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-            }`}
-          >
-            {loading ? (
-              <>
-                <RefreshCw className="w-5 h-5 animate-spin" />
-                <span>Verifying...</span>
-              </>
-            ) : (
-              <>
-                <span>Verify</span>
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </div>
-      </form>
-    </div>
-  );
 
   const renderPhoneOtp = () => (
     <div className="max-w-md mx-auto">
@@ -602,8 +474,7 @@ const AdminLogin = () => {
           {renderStepIndicator()}
 
           {currentStep === 1 && renderPrimaryLogin()}
-          {currentStep === 2 && renderEmailOtp()}
-          {currentStep === 3 && renderPhoneOtp()}
+          {currentStep === 2 && renderPhoneOtp()}
         </div>
 
         <div className="mt-6 text-center">

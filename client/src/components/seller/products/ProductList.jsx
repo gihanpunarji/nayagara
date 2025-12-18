@@ -234,7 +234,7 @@ const ProductList = () => {
           <img
             src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
             alt={product.title}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             onError={(e) => {
               e.target.src = '/api/placeholder/400/400';
             }}

@@ -324,7 +324,7 @@ const MobileMenu = ({
                       key={index}
                       to={item.path}
                       onClick={onClose}
-                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
+                      className="flex items-center px-6 space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
                     >
                       <IconComponent className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
                       <span className="font-medium text-gray-700 group-hover:text-primary-600">

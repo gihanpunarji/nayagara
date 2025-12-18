@@ -99,7 +99,7 @@ const ProductListing = ({ title, subtitle, products: initialProducts, gradient, 
                 <img
                   src={product.image}
                   alt={product.name}
-                  className="w-full h-32 object-cover"
+                  className="w-full h-32 object-contain"
                 />
                 {/* Badge */}
                 <div className="absolute top-2 left-2">

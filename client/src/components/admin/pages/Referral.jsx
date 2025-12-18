@@ -59,16 +59,7 @@ const SystemSettings = () => {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Total Distributable Payout (%)</label>
-            <input
-              type="number"
-              name="referral_total_payout_percent"
-              value={settings.referral_total_payout_percent || ''}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            />
-          </div>
+          
           <div>
             <label className="block text-sm font-medium text-gray-700">Referral Unlock Purchase Threshold</label>
             <input
@@ -79,18 +70,7 @@ const SystemSettings = () => {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
             />
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Commission Model</label>
-            <select
-              name="referral_commission_model"
-              value={settings.referral_commission_model || 'option1'}
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-            >
-              <option value="option1">Option 1</option>
-              <option value="option2">Option 2</option>
-            </select>
-          </div>
+          
         </div>
         <div className="mt-4">
           <button
@@ -387,22 +367,6 @@ const Referral = () => {
     fetchCommissionHistory(1);
   }, []);
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= pagination.totalPages) {
-      fetchCommissionHistory(newPage);
-    }
-  };
-
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  };
-
   return (
     <AdminLayout>
       <div className="p-6 bg-gray-50 min-h-full">
@@ -412,85 +376,6 @@ const Referral = () => {
         <UserReferralData />
         <CommissionTiers />
 
-        {/* Commission History Table */}
-        <div className="bg-white rounded-lg shadow-md border border-gray-200">
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-700">Commission Payout History</h2>
-          </div>
-          
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Level</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan="5" className="text-center py-10">
-                      <Loader className="w-6 h-6 text-gray-400 animate-spin mx-auto" />
-                      <p className="mt-2 text-sm text-gray-500">Loading history...</p>
-                    </td>
-                  </tr>
-                ) : history.length === 0 ? (
-                  <tr>
-                    <td colSpan="5" className="text-center py-10">
-                      <p className="text-sm text-gray-500">No commission history found.</p>
-                    </td>
-                  </tr>
-                ) : (
-                  history.map((item) => (
-                    <tr key={item.rewards_id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{item.first_name} {item.last_name}</div>
-                        <div className="text-sm text-gray-500">{item.user_email}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.order_number}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-semibold">L{item.level}</td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold">
-                        Rs. {parseFloat(item.reward_amount).toFixed(2)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(item.created_at)}</td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination Controls */}
-          {!loading && pagination.total > 0 && (
-            <div className="p-4 border-t border-gray-200 flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> results
-              </span>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                  className="p-2 text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronLeft className="w-5 h-5" />
-                </button>
-                <span className="text-sm text-gray-700">
-                  Page {pagination.page} of {pagination.totalPages}
-                </span>
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.totalPages}
-                  className="p-2 text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
       </div>
     </AdminLayout>
   );

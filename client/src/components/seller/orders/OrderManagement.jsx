@@ -421,7 +421,7 @@ const OrderManagement = () => {
                       <img
                         src={item.product_image_url}
                         alt={item.product_title}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                       />
                     </div>
                     <div className="flex-1">

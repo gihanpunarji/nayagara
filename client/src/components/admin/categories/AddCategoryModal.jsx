@@ -212,7 +212,7 @@ const AddCategoryModal = ({ isOpen, onClose, onSuccess, editingCategory }) => {
                   <img
                     src={iconPreview}
                     alt="Category icon preview"
-                    className="w-20 h-20 object-cover rounded-lg border-2 border-green-500"
+                    className="w-20 h-20 object-contain rounded-lg border-2 border-green-500"
                   />
                   <button
                     type="button"

@@ -82,21 +82,6 @@ const Shipping = () => {
       carrier: 'Local Post'
     },
     {
-      id: 5,
-      name: 'Free Shipping',
-      description: 'Free delivery for orders above Rs. 5000',
-      zones: ['Colombo', 'Gampaha'],
-      basePrice: 0,
-      pricePerKg: 0,
-      minWeight: 0,
-      maxWeight: 20,
-      estimatedDays: '5-7',
-      status: 'active',
-      totalOrders: 567,
-      carrier: 'Local Post',
-      minOrderValue: 5000
-    },
-    {
       id: 6,
       name: 'International Shipping',
       description: 'Worldwide delivery within 10-15 business days',

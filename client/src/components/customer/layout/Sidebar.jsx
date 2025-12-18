@@ -87,7 +87,7 @@ const Sidebar = ({ mainCategories }) => {
                 >
                   <div className="flex items-center space-x-3">
                     {category.icon && category.icon.startsWith('http') ? (
-                      <img src={category.icon} alt={category.name} className="w-6 h-6 object-cover rounded" />
+                      <img src={category.icon} alt={category.name} className="w-6 h-6 object-contain rounded" />
                     ) : (
                       <span className="text-lg">{category.icon}</span>
                     )}

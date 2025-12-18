@@ -90,9 +90,9 @@ const SearchPage = () => {
     const image = product.images && product.images.length > 0 ? product.images[0].image_url : null;
     
     return (
-      <Link to={`/product/${product.product_id}`} className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden border border-gray-100 flex flex-col h-full">
+      <Link to={`/product/${product.product_id}`} className="group bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 overflow-hidden border border-gray-100 flex flex-col h-full hover:border-primary-200">
         {/* Image Container */}
-        <div className="relative aspect-square overflow-hidden bg-gray-100">
+        <div className="relative aspect-square overflow-hidden bg-white p-2">
           {image ? (
             <img 
               src={image} 
@@ -100,20 +100,20 @@ const SearchPage = () => {
               className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300" 
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-               No Image
+            <div className="w-full h-full flex items-center justify-center bg-gray-50 rounded-lg">
+               <Search className="w-8 h-8 text-gray-300" />
             </div>
           )}
           
           {/* Badges */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1">
+          <div className="absolute top-2 left-2 flex flex-col gap-1 z-10">
             {discount > 0 && (
-              <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded">
+              <span className="bg-red-500 text-white text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-sm">
                 -{discount}%
               </span>
             )}
             {product.is_featured === 1 && (
-              <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
+              <span className="bg-yellow-400 text-yellow-900 text-[10px] sm:text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded shadow-sm">
                 Featured
               </span>
             )}
@@ -121,45 +121,34 @@ const SearchPage = () => {
         </div>
 
         {/* Content */}
-        <div className="p-4 flex-1 flex flex-col">
-          <div className="text-xs text-gray-500 mb-1">{product.category_name}</div>
-          <h3 className="font-medium text-gray-900 mb-1 line-clamp-2 group-hover:text-primary-600 transition-colors">
+        <div className="p-3 sm:p-4 flex-1 flex flex-col bg-white">
+          <div className="text-[10px] sm:text-xs text-gray-500 mb-1 truncate">{product.category_name}</div>
+          <h3 className="font-medium text-xs sm:text-sm text-gray-900 mb-2 line-clamp-2 group-hover:text-primary-600 transition-colors leading-tight h-8 sm:h-10">
             {product.product_title}
           </h3>
           
-          {/* Rating (Placeholder or removed since backend doesn't return it yet) */}
-          {/* 
-          <div className="flex items-center space-x-1 mb-2">
-            <Star className="w-3 h-3 text-yellow-400 fill-current" />
-            <span className="text-xs font-medium text-gray-700">4.5</span>
-            <span className="text-xs text-gray-400">(10)</span>
-          </div> 
-          */}
-          
           <div className="mt-auto">
-             <div className="flex items-baseline space-x-2">
-                <span className="text-lg font-bold text-gray-900">
+             <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+                <span className="text-sm sm:text-lg font-bold text-primary-600">
                   LKR {parseFloat(product.price).toLocaleString()}
                 </span>
                 {discount > 0 && (
-                  <span className="text-xs text-gray-500 line-through">
+                  <span className="text-[10px] sm:text-xs text-gray-400 line-through">
                     LKR {parseFloat(product.market_price).toLocaleString()}
                   </span>
                 )}
              </div>
              
-             {product.seller_name && (
-                <div className="flex items-center mt-2 text-xs text-gray-500">
-                  <span className="truncate">Sold by {product.seller_name}</span>
-                </div>
-             )}
-              
-             {product.location_city_name && (
-               <div className="flex items-center mt-1 text-xs text-gray-500">
-                 <MapPin className="w-3 h-3 mr-1" />
-                 <span className="truncate">{product.location_city_name}</span>
-               </div>
-             )}
+             <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-50">
+               {product.location_city_name && (
+                 <div className="flex items-center text-[10px] sm:text-xs text-gray-500 max-w-[70%]">
+                   <MapPin className="w-3 h-3 mr-0.5 flex-shrink-0" />
+                   <span className="truncate">{product.location_city_name}</span>
+                 </div>
+               )}
+               
+               {/* Mobile only simplified view could go here, but keeping it consistent for now */}
+             </div>
           </div>
         </div>
       </Link>

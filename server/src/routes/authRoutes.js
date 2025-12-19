@@ -11,7 +11,8 @@ const {
   sendEmail,
   verifyEmailOtp,
   verifyAdminSmsOtp,
-  refreshAdminToken
+  refreshAdminToken,
+  sendAdminSmsOtp
 } = require("../controllers/authController");
 const { mobile, verifyOtp } = require("../utils/mobileVerify");
 
@@ -29,6 +30,7 @@ router.post("/admin/send-email", sendEmail);
 router.post("/admin/email-otp-verify", verifyEmailOtp);
 router.post("/admin/sms-otp-verify", verifyAdminSmsOtp);
 router.post("/admin/login", (req, res) => loginAdmin(req, res));
+router.post("/admin/send-sms", sendAdminSmsOtp);
 router.post("/admin/refresh-token", refreshAdminToken);
 
 module.exports = router;

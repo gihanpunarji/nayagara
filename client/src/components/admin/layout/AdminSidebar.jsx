@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { getAdminDashboardData } from '../../../api/admin';
 import {
   LayoutDashboard,
   Users,
@@ -8,28 +9,34 @@ import {
   ShoppingCart,
   CreditCard,
   BarChart3,
-  MessageSquare,
-  Settings,
-  Shield,
-  AlertCircle,
-  FileText,
   TrendingUp,
-  Globe,
-  HelpCircle,
-  Database,
-  Activity,
   Car,
   Folder,
-  Star,
-  Tag,
-  Truck,
-  RotateCcw,
   Bell,
-  Image
 } from 'lucide-react';
 
 const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
   const location = useLocation();
+  const [stats, setStats] = React.useState({
+    products: 0,
+    pendingProducts: 0,
+    pendingAds: 0,
+    pendingOrders: 0
+  });
+
+  React.useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const response = await getAdminDashboardData();
+        if (response.success && response.data.badges) {
+            setStats(response.data.badges);
+        }
+      } catch (error) {
+        console.error('Failed to fetch sidebar stats', error);
+      }
+    };
+    fetchStats();
+  }, []);
 
   const menuSections = [
     {
@@ -38,15 +45,9 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
         {
           icon: LayoutDashboard,
           label: 'Dashboard',
-          path: '/admin/dashboard',
-          badge: null
+          path: '/admin/dashboard',          
         },
-        {
-          icon: Activity,
-          label: 'System Monitor',
-          path: '/admin/system',
-          badge: null
-        }
+        
       ]
     },
     {
@@ -56,19 +57,11 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           icon: Users,
           label: 'Customers',
           path: '/admin/customers',
-          badge: '1,234'
         },
         {
           icon: Store,
           label: 'Sellers',
           path: '/admin/sellers',
-          badge: '89'
-        },
-        {
-          icon: Shield,
-          label: 'Admin Users',
-          path: '/admin/admins',
-          badge: null
         }
       ]
     },
@@ -79,80 +72,69 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           icon: Package,
           label: 'Products',
           path: '/admin/products',
-          badge: '12.5K'
         },
-        {
-          icon: Car,
-          label: 'Advertisements',
-          path: '/admin/advertisements',
-          badge: '8'
-        },
+        // {
+        //   icon: Car,
+        //   label: 'Advertisements',
+        //   path: '/admin/advertisements',
+        //   badge: stats.pendingAds > 0 ? stats.pendingAds : null
+        // },
         {
           icon: ShoppingCart,
           label: 'Orders',
           path: '/admin/orders',
-          badge: '45'
         },
         {
           icon: Folder,
           label: 'Categories',
           path: '/admin/categories',
-          badge: null
         },
-        {
-          icon: Database,
-          label: 'Inventory',
-          path: '/admin/inventory',
-          badge: null
-        },
-        {
-          icon: Star,
-          label: 'Reviews & Ratings',
-          path: '/admin/reviews',
-          badge: null
-        },
-        {
-          icon: Tag,
-          label: 'Promotions',
-          path: '/admin/promotions',
-          badge: null
-        },
+        // {
+        //   icon: Star,
+        //   label: 'Reviews & Ratings',
+        //   path: '/admin/reviews',
+        //   badge: null
+        // },
+        // {
+        //   icon: Tag,
+        //   label: 'Promotions',
+        //   path: '/admin/promotions',
+        //   badge: null
+        // },
         {
           icon: TrendingUp,
           label: 'Referrals',
           path: '/admin/referrals',
-          badge: null
         },
         {
           icon: CreditCard,
           label: 'Payments',
           path: '/admin/payments',
-          badge: null
         },
-        {
-          icon: Truck,
-          label: 'Shipping',
-          path: '/admin/shipping',
-          badge: null
-        },
-        {
-          icon: RotateCcw,
-          label: 'Returns & Refunds',
-          path: '/admin/returns',
-          badge: null
-        },
-        {
-          icon: Image,
-          label: 'Banner & Slider',
-          path: '/admin/banners',
-          badge: null
-        },
-        {
-          icon: MessageSquare,
-          label: 'Disputes',
-          path: '/admin/disputes',
-          badge: '12'
-        }
+        // {
+        //   icon: Truck,
+        //   label: 'Shipping',
+        //   path: '/admin/shipping',
+        //   badge: null
+        // },
+        // {
+        //   icon: RotateCcw,
+        //   label: 'Returns & Refunds',
+        //   path: '/admin/returns',
+        //   badge: null
+        // },
+        // {
+        //   icon: Image,
+        //   label: 'Banner & Slider',
+        //   path: '/admin/banners',
+        //   badge: null
+        // },
+        // {
+        //   icon: MessageSquare,
+        //   label: 'Disputes',
+        //   path: '/admin/disputes',
+        //   badge: '12'
+        // }
       ]
     },
     {
@@ -162,20 +144,19 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           icon: BarChart3,
           label: 'Analytics',
           path: '/admin/analytics',
-          badge: null
         },
-        {
-          icon: TrendingUp,
-          label: 'Reports',
-          path: '/admin/reports',
-          badge: null
-        },
-        {
-          icon: FileText,
-          label: 'Audit Logs',
-          path: '/admin/audit-logs',
-          badge: null
-        }
+        // {
+        //   icon: TrendingUp,
+        //   label: 'Reports',
+        //   path: '/admin/reports',
+        //   badge: null
+        // },
+        // {
+        //   icon: FileText,
+        //   label: 'Audit Logs',
+        //   path: '/admin/audit-logs',
+        //   badge: null
+        // }
       ]
     },
     {
@@ -185,42 +166,41 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
           icon: Bell,
           label: 'Notifications',
           path: '/admin/notifications',
-          badge: null
         },
-        {
-          icon: Globe,
-          label: 'Platform Settings',
-          path: '/admin/platform-settings',
-          badge: null
-        },
-        {
-          icon: Database,
-          label: 'Database',
-          path: '/admin/database',
-          badge: null
-        },
-        {
-          icon: AlertCircle,
-          label: 'Security Center',
-          path: '/admin/security',
-          badge: '3'
-        }
+        // {
+        //   icon: Globe,
+        //   label: 'Platform Settings',
+        //   path: '/admin/platform-settings',
+        //   badge: null
+        // },
+        // {
+        //   icon: Database,
+        //   label: 'Database',
+        //   path: '/admin/database',
+        //   badge: null
+        // },
+        // {
+        //   icon: AlertCircle,
+        //   label: 'Security Center',
+        //   path: '/admin/security',
+        //   badge: '3'
+        // }
       ]
     }
   ];
 
-  const bottomMenuItems = [
-    {
-      icon: Settings,
-      label: 'Settings',
-      path: '/admin/settings'
-    },
-    {
-      icon: HelpCircle,
-      label: 'Support',
-      path: '/admin/support'
-    }
-  ];
+  // const bottomMenuItems = [
+  //   {
+  //     icon: Settings,
+  //     label: 'Settings',
+  //     path: '/admin/settings'
+  //   },
+  //   {
+  //     icon: HelpCircle,
+  //     label: 'Support',
+  //     path: '/admin/support'
+  //   }
+  // ];
 
   const isActivePath = (path) => {
     if (path === '/admin/dashboard') {
@@ -301,7 +281,7 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
             ))}
 
             {/* System Status Card */}
-            <div className="mt-8 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
+            {/* <div className="mt-8 bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-sm font-semibold text-green-800">System Status</h3>
                 <Activity className="w-4 h-4 text-green-600" />
@@ -324,19 +304,19 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
                 </div>
                 <p className="text-xs text-green-600 mt-1">System performing well</p>
               </div>
-            </div>
+            </div> */}
           </div>
 
           {/* Bottom Menu */}
           <div className="border-t border-gray-200 px-4 py-4">
             <nav className="space-y-1">
-              {bottomMenuItems.map((item, index) => (
+              {/* {bottomMenuItems.map((item, index) => (
                 <MenuLink
                   key={index}
                   item={item}
                   onClick={showMobileMenu ? onMenuToggle : undefined}
                 />
-              ))}
+              ))} */}
             </nav>
           </div>
         </div>

@@ -100,8 +100,8 @@ const MobileBottomNav = ({ cartCount = 0, onMenuToggle }) => {
                 <div className="relative flex flex-col items-center">
                   <div className="relative">
                     <IconComponent className={`w-6 h-6 ${isActive ? 'text-primary-600' : ''}`} />
-                    {item.badge && item.badge > 0 && (
-                      <span className="absolute -top-1 -right-1 w-4 h-4 bg-error text-white text-xs rounded-full flex items-center justify-center font-bold leading-none">
+                    {item.badge > 0 && (
+                      <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-600 text-white text-[10px] rounded-full flex items-center justify-center font-bold leading-none border-2 border-white shadow-sm">
                         {item.badge > 9 ? '9+' : item.badge}
                       </span>
                     )}

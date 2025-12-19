@@ -359,25 +359,61 @@ class User {
     }
   }
 
-  static async getAllSellersWithStats() {
+  static async getAllSellersWithStats(limit = 25, offset = 0, search = '', status = 'all') {
     const pool = getConnection();
     let connection;
     try {
       connection = await pool.getConnection();
-      const [rows] = await connection.execute(`
+      
+      let whereClause = "WHERE u.user_type = 'seller'";
+      const queryParams = [];
+
+      // Add status filter
+      if (status && status !== 'all') {
+        whereClause += " AND u.user_status = ?";
+        queryParams.push(status);
+      }
+
+      // Add search filter
+      if (search && search.trim()) {
+        whereClause += " AND (u.first_name LIKE ? OR u.last_name LIKE ? OR u.user_email LIKE ? OR u.user_mobile LIKE ? OR s.store_name LIKE ?)";
+        const searchTerm = `%${search.trim()}%`;
+        queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm, searchTerm);
+      }
+
+      // Get total count
+      const countQuery = `
+        SELECT COUNT(DISTINCT u.user_id) as total
+        FROM users u
+        LEFT JOIN store s ON u.user_id = s.user_id
+        ${whereClause}
+      `;
+      
+      const [countResult] = await connection.execute(countQuery, queryParams);
+      const total = countResult[0].total;
+
+      // Get paginated data
+      const query = `
         SELECT
             u.user_id AS id,
             CONCAT(u.first_name, ' ', u.last_name) AS name,
             u.user_email AS email,
             u.user_mobile AS phone,
             u.user_status AS status,
-            u.email_verified AS verified,
+            u.email_verified,
+            u.mobile_verified,
+            u.profile_image,
             u.created_at AS joinDate,
             u.nic,
+            s.store_name,
+            s.store_description,
             (SELECT COUNT(DISTINCT p.product_id) FROM products p WHERE p.seller_id = u.user_id) AS totalProducts,
             (SELECT SUM(oi.total_price) FROM orders o JOIN order_items oi ON o.order_id = oi.order_id WHERE oi.seller_id = u.user_id) AS totalSales,
             (SELECT AVG(pr.rating) FROM product_reviews pr JOIN products p ON pr.product_id = p.product_id WHERE p.seller_id = u.user_id) AS avgProductRating,
-            (SELECT 
+            COALESCE(u.total_earned, 0) AS totalEarnings,
+            COALESCE((SELECT p.total_paid FROM payments p WHERE p.user_id = u.user_id ORDER BY p.paid_at DESC LIMIT 1), 0) AS totalPaid,
+            COALESCE(u.total_earned, 0) - COALESCE((SELECT p.total_paid FROM payments p WHERE p.user_id = u.user_id ORDER BY p.paid_at DESC LIMIT 1), 0) AS availableBalance,
+            (SELECT
               CONCAT(a.line1, ', ', a.line2, ', ', c.city_name, ', ', d.district_name, ', ', p.province_name)
               FROM addresses a
               JOIN cities c ON a.city_id = c.city_id
@@ -387,14 +423,20 @@ class User {
               LIMIT 1) AS location
         FROM
             users u
-        WHERE
-            u.user_type = 'seller'
+        LEFT JOIN store s ON u.user_id = s.user_id
+        ${whereClause}
         GROUP BY
             u.user_id
         ORDER BY
-            u.created_at DESC;
-      `);
-      return rows;
+            u.created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+
+      // Copy query params and add limit/offset
+      const finalQueryParams = [...queryParams, parseInt(limit), parseInt(offset)];
+      
+      const [rows] = await connection.execute(query, finalQueryParams);
+      return { sellers: rows, total };
     } finally {
       if (connection) connection.release();
     }
@@ -541,6 +583,78 @@ class User {
   /**
    * Updates user purchase information and referral status
    */
+
+  /**
+   * Adds to seller's total earned amount (when orders complete)
+   */
+  static async incrementTotalEarned(userId, amountToAdd) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [result] = await connection.execute(
+        "UPDATE users SET total_earned = COALESCE(total_earned, 0) + ? WHERE user_id = ?",
+        [amountToAdd, userId]
+      );
+      return result;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+
+  /**
+   * Gets seller's total earned amount
+   */
+  static async getTotalEarned(userId) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(
+        "SELECT COALESCE(total_earned, 0) as total_earned FROM users WHERE user_id = ?",
+        [userId]
+      );
+      return rows[0]?.total_earned || 0;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  /**
+   * Gets seller's available balance (total_earned - total_paid from payments table)
+   */
+  static async getAvailableBalance(userId) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(
+        `SELECT
+          COALESCE(u.total_earned, 0) - COALESCE((SELECT total_paid FROM payments WHERE user_id = ? ORDER BY paid_at DESC LIMIT 1), 0) as available_balance
+         FROM users u
+         WHERE u.user_id = ?`,
+        [userId, userId]
+      );
+      return rows[0]?.available_balance || 0;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+  static async updateStatus(userId, status) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [result] = await connection.execute(
+        "UPDATE users SET user_status = ? WHERE user_id = ?",
+        [status, userId]
+      );
+      return result;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
 }
 
 module.exports = User;

@@ -456,7 +456,7 @@ CREATE TABLE `products` (
   `currency_code` varchar(3) DEFAULT 'LKR',
   `weight_kg` decimal(8,3) DEFAULT '0.000',
   `stock_quantity` int DEFAULT '0',
-  `product_status` enum('draft','pending_approval','active','inactive','sold','expired') DEFAULT 'draft',
+  `product_status` enum('pending_approval','active','inactive') DEFAULT 'draft',
   `is_featured` tinyint(1) DEFAULT '0',
   `is_promoted` tinyint(1) DEFAULT '0',
   `location_city_id` int DEFAULT NULL,

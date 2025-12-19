@@ -145,8 +145,24 @@ function SellerRegistration() {
 
   const handleOtpVerify = async (e) => {
     e.preventDefault();
-    await api.post("/auth/verify-otp", { mobile, email, verificationCode });
-    navigate("/seller/login");
+    try {
+      setLoading(true);
+      setError("");
+      const res = await api.post("/auth/verify-otp", { mobile, email, verificationCode });
+
+      if (res.data.success) {
+        // Token was already saved during registration (step 2)
+        // Now navigate to seller dashboard
+        navigate("/seller/dashboard");
+      } else {
+        setError(res.data.message || "Verification failed");
+      }
+    } catch (error) {
+      setError(error.response?.data?.message || "OTP verification failed");
+      console.error("OTP verification error:", error.response?.data?.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleAccountContinue = (e) => {

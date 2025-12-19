@@ -1,5 +1,5 @@
 const express = require("express");
-const { getSellerProfile, updateSellerProfile, uploadProfilePicture, getSellerPaymentDetails, updateSellerPaymentDetails, getSellerCustomers, getSellerDashboardData } = require("../controllers/sellerController");
+const { getSellerProfile, updateSellerProfile, uploadProfilePicture, getSellerPaymentDetails, updateSellerPaymentDetails, getSellerCustomers, getSellerDashboardData, getSellerAnalytics } = require("../controllers/sellerController");
 const { authenticateToken } = require("../middleware/auth");
 const { upload } = require("../middleware/cloudinaryUpload");
 
@@ -15,5 +15,6 @@ router.put("/payment", authenticateToken, updateSellerPaymentDetails);
 
 router.get("/customers", authenticateToken, getSellerCustomers);
 router.get("/dashboard", authenticateToken, getSellerDashboardData);
+router.get("/analytics", authenticateToken, getSellerAnalytics);
 
 module.exports = router;

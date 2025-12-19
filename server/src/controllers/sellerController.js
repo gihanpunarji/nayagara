@@ -317,6 +317,39 @@ const getSellerDashboardData = async (req, res) => {
   }
 };
 
+const getSellerAnalytics = async (req, res) => {
+  try {
+    const sellerId = req.user.user_id;
+    const { days = 30 } = req.query;
+
+    const [overview, revenueOverTime, topProducts, categoryPerformance] = await Promise.all([
+      Dashboard.getSellerOverviewStats(sellerId, parseInt(days)),
+      Dashboard.getSellerRevenueOverTime(sellerId, parseInt(days)),
+      Dashboard.getSellerTopProducts(sellerId, parseInt(days)),
+      Dashboard.getSellerCategoryPerformance(sellerId, parseInt(days))
+    ]);
+
+    res.json({
+      success: true,
+      data: {
+        ...overview,
+        chartData: {
+            daily: revenueOverTime
+        },
+        topProducts,
+        categoryPerformance
+      }
+    });
+  } catch (error) {
+    console.error("Get seller analytics error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to retrieve seller analytics",
+      details: error.message
+    });
+  }
+};
+
 module.exports = {
   getSellerProfile,
   updateSellerProfile,
@@ -325,4 +358,5 @@ module.exports = {
   updateSellerPaymentDetails,
   getSellerCustomers,
   getSellerDashboardData,
+  getSellerAnalytics,
 };

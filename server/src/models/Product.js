@@ -194,6 +194,20 @@ class Product {
       return {};
     }
   }
+
+  static async getCostById(productId) {
+    const connection = getConnection();
+    try {
+      const [rows] = await connection.execute(
+        "SELECT cost FROM products WHERE product_id = ?",
+        [productId]
+      );
+      return rows[0]?.cost || 0;
+    } catch (error) {
+      console.error('Error fetching product cost:', error);
+      return 0;
+    }
+  }
 }
 
 module.exports = Product;

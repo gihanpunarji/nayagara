@@ -48,13 +48,6 @@ const createPayHerePayment = async (req, res) => {
       });
     }
 
-    // Check environment variables
-    console.log('Environment check:', {
-      merchant_id: process.env.PAYHERE_MERCHANT_ID ? 'Set' : 'Missing',
-      merchant_secret: process.env.PAYHERE_MERCHANT_SECRET ? 'Set' : 'Missing',
-      front_end_api: process.env.FRONT_END_API ? 'Set' : 'Missing'
-    });
-
     // PayHere payment data
     const paymentData = {
       merchant_id: process.env.PAYHERE_MERCHANT_ID,

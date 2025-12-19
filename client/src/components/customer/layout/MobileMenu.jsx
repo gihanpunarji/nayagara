@@ -37,6 +37,7 @@ const MobileMenu = ({
   handleNavClick = null,
   scrollToContact = null,
   setActiveTab = null,
+  mainCategories = [],
 }) => {
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const { user, logout } = useAuth();
@@ -54,7 +55,7 @@ const MobileMenu = ({
     };
   }, [isOpen]);
 
-  const mainCategories = [
+  const defaultCategories = [
     { name: 'Electronics' },
     { name: 'Vehicles' },
     { name: 'Fashion' },
@@ -64,6 +65,9 @@ const MobileMenu = ({
     { name: 'Books & Media' },
     { name: 'Services' },
   ];
+
+  // Use passed categories or fall back to default if empty
+  const categoriesToUse = (mainCategories && mainCategories.length > 0) ? mainCategories : defaultCategories;
 
   const companyMenuItems = [
     { label: 'About Us', icon: Info, path: '/about-us' },
@@ -111,7 +115,7 @@ const MobileMenu = ({
           <div className="flex items-center space-x-3">
             {user ? (
               <img
-                src={`http://localhost:8000/${user.profile_picture}`}
+                src={user.profile_picture}
                 alt={user.name}
                 className="w-12 h-12 rounded-full border-2 border-white"
               />
@@ -320,7 +324,7 @@ const MobileMenu = ({
                       key={index}
                       to={item.path}
                       onClick={onClose}
-                      className="flex items-center space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
+                      className="flex items-center px-6 space-x-3 px-4 py-3 hover:bg-gray-50 transition-colors group border-t border-gray-100 first:border-t-0"
                     >
                       <IconComponent className="w-4 h-4 text-gray-500 group-hover:text-primary-600" />
                       <span className="font-medium text-gray-700 group-hover:text-primary-600">
@@ -370,7 +374,7 @@ const MobileMenu = ({
         onClose={() => setShowAdvancedFilters(false)}
         onFiltersApply={handleFiltersApply}
         selectedCategory="All Categories"
-        mainCategories={mainCategories}
+        mainCategories={categoriesToUse}
       />
     </>
   );

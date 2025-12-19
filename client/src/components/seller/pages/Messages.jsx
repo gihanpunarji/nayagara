@@ -19,7 +19,6 @@ import SellerLayout from '../layout/SellerLayout';
 import api from '../../../api/axios';
 
 const Messages = () => {
-  const serverUrl = import.meta.env.VITE_API_URL ? import.meta.env.VITE_API_URL.replace('/api', '') : 'http://localhost:5001';
   const [conversations, setConversations] = useState([]);
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [currentMessages, setCurrentMessages] = useState([]);

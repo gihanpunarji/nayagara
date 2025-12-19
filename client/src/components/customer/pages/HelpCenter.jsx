@@ -15,12 +15,12 @@ const HelpCenter = () => {
       description: 'Learn about our shipping process, delivery times, and fees.',
       link: '#',
     },
-    {
-      icon: <Shield className="w-8 h-8 text-primary-600" />,
-      title: 'Returns & Refunds',
-      description: 'Understand our return policy and how to request a refund.',
-      link: '#',
-    },
+    // {
+    //   icon: <Shield className="w-8 h-8 text-primary-600" />,
+    //   title: 'Returns & Refunds',
+    //   description: 'Understand our return policy and how to request a refund.',
+    //   link: '#',
+    // },
     {
       icon: <CreditCard className="w-8 h-8 text-primary-600" />,
       title: 'Payment Options',

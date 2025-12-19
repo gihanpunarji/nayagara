@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/gihanpunarji/nayagara#readme",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1"
+    "@google/generative-ai": "^0.24.1",
+    "@tailwindcss/forms": "^0.5.10"
   }
 }

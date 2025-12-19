@@ -15,9 +15,14 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle,
-  Image as ImageIcon
+  Image as ImageIcon,
+  XIcon as X
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
+import { getAdminCategories } from '../../../api/admin';
+import AddCategoryModal from '../categories/AddCategoryModal';
+import SubCategoryModal from '../categories/SubCategoryModal';
+import api from '../../../api/axios';
 
 const Categories = () => {
   const [categories, setCategories] = useState([]);
@@ -26,163 +31,92 @@ const Categories = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [selectedCategories, setSelectedCategories] = useState([]);
-
-  // Mock category data
-  const mockCategories = [
-    {
-      id: 1,
-      name: 'Electronics',
-      description: 'Electronic devices, gadgets, and accessories',
-      parentCategory: null,
-      subCategories: ['Mobile Phones', 'Laptops', 'Cameras', 'Audio'],
-      totalProducts: 12500,
-      activeProducts: 11200,
-      totalSales: 4200000,
-      icon: '📱',
-      status: 'active',
-      featured: true,
-      createdDate: '2023-01-15',
-      lastUpdated: '2024-01-10'
-    },
-    {
-      id: 2,
-      name: 'Fashion',
-      description: 'Clothing, accessories, and footwear',
-      parentCategory: null,
-      subCategories: ['Men\'s Wear', 'Women\'s Wear', 'Kids', 'Accessories'],
-      totalProducts: 8900,
-      activeProducts: 8100,
-      totalSales: 2800000,
-      icon: '👗',
-      status: 'active',
-      featured: true,
-      createdDate: '2023-01-15',
-      lastUpdated: '2024-01-12'
-    },
-    {
-      id: 3,
-      name: 'Home & Garden',
-      description: 'Home decor, furniture, and garden supplies',
-      parentCategory: null,
-      subCategories: ['Furniture', 'Decor', 'Kitchen', 'Garden'],
-      totalProducts: 6700,
-      activeProducts: 6200,
-      totalSales: 1900000,
-      icon: '🏡',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-02-20',
-      lastUpdated: '2024-01-08'
-    },
-    {
-      id: 4,
-      name: 'Automotive',
-      description: 'Car parts, accessories, and maintenance',
-      parentCategory: null,
-      subCategories: ['Parts', 'Accessories', 'Tools', 'Oils'],
-      totalProducts: 5400,
-      activeProducts: 5100,
-      totalSales: 1500000,
-      icon: '🚗',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-03-10',
-      lastUpdated: '2024-01-11'
-    },
-    {
-      id: 5,
-      name: 'Books',
-      description: 'Books, magazines, and educational materials',
-      parentCategory: null,
-      subCategories: ['Fiction', 'Non-fiction', 'Academic', 'Children'],
-      totalProducts: 3200,
-      activeProducts: 3000,
-      totalSales: 1000000,
-      icon: '📚',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-04-05',
-      lastUpdated: '2024-01-09'
-    },
-    {
-      id: 6,
-      name: 'Health & Beauty',
-      description: 'Healthcare, beauty, and personal care products',
-      parentCategory: null,
-      subCategories: ['Skincare', 'Makeup', 'Healthcare', 'Fragrance'],
-      totalProducts: 4500,
-      activeProducts: 4200,
-      totalSales: 1200000,
-      icon: '💄',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-05-15',
-      lastUpdated: '2024-01-13'
-    },
-    {
-      id: 7,
-      name: 'Sports & Outdoors',
-      description: 'Sports equipment and outdoor gear',
-      parentCategory: null,
-      subCategories: ['Fitness', 'Outdoor', 'Team Sports', 'Cycling'],
-      totalProducts: 2800,
-      activeProducts: 2500,
-      totalSales: 850000,
-      icon: '⚽',
-      status: 'inactive',
-      featured: false,
-      createdDate: '2023-06-20',
-      lastUpdated: '2023-12-15'
-    },
-    {
-      id: 8,
-      name: 'Mobile Phones',
-      description: 'Smartphones and mobile accessories',
-      parentCategory: 'Electronics',
-      subCategories: [],
-      totalProducts: 3500,
-      activeProducts: 3200,
-      totalSales: 1800000,
-      icon: '📱',
-      status: 'active',
-      featured: false,
-      createdDate: '2023-01-15',
-      lastUpdated: '2024-01-10'
-    }
-  ];
-
-  const filterOptions = [
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [isSubCategoryModalOpen, setIsSubCategoryModalOpen] = useState(false);
+  const [selectedCategoryForSubcategory, setSelectedCategoryForSubcategory] = useState(null);
+  const [actionError, setActionError] = useState('');
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Categories', count: 0, color: 'gray' },
     { key: 'active', label: 'Active', count: 0, color: 'green' },
     { key: 'inactive', label: 'Inactive', count: 0, color: 'red' },
     { key: 'parent', label: 'Parent Categories', count: 0, color: 'blue' },
     { key: 'subcategory', label: 'Subcategories', count: 0, color: 'purple' },
     { key: 'featured', label: 'Featured', count: 0, color: 'orange' }
-  ];
+  ]);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await getAdminCategories();
+      if (response.success) {
+        const mappedCategories = response.categories.map(cat => {
+          const mappedStatus = (cat.status === 'inactive' || cat.is_active === 0) ? 'inactive' : 'active';
+          return {
+            id: cat.id,
+            name: cat.name,
+            description: `Category for ${cat.name}`, 
+            parentCategory: null, 
+            subCategories: cat.subCategories || [],
+            totalProducts: cat.totalProducts || 0,
+            activeProducts: cat.activeProducts || 0,
+            totalSales: cat.totalSales || 0,
+            icon: cat.icon || '📁', 
+            status: mappedStatus,
+            featured: false, 
+            createdDate: new Date().toISOString(), 
+            lastUpdated: new Date().toISOString() 
+          };
+        });
+        setCategories(mappedCategories);
+      }
+    } catch (error) {
+      console.error('Failed to fetch categories:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setCategories(mockCategories);
-
-      // Update filter counts
-      filterOptions.forEach(filter => {
-        if (filter.key === 'all') {
-          filter.count = mockCategories.length;
-        } else if (filter.key === 'parent') {
-          filter.count = mockCategories.filter(cat => cat.parentCategory === null).length;
-        } else if (filter.key === 'subcategory') {
-          filter.count = mockCategories.filter(cat => cat.parentCategory !== null).length;
-        } else if (filter.key === 'featured') {
-          filter.count = mockCategories.filter(cat => cat.featured).length;
-        } else {
-          filter.count = mockCategories.filter(cat => cat.status === filter.key).length;
-        }
-      });
-
-      setLoading(false);
-    }, 1000);
+    fetchCategories();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (openDropdown !== null && !event.target.closest('.relative')) {
+        setOpenDropdown(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openDropdown]);
+
+  // Update filter counts when categories change
+  useEffect(() => {
+    if (categories.length > 0) {
+      const newFilterOptions = filterOptions.map(filter => {
+        let count = 0;
+        if (filter.key === 'all') {
+          count = categories.length;
+        } else if (filter.key === 'parent') {
+          count = categories.filter(cat => cat.parentCategory === null).length;
+        } else if (filter.key === 'subcategory') {
+          count = categories.filter(cat => cat.parentCategory !== null).length;
+        } else if (filter.key === 'featured') {
+          count = categories.filter(cat => cat.featured).length;
+        } else {
+          count = categories.filter(cat => cat.status === filter.key).length;
+        }
+        return { ...filter, count };
+      });
+      setFilterOptions(newFilterOptions);
+    }
+  }, [categories]);
 
   useEffect(() => {
     let filtered = [...categories];
@@ -235,9 +169,60 @@ const Categories = () => {
     });
   };
 
-  const handleCategoryAction = (action, categoryId) => {
-    console.log(`${action} category:`, categoryId);
-    // Handle category actions here
+  const handleCategoryAction = async (action, categoryId) => {
+    if (action === 'add') {
+      setEditingCategory(null);
+      setIsAddModalOpen(true);
+    } else if (action === 'edit') {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        setEditingCategory(category);
+        setIsAddModalOpen(true);
+      }
+    } else if (action === 'add_subcategory') {
+      const category = categories.find(cat => cat.id === categoryId);
+      if (category) {
+        setSelectedCategoryForSubcategory(category);
+        setIsSubCategoryModalOpen(true);
+      }
+    } else if (action === 'deactivate' || action === 'activate') {
+      try {
+        setActionError('');
+        const response = await api.patch(`/admin/categories/${categoryId}/status`);
+        if (response.data.success) {
+          fetchCategories();
+        }
+      } catch (err) {
+        console.error('Error toggling category status:', err);
+        setActionError(err.response?.data?.message || 'Failed to update category status');
+      }
+    } else if (action === 'delete') {
+      if (!window.confirm('Are you sure you want to delete this category? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        setActionError('');
+        const response = await api.delete(`/admin/categories/${categoryId}`);
+        if (response.data.success) {
+          fetchCategories();
+        }
+      } catch (err) {
+        console.error('Error deleting category:', err);
+        const message = err.response?.data?.message || 'Failed to delete category';
+        setActionError(`⚠️ ${message}`);
+
+        // Scroll to top to show error
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    } else {
+      console.log(`${action} category:`, categoryId);
+    }
+  };
+
+  const handleAddSuccess = () => {
+    fetchCategories(); // Refresh categories list
+    setEditingCategory(null);
   };
 
   const handleBulkAction = (action) => {
@@ -264,8 +249,12 @@ const Categories = () => {
 
       <td className="px-6 py-4">
         <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center text-2xl">
-            {category.icon}
+          <div className="w-12 h-12 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center overflow-hidden">
+            {category.icon && category.icon.startsWith('http') ? (
+              <img src={category.icon} alt={category.name} className="w-full h-full object-contain" />
+            ) : (
+              <span className="text-2xl">{category.icon || '📁'}</span>
+            )}
           </div>
           <div>
             <div className="font-medium text-gray-900 flex items-center space-x-2">
@@ -341,64 +330,76 @@ const Categories = () => {
             <Eye className="w-4 h-4" />
           </button>
 
-          <div className="relative group">
-            <button className="text-gray-600 hover:text-red-600 transition-colors">
+          <div className="relative">
+            <button
+              onClick={() => setOpenDropdown(openDropdown === category.id ? null : category.id)}
+              className="text-gray-600 hover:text-red-600 transition-colors"
+            >
               <MoreVertical className="w-4 h-4" />
             </button>
 
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10">
-              <div className="py-1">
-                <button
-                  onClick={() => handleCategoryAction('edit', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Edit className="w-4 h-4" />
-                  <span>Edit Category</span>
-                </button>
-
-                <button
-                  onClick={() => handleCategoryAction('add_subcategory', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Add Subcategory</span>
-                </button>
-
-                {category.status === 'active' ? (
+            {openDropdown === category.id && (
+              <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+                <div className="py-1">
                   <button
-                    onClick={() => handleCategoryAction('deactivate', category.id)}
+                    onClick={() => {
+                      handleCategoryAction('edit', category.id);
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <Edit className="w-4 h-4" />
+                    <span>Edit Category</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      handleCategoryAction('add_subcategory', category.id);
+                      setOpenDropdown(null);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center space-x-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Subcategory</span>
+                  </button>
+
+                  {category.status === 'active' ? (
+                    <button
+                      onClick={() => {
+                        handleCategoryAction('deactivate', category.id);
+                        setOpenDropdown(null);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
+                    >
+                      <AlertCircle className="w-4 h-4" />
+                      <span>Deactivate</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        handleCategoryAction('activate', category.id);
+                        setOpenDropdown(null);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
+                    >
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Activate</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      handleCategoryAction('delete', category.id);
+                      setOpenDropdown(null);
+                    }}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                   >
-                    <AlertCircle className="w-4 h-4" />
-                    <span>Deactivate</span>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Category</span>
                   </button>
-                ) : (
-                  <button
-                    onClick={() => handleCategoryAction('activate', category.id)}
-                    className="w-full text-left px-4 py-2 text-sm text-green-600 hover:bg-green-50 flex items-center space-x-2"
-                  >
-                    <CheckCircle className="w-4 h-4" />
-                    <span>Activate</span>
-                  </button>
-                )}
-
-                <button
-                  onClick={() => handleCategoryAction(category.featured ? 'unfeature' : 'feature', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-orange-600 hover:bg-orange-50 flex items-center space-x-2"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  <span>{category.featured ? 'Remove from Featured' : 'Add to Featured'}</span>
-                </button>
-
-                <button
-                  onClick={() => handleCategoryAction('delete', category.id)}
-                  className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  <span>Delete Category</span>
-                </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </td>
@@ -427,7 +428,47 @@ const Categories = () => {
 
   return (
     <AdminLayout>
+      <AddCategoryModal
+        isOpen={isAddModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setEditingCategory(null);
+        }}
+        onSuccess={handleAddSuccess}
+        editingCategory={editingCategory}
+      />
+      <SubCategoryModal
+        isOpen={isSubCategoryModalOpen}
+        onClose={() => {
+          setIsSubCategoryModalOpen(false);
+          setSelectedCategoryForSubcategory(null);
+        }}
+        onSuccess={handleAddSuccess}
+        category={selectedCategoryForSubcategory}
+      />
       <div className="space-y-6">
+        {/* Error Message */}
+        {actionError && (
+          <div className="bg-red-50 border-2 border-red-300 text-red-800 px-5 py-4 rounded-lg flex items-start shadow-lg">
+            <div className="flex-shrink-0 mr-3">
+              <svg className="w-6 h-6 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <p className="font-bold text-base">Error</p>
+              <p className="text-sm mt-1 leading-relaxed">{actionError}</p>
+            </div>
+            <button
+              onClick={() => setActionError('')}
+              className="flex-shrink-0 ml-3 text-red-500 hover:text-red-700 transition-colors"
+              title="Dismiss"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -446,13 +487,13 @@ const Categories = () => {
               <span>Add Category</span>
             </button>
 
-            <button
+            {/* <button
               onClick={() => handleBulkAction('export')}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors flex items-center space-x-2"
             >
               <Download className="w-4 h-4" />
               <span>Export</span>
-            </button>
+            </button> */}
 
             <button
               onClick={() => window.location.reload()}
@@ -567,12 +608,7 @@ const Categories = () => {
                 >
                   Bulk Activate
                 </button>
-                <button
-                  onClick={() => handleBulkAction('feature')}
-                  className="px-3 py-1 bg-orange-600 text-white rounded text-sm hover:bg-orange-700 transition-colors"
-                >
-                  Add to Featured
-                </button>
+                
                 <button
                   onClick={() => handleBulkAction('delete')}
                   className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"

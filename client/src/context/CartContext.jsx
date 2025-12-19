@@ -93,9 +93,10 @@ export const CartProvider = ({ children }) => {
         title: productTitle,
         price: productPrice,
         quantity: quantity,
+        weight_kg: parseFloat(product.weight_kg || 1.0),
         images: product.images ? (
-          typeof product.images === 'string' ? 
-            [product.images.split(',')[0].trim()] : 
+          typeof product.images === 'string' ?
+            [product.images.split(',')[0].trim()] :
             (Array.isArray(product.images) ? [product.images[0]?.image_url || product.images[0]] : [product.images])
         ) : (product.image ? [product.image] : []),
         seller: product.seller_name || product.seller || 'Unknown Seller',
@@ -247,9 +248,16 @@ export const CartProvider = ({ children }) => {
   }, 0);
   const itemCount = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
 
-  // Calculate shipping (free over Rs. 50,000)
-  const shipping = subtotal > 50000 ? 0 : 1000;
-  const total = subtotal + shipping;
+  // Calculate shipping directly from cart items (weight_kg × Rs. 200/kg)
+  const SHIPPING_RATE_PER_KG = 200;
+
+  const calculatedShipping = cart.reduce((total, item) => {
+    const weight = parseFloat(item.weight_kg || 1.0);
+    const quantity = parseInt(item.quantity || 0);
+    return total + (weight * quantity * SHIPPING_RATE_PER_KG);
+  }, 0);
+
+  const total = subtotal + calculatedShipping;
 
   // Check if item is in cart
   const isInCart = useCallback((productId) => {
@@ -277,7 +285,7 @@ export const CartProvider = ({ children }) => {
 
     // Computed values
     subtotal,
-    shipping,
+    shipping: calculatedShipping,
     total,
     itemCount,
     isEmpty: cart.length === 0,

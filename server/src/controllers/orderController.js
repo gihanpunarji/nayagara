@@ -1,4 +1,5 @@
 const Order = require("../models/Order");
+const User = require("../models/User");
 const { processReferralCommissions } = require("../utils/referralHelpers");
 
 const createOrder = async (req, res) => {
@@ -26,9 +27,6 @@ const createOrder = async (req, res) => {
       });
     }
 
-    console.log('Creating order for customer:', customer_id);
-    console.log('Order data:', { order_number, subtotal, shipping_cost, total_amount });
-
     // Create shipping address first
     const shipping_address_id = await Order.createShippingAddress({
       line1: shipping_address.line1,
@@ -40,7 +38,6 @@ const createOrder = async (req, res) => {
       country_name: shipping_address.country || 'Sri Lanka'
     });
 
-    console.log('Created shipping address with ID:', shipping_address_id);
 
     // Create the order
     const order_id = await Order.createOrder({
@@ -56,7 +53,6 @@ const createOrder = async (req, res) => {
       payment_status: 'pending'
     });
 
-    console.log('Created order with ID:', order_id);
 
     // Create order items
     const orderItemPromises = cart_items.map(async (item) => {
@@ -66,22 +62,23 @@ const createOrder = async (req, res) => {
         variant: item.variant || null
       };
 
+      console.log("item ", item);
+
       return await Order.createOrderItem({
         order_id,
         product_id: item.product_id || item.id,
         seller_id: item.seller_id,
         product_title: item.product_title || item.name,
-        product_description: item.description || '',
-        unit_price: item.price,
+        product_description: item.description || item.shortDescription || '',
+        unit_price: item.cost || item.originalPrice || item.original_price,
         quantity: item.quantity,
         total_price: item.price * item.quantity,
         product_attributes_snapshot: JSON.stringify(product_attributes),
-        product_image_url: item.image || null
+        product_image_url: item.image || (item.images && item.images[0]) || null
       });
     });
 
     await Promise.all(orderItemPromises);
-    console.log('Created order items for order:', order_id);
 
     res.status(201).json({
       success: true,
@@ -125,46 +122,98 @@ const updateOrderPaymentStatus = async (req, res) => {
 
     // Update payment status
     const affectedRows = await Order.updateOrderPaymentStatus(order.order_id, payment_status);
-    
+
     if (affectedRows > 0) {
       // If payment is completed, update order status to confirmed
       if (payment_status === 'completed') {
         await Order.updateOrderStatus(order.order_id, 'confirmed');
-        
+
         // Attempt to process referrals, but don't let it break the order flow
         try {
+          const Product = require("../models/Product");
+
           // Get order items with product cost information
           const orderItems = await Order.getOrderItems(order.order_id);
-          
-          // Add product cost information to order items
-          const { getConnection } = require("../config/database");
-          const pool = getConnection();
-          let connection;
 
-          try {
-            connection = await pool.getConnection();
-            
-            for (let item of orderItems) {
-              const [productRows] = await connection.execute(
-                "SELECT cost FROM products WHERE product_id = ?",
-                [item.product_id]
-              );
-              item.product_cost = productRows[0]?.cost || 0;
-            }
-
-            // Process referral commissions with the new system
-            await processReferralCommissions(order.order_id, order.customer_id, orderItems);
-            console.log(`Referral commissions processed successfully for order ${order.order_number}`);
-          } finally {
-            if (connection) connection.release();
+          // Add product cost information to order items using Product model
+          for (let item of orderItems) {
+            item.product_cost = await Product.getCostById(item.product_id);
           }
+
+          // Process referral commissions with the new system
+          await processReferralCommissions(order.order_id, order.customer_id, orderItems);
+          console.log(`Referral commissions processed successfully for order ${order.order_number}`);
         } catch (referralError) {
           console.error(`[Non-blocking Error] Failed to process referrals for order ${order.order_number}:`, referralError);
+        }
+
+        // Send confirmation email and SMS
+        try {
+
+          const customer = await User.findById(order.customer_id);
+
+          if (customer) {
+            const customerEmail = customer.user_email;
+            const customerMobile = customer.user_mobile;
+            const customerName = `${customer.first_name} ${customer.last_name}`;
+
+            // Send confirmation email
+            if (customerEmail) {
+              const nodeMailer = require("nodemailer");
+              const transporter = nodeMailer.createTransport({
+                host: 'smtp.hostinger.com',
+                port: 465,
+                secure: true,
+                auth: {
+                  user: process.env.EMAIL_USERNAME,
+                  pass: process.env.EMAIL_PASSWORD,
+                },
+              });
+
+              await transporter.sendMail({
+                from: `"Nayagara" <${process.env.EMAIL_USERNAME}>`,
+                to: customerEmail,
+                subject: `Order Confirmation - ${order.order_number}`,
+                html: `
+                  <h2>Thank you for your order!</h2>
+                  <p>Dear ${customerName},</p>
+                  <p>Your order <strong>${order.order_number}</strong> has been confirmed.</p>
+                  <p><strong>Order Total:</strong> Rs. ${order.total_amount}</p>
+                  <p>We will notify you when your order is ready to ship.</p>
+                  <br>
+                  <p>Thank you for shopping with Nayagara!</p>
+                `,
+              });
+              console.log(`Confirmation email sent to ${customerEmail}`);
+            }
+
+            // Send confirmation SMS
+            if (customerMobile) {
+              fetch("https://app.text.lk/api/v3/sms/send", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${process.env.TEXTLK_API_KEY}`,
+                },
+                body: JSON.stringify({
+                  recipient: customerMobile,
+                  sender_id: process.env.TEXTLK_SENDER_ID,
+                  type: "plain",
+                  message: `Thank you for your order! Your order ${order.order_number} has been confirmed. Total: Rs. ${order.total_amount}. - Nayagara`,
+                }),
+              })
+                .then((response) => response.json())
+                .then((data) => console.log(`Confirmation SMS sent to ${customerMobile}`))
+                .catch((error) => console.error("Error sending SMS:", error));
+            }
+          }
+        } catch (notificationError) {
+          console.error(`[Non-blocking Error] Failed to send notifications for order ${order.order_number}:`, notificationError);
         }
       }
 
       console.log(`Order ${order_number} payment status updated to ${payment_status}`);
-      
+
       res.json({
         success: true,
         message: 'Order payment status updated successfully',
@@ -229,7 +278,7 @@ const getOrderDetails = async (req, res) => {
     const customer_id = req.user.user_id;
 
     const order = await Order.getOrderByNumber(order_number);
-    
+
     if (!order) {
       return res.status(404).json({
         success: false,
@@ -325,37 +374,64 @@ const getSellerOrderDetails = async (req, res) => {
 
 const updateSellerOrderStatus = async (req, res) => {
   try {
-    const { order_item_id, status, tracking_number } = req.body;
+    const { order_id, status, tracking_number } = req.body;
     const seller_id = req.user.user_id;
 
-    if (!order_item_id || !status) {
+    if (!order_id || !status) {
       return res.status(400).json({
         success: false,
-        message: 'Missing order item ID or status'
+        message: 'Missing order ID or status'
       });
     }
 
-    // First, verify that this order item belongs to the seller
-    const orderItems = await Order.getSellerOrderItems(seller_id);
-    const orderItem = orderItems.find(item => item.order_item_id == order_item_id);
-    console.log('order item:', orderItem);
-    
-    if (!orderItem) {
+    // Verify that this order has items belonging to the seller
+    const sellerOrders = await Order.getSellerOrders(seller_id);
+    const isSellerOrder = sellerOrders.some(order => order.order_id == order_id);
+
+    if (!isSellerOrder) {
       return res.status(403).json({
         success: false,
-        message: 'Unauthorized to update this order item'
+        message: 'Unauthorized to update this order'
       });
     }
 
-    // Update the order item status
-    const affectedRows = await Order.updateOrderItemStatus(order_item_id, status, tracking_number);
-    
+    // Update the order status in orders table
+    const affectedRows = await Order.updateOrderStatus(order_id, status, tracking_number);
+
     if (affectedRows > 0) {
+      // If order is delivered, increment total_earned for sellers
+      if (status === 'delivered') {
+        try {
+          const orderItems = await Order.getOrderItems(order_id);
+
+          // Group order items by seller and calculate earnings
+          const sellerEarnings = {};
+          orderItems.forEach(item => {
+            const sellerId = item.seller_id;
+            const earnings = parseFloat(item.unit_price) * parseInt(item.quantity);
+
+            if (sellerEarnings[sellerId]) {
+              sellerEarnings[sellerId] += earnings;
+            } else {
+              sellerEarnings[sellerId] = earnings;
+            }
+          });
+
+          // Update total_earned for each seller
+          for (const [sellerId, earnings] of Object.entries(sellerEarnings)) {
+            await User.incrementTotalEarned(sellerId, earnings);
+            console.log(`Order ${order_id} delivered: incremented total_earned for seller ${sellerId} by Rs. ${earnings}`);
+          }
+        } catch (earningsError) {
+          console.error(`[Non-blocking Error] Failed to update total_earned for order ${order_id}:`, earningsError);
+        }
+      }
+
       res.json({
         success: true,
-        message: 'Order item status updated successfully',
+        message: 'Order status updated successfully',
         data: {
-          order_item_id,
+          order_id,
           status,
           tracking_number
         }
@@ -363,7 +439,7 @@ const updateSellerOrderStatus = async (req, res) => {
     } else {
       res.status(400).json({
         success: false,
-        message: 'Failed to update order item status'
+        message: 'Failed to update order status'
       });
     }
 
@@ -377,6 +453,166 @@ const updateSellerOrderStatus = async (req, res) => {
   }
 };
 
+const calculateShipping = async (req, res) => {
+  try {
+    const { cartItems } = req.body;
+    console.log('Calculating shipping for cart items:', cartItems?.length);
+
+    if (!cartItems || !Array.isArray(cartItems) || cartItems.length === 0) {
+      return res.json({
+        success: true,
+        data: {
+          totalWeight: 0,
+          amountPerKilo: 0,
+          shippingCost: 0
+        }
+      });
+    }
+
+    const { getConnection } = require('../config/database');
+    const pool = getConnection();
+    let connection;
+
+    try {
+      connection = await pool.getConnection();
+
+      // Get shipping rate per kilo from amount_per_kilo column
+      let [shippingSettings] = await connection.execute(
+        "SELECT amount_per_kilo FROM shipping_settings LIMIT 1"
+      );
+
+      if (!shippingSettings || !shippingSettings[0] || !shippingSettings[0].amount_per_kilo) {
+        // Use default rate if not set
+        console.log('No shipping settings found, using default 200');
+      }
+
+      const amountPerKilo = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
+      console.log('Shipping rate per kilo:', amountPerKilo);
+      let totalWeight = 0;
+
+      // Calculate total weight from all cart items
+      for (const item of cartItems) {
+        const productId = item.product_id || item.id;
+        const quantity = parseInt(item.quantity || 1);
+
+        if (!productId) continue;
+
+        try {
+          // Get product weight - default to 1kg if not set
+          const [productRows] = await connection.execute(
+            "SELECT COALESCE(weight_kg, 1.0) as weight_kg FROM products WHERE product_id = ?",
+            [productId]
+          );
+
+          if (productRows && productRows[0]) {
+            const weightKg = parseFloat(productRows[0].weight_kg || 1.0);
+            totalWeight += weightKg * quantity;
+          } else {
+            // If product not found, assume 1kg
+            totalWeight += 1.0 * quantity;
+          }
+        } catch (itemError) {
+          console.error(`Error getting weight for product ${productId}:`, itemError);
+          // Default to 1kg per item on error
+          totalWeight += 1.0 * quantity;
+        }
+      }
+
+      const shippingCost = totalWeight * amountPerKilo;
+
+      res.json({
+        success: true,
+        data: {
+          totalWeight: parseFloat(totalWeight.toFixed(2)),
+          amountPerKilo: amountPerKilo,
+          shippingCost: parseFloat(shippingCost.toFixed(2))
+        }
+      });
+
+    } finally {
+      if (connection) connection.release();
+    }
+
+  } catch (error) {
+    console.error('Error calculating shipping:', error);
+    // Return default shipping on error instead of failing
+    res.json({
+      success: true,
+      data: {
+        totalWeight: 0,
+        amountPerKilo: 200,
+        shippingCost: 1000 // Fallback to Rs. 1000
+      }
+    });
+  }
+};
+
+const getAllOrders = async (req, res) => {
+  try {
+    const { page = 1, limit = 25 } = req.query;
+    const { orders, pagination } = await Order.getAllOrders({ page, limit });
+
+    if (orders.length > 0) {
+      const orderIds = orders.map(o => o.order_id);
+      const items = await Order.getOrderItemsForMultipleOrders(orderIds);
+
+      const itemsByOrderId = items.reduce((acc, item) => {
+        if (!acc[item.order_id]) {
+          acc[item.order_id] = [];
+        }
+        acc[item.order_id].push(item);
+        return acc;
+      }, {});
+
+      const ordersWithItems = orders.map(order => ({
+        ...order,
+        items: itemsByOrderId[order.order_id] || []
+      }));
+
+      res.json({
+        success: true,
+        message: 'All orders retrieved successfully',
+        data: ordersWithItems,
+        pagination
+      });
+    } else {
+      res.json({
+        success: true,
+        message: 'No orders found',
+        data: [],
+        pagination
+      });
+    }
+  } catch (error) {
+    console.error('Get all orders error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve all orders',
+      error: error.message
+    });
+  }
+};
+
+const getSellerEarnings = async (req, res) => {
+  try {
+    const seller_id = req.user.user_id;
+    const earnings = await Order.getSellerEarnings(seller_id);
+
+    res.json({
+      success: true,
+      message: 'Seller earnings retrieved successfully',
+      data: earnings
+    });
+  } catch (error) {
+    console.error('Get seller earnings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve seller earnings',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createOrder,
   updateOrderPaymentStatus,
@@ -384,5 +620,8 @@ module.exports = {
   getOrderDetails,
   getSellerOrders,
   getSellerOrderDetails,
-  updateSellerOrderStatus
+  updateSellerOrderStatus,
+  calculateShipping,
+  getAllOrders,
+  getSellerEarnings
 };

@@ -12,6 +12,7 @@ router.post('/register', referralController.registerWithReferralCode);
 router.get('/my-code', authenticateToken, referralController.getMyReferralCode);
 router.get('/my-earnings', authenticateToken, referralController.getMyEarnings);
 router.get('/my-referrals', authenticateToken, referralController.getMyReferrals);
+router.get('/my-network', authenticateToken, referralController.getUserReferralNetwork);
 
 // Order-related referral processing
 router.post('/process-order', authenticateToken, referralController.processOrderReferrals);
@@ -20,5 +21,8 @@ router.post('/process-order', authenticateToken, referralController.processOrder
 router.post('/calculate-profit', authenticateToken, referralController.calculateProfitMargins);
 router.post('/calculate-discount', authenticateToken, referralController.calculateUserDiscount);
 router.post('/simulate-commission', authenticateToken, referralController.simulateCommission);
+
+// Checkout discount calculation
+router.post('/calculate-cart-discount', authenticateToken, referralController.calculateCartDiscount);
 
 module.exports = router;

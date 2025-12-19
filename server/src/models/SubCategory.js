@@ -53,6 +53,15 @@ class SubCategory {
     );
     return result.affectedRows;
   }
+
+  static async hasProducts(subCategoryId) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      "SELECT COUNT(*) as count FROM products WHERE subcategory_id = ?",
+      [subCategoryId]
+    );
+    return rows[0].count > 0;
+  }
 }
 
 module.exports = SubCategory;

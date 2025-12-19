@@ -174,27 +174,7 @@ const SellerSidebar = ({ showMobileMenu, onMenuToggle }) => {
               ))}
             </nav>
 
-            {/* Quick Stats Card */}
-            <div className="mt-8 bg-gradient-to-br from-primary-50 to-primary-100 rounded-xl p-4 border border-primary-200">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-primary-800">This Month</h3>
-                <TrendingUp className="w-4 h-4 text-primary-600" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-primary-700">Sales</span>
-                  <span className="font-semibold text-primary-800">Rs. 245K</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-primary-700">Orders</span>
-                  <span className="font-semibold text-primary-800">156</span>
-                </div>
-                <div className="w-full bg-primary-200 rounded-full h-2 mt-3">
-                  <div className="bg-primary-600 h-2 rounded-full" style={{ width: '68%' }}></div>
-                </div>
-                <p className="text-xs text-primary-600 mt-1">68% of monthly target</p>
-              </div>
-            </div>
+            
           </div>
 
           {/* Bottom Menu */}

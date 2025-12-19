@@ -39,7 +39,7 @@ const EditProduct = () => {
             metaDescription: product.meta_description,
             images: images.map(img => ({
               id: img.image_id,
-              url: `http://localhost:5001${img.image_url}`,
+              url: img.image_url,
               name: img.image_alt || 'Product Image',
               size: 0 // We don't have size info from API
             })),

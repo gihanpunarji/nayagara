@@ -173,7 +173,7 @@ const App = () => {
 
         {/* Mobile Layout */}
         <div className="md:hidden">
-          <MobileLayout user={user}>
+          <MobileLayout user={user} mainCategories={mainCategories}>
             {location.pathname.startsWith('/account') ? <CustomerAccount /> : children}
           </MobileLayout>
         </div>

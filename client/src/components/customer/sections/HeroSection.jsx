@@ -6,30 +6,30 @@ const HeroSection = () => {
 
   const heroBanners = [
     {
-      title: "MEGA SALE",
-      subtitle: "Up to 80% OFF",
-      description: "Electronics, Fashion & More",
-      image: "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
-      cta: "Shop Now",
-      badge: "Limited Time",
+      title: "SRI LANKA'S #1",
+      subtitle: "Shopping Platform",
+      description: "The most trusted online marketplace in the island",
+      image: "banner.avif",
+      cta: "Start Shopping",
+      badge: "Top Rated",
       color: "from-primary-600 to-primary-800"
     },
     {
-      title: "NEW ARRIVALS",
-      subtitle: "Latest Fashion Trends",
-      description: "Discover Premium Collections",
-      image: "https://images.unsplash.com/photo-1441986300917-64674bd600d8?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
-      cta: "Explore",
-      badge: "Trending",
+      title: "MULTI-SELLER STORE",
+      subtitle: "Thousands of Sellers",
+      description: "Connect with verified sellers across the nation",
+      image: "/multiseller.png",
+      cta: "Explore Stores",
+      badge: "Variety",
       color: "from-secondary-600 to-secondary-800"
     },
     {
-      title: "VEHICLE BAZAAR",
-      subtitle: "Best Car Deals",
-      description: "Verified Sellers, Best Prices",
-      image: "https://images.unsplash.com/photo-1503376780353-7e6692767b70?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80",
-      cta: "Browse Cars",
-      badge: "Verified",
+      title: "HUGE DISCOUNTS",
+      subtitle: "Unbeatable Prices",
+      description: "Get the best value for your money every day",
+      image: "/delivery.png",
+      cta: "View Offers",
+      badge: "Best Deals",
       color: "from-primary-500 to-secondary-600"
     }
   ];
@@ -107,7 +107,7 @@ const HeroSection = () => {
             <Gift className="w-6 h-6" />
             <span className="font-bold">Daily Deals</span>
           </div>
-          <h3 className="text-xl font-bold mb-2">Up to 60% OFF</h3>
+          <h3 className="text-xl font-bold mb-2">Huge discounts on products</h3>
           <p className="text-sm text-secondary-100 mb-4">Limited time offers on top brands</p>
           <button className="bg-white text-secondary-600 px-4 py-2 rounded-lg font-medium hover:bg-secondary-50 transition-colors">
             Shop Now
@@ -117,10 +117,10 @@ const HeroSection = () => {
         <div className="bg-gradient-to-br from-primary-500 to-primary-700 text-white p-4 sm:p-6 rounded-xl shadow-green">
           <div className="flex items-center space-x-2 mb-3">
             <Truck className="w-6 h-6" />
-            <span className="font-bold">Free Delivery</span>
+            <span className="font-bold">Delivery</span>
           </div>
           <h3 className="text-xl font-bold mb-2">Island Wide</h3>
-          <p className="text-sm text-primary-100 mb-4">On orders over Rs. 2,500</p>
+          <p className="text-sm text-primary-100 mb-4">For every order</p>
           <button className="bg-white text-primary-600 px-4 py-2 rounded-lg font-medium hover:bg-primary-50 transition-colors">
             Learn More
           </button>

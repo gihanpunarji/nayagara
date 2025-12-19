@@ -13,6 +13,7 @@ const nodeMailer = require("nodemailer");
 const bcrypt = require("bcrypt");
 const { getConnection } = require("../config/database");
 const { log } = require("console");
+const { getUserByReferralCode, createReferralChain } = require("../utils/referralHelpers");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || "24h";
@@ -73,8 +74,25 @@ const register = async (req, res, role = "customer") => {
       role,
     });
 
+    // Handle referral code if provided
     if (refCode) {
-      await Referral.create({ userId: user.user_id, referrerId: refCode });
+      try {
+        // Get the referrer by referral code
+        const referrer = await getUserByReferralCode(refCode);
+
+        if (!referrer) {
+          console.warn(`Invalid referral code provided during registration: ${refCode}`);
+        } else if (!referrer.referral_link_unlocked) {
+          console.warn(`Referral code not unlocked: ${refCode}`);
+        } else {
+          // Create the referral chain
+          await createReferralChain(user.user_id, referrer.user_id);
+          console.log(`User ${user.user_id} registered with referral code ${refCode} from user ${referrer.user_id}`);
+        }
+      } catch (error) {
+        console.error('Error processing referral code during registration:', error);
+        // Don't fail the registration if referral processing fails
+      }
     }
 
     const token = generateToken(user.user_id, user.user_type);
@@ -233,7 +251,7 @@ const login = async (req, res, role = "customer") => {
     res.json({
       success: true,
       message: "Login successful",
-      user: {first_name, last_name, user_role},
+      user: { first_name, last_name, user_role },
       token,
     });
   } catch (error) {
@@ -298,7 +316,7 @@ const sellerLogin = async (req, res, role = "seller") => {
     res.json({
       success: true,
       message: "Login successful",
-      user: {first_name, last_name, user_role},
+      user: { first_name, last_name, user_role },
       token,
     });
   } catch (error) {
@@ -339,13 +357,14 @@ const forgotPassword = async (req, res) => {
         message: "Failed to update token",
       });
     }
-    const resetLink = `${
-      process.env.FRONT_END_API
-    }/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    const resetLink = `${process.env.FRONT_END_API
+      }/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
     console.log("Password reset link:", resetLink);
 
     const transporter = nodeMailer.createTransport({
-      service: "gmail",
+      host: 'smtp.hostinger.com',
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
@@ -915,7 +934,9 @@ const sendEmail = async (req, res) => {
     );
 
     const transporter = nodeMailer.createTransport({
-      service: "gmail",
+      host: 'smtp.hostinger.com',
+      port: 465,
+      secure: true,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
@@ -954,12 +975,12 @@ const verifyEmailOtp = async (req, res) => {
     const validCode = await Admin.checkCode(code, email);
     if (!validCode) {
       return res
-      .status(400)
-      .json({ success: false, message: "Invalid email verification code" });
+        .status(400)
+        .json({ success: false, message: "Invalid email verification code" });
     }
 
     await Admin.deleteCode(email);
-    
+
     // If email OTP is correct, proceed to send SMS OTP
     await sendAdminSmsOtp(req, res);
 
@@ -1000,8 +1021,8 @@ const sendAdminSmsOtp = async (req, res) => {
 
     const maskedPhone = admin.mobile.slice(0, 3) + '***' + admin.mobile.slice(-4);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "SMS verification code sent successfully.",
       maskedPhone
     });
@@ -1036,8 +1057,8 @@ const verifyAdminSmsOtp = async (req, res) => {
     await Admin.updateMobileCode(email, null);
     console.log("Admin SMS verification successful for:", email);
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: "Admin login successful",
       accessToken,
       refreshToken
@@ -1086,5 +1107,6 @@ module.exports = {
   verifyEmailOtp,
   sendEmail,
   verifyAdminSmsOtp,
-  refreshAdminToken
+  refreshAdminToken,
+  sendAdminSmsOtp
 };

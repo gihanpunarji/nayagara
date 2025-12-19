@@ -21,3 +21,15 @@ export const getSellerDashboardData = async () => {
         throw error.response?.data || { message: 'An unknown error occurred' };
     }
 };
+
+export const getSellerAnalytics = async (days = 30) => {
+    try {
+        const response = await api.get('/seller/analytics', {
+            params: { days }
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error fetching seller analytics:', error.response?.data || error.message);
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};

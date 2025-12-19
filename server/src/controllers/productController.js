@@ -122,15 +122,15 @@ const createProduct = async (req, res) => {
 const getSellerProducts = async (req, res) => {
   try {
     const sellerId = req.user.user_id;
-    const { 
-      page = 1, 
+    const {
+      page = 1,
       limit = 50,
       search,
       status,
       category,
       sort = 'newest'
     } = req.query;
-    
+
     const offset = (page - 1) * limit;
 
     // If no filters are applied, use the simple method
@@ -164,7 +164,7 @@ const getSellerProducts = async (req, res) => {
     // For filtered queries, use custom SQL
     const { getConnection } = require("../config/database");
     const connection = getConnection();
-    
+
     let query = `
       SELECT p.*, 
              c.category_name,
@@ -451,12 +451,14 @@ const updateProduct = async (req, res) => {
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {
   const { getConnection } = require("../config/database");
+  const Product = require("../models/Product"); // Move requires to top of function or file if possible, but keeping scope is okay if needed. Better to rely on existing requires if available.
+
   const pool = getConnection();
   let connection;
   try {
     connection = await pool.getConnection();
-    const { 
-      page = 1, 
+    const {
+      page = 1,
       limit = 12,
       search,
       category,
@@ -464,11 +466,46 @@ const getPublicProducts = async (req, res) => {
       sort = 'newest',
       featured = false
     } = req.query;
-    
+
     const offset = (page - 1) * limit;
-    
-    // First check if any products exist at all
-    const [countResult] = await connection.execute("SELECT COUNT(*) as total FROM products");
+
+    let whereClause = ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
+    const queryParams = [];
+
+    // Add search filter
+    if (search && search.trim()) {
+      whereClause += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      queryParams.push(searchTerm, searchTerm);
+    }
+
+    // Add category filter
+    if (category && category.trim() && category !== 'all') {
+      whereClause += ` AND (c.category_slug = ? OR c.category_name = ?)`;
+      queryParams.push(category.trim(), category.trim());
+    }
+
+    // Add subcategory filter
+    if (subcategory && subcategory.trim()) {
+      whereClause += ` AND sc.sub_category_id = ?`;
+      queryParams.push(parseInt(subcategory.trim()));
+    }
+
+    // Add featured filter
+    if (featured === 'true') {
+      whereClause += ` AND p.is_featured = 1`;
+    }
+
+    // Get total count
+    const countQuery = `
+      SELECT COUNT(DISTINCT p.product_id) as total
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
+      ${whereClause}
+    `;
+    const [countResult] = await connection.execute(countQuery, queryParams);
+    const totalProducts = countResult[0].total;
 
     let query = `
       SELECT p.*, 
@@ -487,35 +524,8 @@ const getPublicProducts = async (req, res) => {
       LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
       LEFT JOIN districts d ON c2.district_id = d.district_id
       LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      ${whereClause}
     `;
-    const queryParams = [];
-
-    // Only show products (including empty status and active status)
-    query += ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
-
-    // Add search filter
-    if (search && search.trim()) {
-      query += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
-      const searchTerm = `%${search.trim()}%`;
-      queryParams.push(searchTerm, searchTerm);
-    }
-
-    // Add category filter
-    if (category && category.trim() && category !== 'all') {
-      query += ` AND (c.category_slug = ? OR c.category_name = ?)`;
-      queryParams.push(category.trim(), category.trim());
-    }
-
-    // Add subcategory filter
-    if (subcategory && subcategory.trim()) {
-      query += ` AND sc.sub_category_id = ?`;
-      queryParams.push(parseInt(subcategory.trim()));
-    }
-
-    // Add featured filter
-    if (featured === 'true') {
-      query += ` AND p.is_featured = 1`;
-    }
 
     // Add GROUP BY for the image concatenation
     query += ` GROUP BY p.product_id`;
@@ -548,25 +558,24 @@ const getPublicProducts = async (req, res) => {
 
     // Add pagination
     query += ` LIMIT ? OFFSET ?`;
-    queryParams.push(parseInt(limit), offset);
+    const finalQueryParams = [...queryParams, parseInt(limit), offset];
 
-    const [products] = await connection.execute(query, queryParams);
+    const [products] = await connection.execute(query, finalQueryParams);
 
-    // Get images for each product
-    const ProductImage = require("../models/ProductImage");
-    const Product = require("../models/Product");
-    
-    const productsWithImages = await Promise.all(
-      products.map(async (product) => {
-        const images = await ProductImage.findByProductId(product.product_id);
-        return {
-          ...product,
-          product_attributes: Product.parseProductAttributes(product.product_attributes),
-          images: images,
-          seller_name: `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
-        };
-      })
-    );
+    // Format products using the data we already fetched
+    const productsWithImages = products.map((product) => {
+      // Process images string back into array
+      const images = product.images
+        ? product.images.split(',').map(url => ({ image_url: url.trim() }))
+        : [];
+
+      return {
+        ...product,
+        product_attributes: Product.parseProductAttributes(product.product_attributes),
+        images: images,
+        seller_name: `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
+      };
+    });
 
     res.json({
       success: true,
@@ -575,7 +584,8 @@ const getPublicProducts = async (req, res) => {
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: productsWithImages.length
+        total: totalProducts,
+        totalPages: Math.ceil(totalProducts / limit)
       }
     });
 
@@ -603,14 +613,14 @@ const getPublicProductById = async (req, res) => {
   try {
     connection = await pool.getConnection();
     const { productId } = req.params;
-    
+
     if (!productId) {
       return res.status(400).json({
         success: false,
         message: "Product ID is required"
       });
     }
-    
+
     // Query to get product with all related data
     const query = `
       SELECT 
@@ -642,18 +652,18 @@ const getPublicProductById = async (req, res) => {
         AND (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)
       GROUP BY p.product_id
     `;
-    
+
     const [results] = await connection.execute(query, [productId]);
-    
+
     if (results.length === 0) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
-    
+
     const product = results[0];
-    
+
     // Get category fields for this product's subcategory to provide field metadata
     let categoryFields = [];
     if (product.category_id) {
@@ -666,12 +676,12 @@ const getPublicProductById = async (req, res) => {
       const [fieldsResults] = await connection.execute(fieldsQuery, [product.category_id]);
       categoryFields = fieldsResults;
     }
-    
+
     // Process images
-    const images = product.images 
+    const images = product.images
       ? product.images.split(',').map(url => ({ image_url: url.trim() }))
       : [];
-    
+
     // Parse and enhance product attributes with field metadata
     let productAttributes = {};
     try {
@@ -680,12 +690,12 @@ const getPublicProductById = async (req, res) => {
       console.error('Error parsing product attributes:', error);
       productAttributes = {};
     }
-    
+
     // Enhance attributes with field metadata
     const enhancedAttributes = categoryFields.map(field => {
       const value = productAttributes[field.field_name] || '';
       let displayValue = value;
-      
+
       // Format display value based on field type
       if (field.field_type === 'select' && field.field_options) {
         try {
@@ -699,7 +709,7 @@ const getPublicProductById = async (req, res) => {
       } else if (field.field_type === 'number' && value) {
         displayValue = parseFloat(value).toLocaleString();
       }
-      
+
       return {
         field_name: field.field_name,
         field_label: field.field_label,
@@ -709,7 +719,7 @@ const getPublicProductById = async (req, res) => {
         has_value: value !== '' && value !== null && value !== undefined
       };
     }).filter(attr => attr.has_value); // Only include attributes that have values
-    
+
     // Format the response
     const formattedProduct = {
       ...product,
@@ -721,17 +731,17 @@ const getPublicProductById = async (req, res) => {
       category_attributes: enhancedAttributes,
       raw_product_attributes: productAttributes // Keep raw attributes for backwards compatibility
     };
-    
+
     // Remove individual seller name fields
     delete formattedProduct.seller_first_name;
     delete formattedProduct.seller_last_name;
-    
+
     res.json({
       success: true,
       message: "Product fetched successfully",
       data: formattedProduct
     });
-    
+
   } catch (error) {
     console.error("Get public product by ID error:", error);
     res.status(500).json({
@@ -743,12 +753,221 @@ const getPublicProductById = async (req, res) => {
   }
 };
 
+// End of public functions
+
+// Get admin products with advanced filtering (cross-seller)
+const getAdminProducts = async (req, res) => {
+  const { getConnection } = require("../config/database");
+  const pool = getConnection();
+  let connection;
+  try {
+    connection = await pool.getConnection();
+    const {
+      page = 1,
+      limit = 25,
+      search,
+      status,
+      category,
+      sellerId,
+      sort = 'newest'
+    } = req.query;
+
+    const offset = (page - 1) * limit;
+
+    let whereClause = ' WHERE 1=1';
+    const queryParams = [];
+
+    // Add search filter
+    if (search && search.trim()) {
+      whereClause += ` AND (p.product_title LIKE ? OR p.product_description LIKE ? OR u.first_name LIKE ? OR u.last_name LIKE ?)`;
+      const searchTerm = `%${search.trim()}%`;
+      queryParams.push(searchTerm, searchTerm, searchTerm, searchTerm);
+    }
+
+    // Add status filter
+    if (status && status !== 'all') {
+      if (status === 'out_of_stock') {
+        whereClause += ` AND p.stock_quantity = 0`;
+      } else {
+        whereClause += ` AND p.product_status = ?`;
+        queryParams.push(status);
+      }
+    }
+
+    // Add category filter
+    if (category && category !== 'all') {
+      whereClause += ` AND c.category_name = ?`;
+      queryParams.push(category);
+    }
+
+    // Add seller filter
+    if (sellerId) {
+      whereClause += ` AND p.seller_id = ?`;
+      queryParams.push(sellerId);
+    }
+
+    // Get stats
+    const statsQuery = `
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN product_status = 'active' THEN 1 ELSE 0 END) as active,
+        SUM(CASE WHEN product_status = 'pending_approval' THEN 1 ELSE 0 END) as pending,
+        SUM(CASE WHEN product_status = 'suspended' THEN 1 ELSE 0 END) as suspended,
+        SUM(CASE WHEN is_featured = 1 THEN 1 ELSE 0 END) as featured,
+        SUM(CASE WHEN stock_quantity = 0 THEN 1 ELSE 0 END) as out_of_stock
+      FROM products
+    `;
+    const [statsResult] = await connection.execute(statsQuery);
+    const stats = {
+      total: parseInt(statsResult[0].total) || 0,
+      active: parseInt(statsResult[0].active) || 0,
+      pending: parseInt(statsResult[0].pending) || 0,
+      suspended: parseInt(statsResult[0].suspended) || 0,
+      featured: parseInt(statsResult[0].featured) || 0,
+      out_of_stock: parseInt(statsResult[0].out_of_stock) || 0
+    };
+
+    // Get total count for pagination (respecting filters)
+    const countQuery = `
+      SELECT COUNT(DISTINCT p.product_id) as total
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN users u ON p.seller_id = u.user_id
+      ${whereClause}
+    `;
+    const [countResult] = await connection.execute(countQuery, queryParams);
+    const total = countResult[0].total;
+
+    let query = `
+      SELECT p.*, 
+             c.category_name,
+             sc.sub_category_name,
+             u.first_name as seller_first_name,
+             u.last_name as seller_last_name,
+             s.store_name,
+             GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+      FROM products p
+      LEFT JOIN categories c ON p.category_id = c.category_id
+      LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
+      LEFT JOIN users u ON p.seller_id = u.user_id
+      LEFT JOIN store s ON u.user_id = s.user_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      ${whereClause}
+      GROUP BY p.product_id
+    `;
+
+    // Add sorting
+    switch (sort) {
+      case 'oldest':
+        query += ` ORDER BY p.created_at ASC`;
+        break;
+      case 'price_high':
+        query += ` ORDER BY p.price DESC`;
+        break;
+      case 'price_low':
+        query += ` ORDER BY p.price ASC`;
+        break;
+      case 'newest':
+      default:
+        query += ` ORDER BY p.created_at DESC`;
+        break;
+    }
+
+    // Add pagination
+    query += ` LIMIT ? OFFSET ?`;
+    queryParams.push(parseInt(limit), offset);
+
+    const [products] = await connection.execute(query, queryParams);
+
+    // Format products
+    const formattedProducts = products.map(product => {
+      const images = product.images
+        ? product.images.split(',').map(url => ({ image_url: url.trim() }))
+        : [];
+
+      return {
+        ...product,
+        images,
+        seller_name: product.store_name || `${product.seller_first_name || ''} ${product.seller_last_name || ''}`.trim()
+      };
+    });
+
+    res.json({
+      success: true,
+      message: "Admin products fetched successfully",
+      data: formattedProducts,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit)
+      },
+      stats
+    });
+
+  } catch (error) {
+    console.error("Get admin products error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  } finally {
+    if (connection) connection.release();
+  }
+};
+
+// Update product status (Admin only)
+const updateProductStatus = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { status } = req.body;
+
+    if (!productId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID and status are required"
+      });
+    }
+
+    const allowedStatuses = ['active', 'pending_approval', 'inactive'];
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
+
+    const affectedRows = await Product.updateStatus(productId, status);
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Product status updated to ${status}`
+    });
+
+  } catch (error) {
+    console.error("Update product status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
 module.exports = {
-    createProduct,
-    getSellerProducts,
-    getProductById,
-    updateProduct,
-    getPublicProducts,
-    filterProducts,
-    getPublicProductById
+  createProduct,
+  getSellerProducts,
+  getProductById,
+  updateProduct,
+  getPublicProducts,
+  filterProducts,
+  getPublicProductById,
+  getAdminProducts,
+  updateProductStatus
 }

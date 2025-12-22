@@ -189,7 +189,7 @@ function SellerRegistration() {
     try {
       setLoading(true);
       setError("");
-      const res = await api.post("/auth/seller-register", {
+      const res = await api.post("/auth/seller/register", {
         email,
         password,
         confirmPassword,

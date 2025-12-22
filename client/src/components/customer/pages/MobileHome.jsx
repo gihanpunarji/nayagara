@@ -1,6 +1,3 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
 import NewArrivals from '../sections/NewArrivals';
 import HeroSection from '../sections/HeroSection';
 import ServicesSection from '../sections/ServicesSection';

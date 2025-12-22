@@ -46,8 +46,8 @@ const MobileBottomNav = ({ cartCount = 0, onMenuToggle }) => {
 
   return (
     <>
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[65] md:hidden shadow-lg">
+      {/* Bottom Navigation - Show on mobile and medium screens */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[65] xl:hidden shadow-lg">
         <div className="grid grid-cols-5 h-16">
           {navItems.map((item) => {
             const IconComponent = item.icon;
@@ -117,7 +117,7 @@ const MobileBottomNav = ({ cartCount = 0, onMenuToggle }) => {
       </div>
 
       {/* Bottom spacing to prevent content from being hidden behind nav */}
-      <div className="h-16 md:hidden"></div>
+      <div className="h-16 xl:hidden"></div>
     </>
   );
 };

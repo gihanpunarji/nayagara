@@ -174,11 +174,9 @@ const Header = ({
           <div className="flex items-center space-x-2 sm:space-x-4">
             <span className="hidden sm:flex items-center space-x-1">
               <Phone className="w-4 h-4" />
-              <span>+94 11 234 5678</span>
+              <span>+94 71 775 0039</span>
             </span>
-            <span className="text-xs sm:text-sm">
-              Get 50% OFF your first order!
-            </span>
+            
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
             <Link

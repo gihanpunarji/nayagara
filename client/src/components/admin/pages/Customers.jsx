@@ -2,21 +2,19 @@ import React, { useState, useEffect } from 'react';
 import {
   Users,
   Search,
-  Filter,
   Mail,
   Phone,
   MapPin,
-  Calendar,
   ShoppingBag,
   Star,
-  TrendingUp,
   Eye,
   Ban,
   UserCheck,
-  AlertTriangle,
-  Download,
   RefreshCw,
-  MoreVertical
+  MoreVertical,
+  ChevronLeft,
+  ChevronRight,
+  TrendingUp
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 import { getAdminCustomers } from '../../../api/admin';
@@ -29,6 +27,10 @@ const Customers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedCustomers, setSelectedCustomers] = useState([]);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Customers', count: 0, color: 'gray' },
@@ -99,6 +101,7 @@ const Customers = () => {
     filtered.sort((a, b) => b.totalSpent - a.totalSpent);
 
     setFilteredCustomers(filtered);
+    setCurrentPage(1); // Reset page on filter change
   }, [customers, selectedFilter, searchQuery]);
 
   const getStatusColor = (status) => {
@@ -508,7 +511,7 @@ const Customers = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCustomers.map(customer => (
+                    {filteredCustomers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(customer => (
                       <CustomerRow key={customer.id} customer={customer} />
                     ))}
                   </tbody>
@@ -519,14 +522,46 @@ const Customers = () => {
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-700">
-                    Showing {filteredCustomers.length} of {customers.length} customers
+                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredCustomers.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredCustomers.length)}</span> of <span className="font-medium">{filteredCustomers.length}</span> customers
                   </p>
                   <div className="flex items-center space-x-2">
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Previous
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Next
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredCustomers.length / itemsPerPage)) }, (_, i) => {
+                      let startPage = Math.max(1, currentPage - 2);
+                      let endPage = Math.min(Math.ceil(filteredCustomers.length / itemsPerPage), startPage + 4);
+                      if (endPage - startPage < 4) {
+                        startPage = Math.max(1, endPage - 4);
+                      }
+                      
+                      const pageNum = startPage + i;
+                      if (pageNum > Math.ceil(filteredCustomers.length / itemsPerPage)) return null;
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCustomers.length / itemsPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredCustomers.length / itemsPerPage)}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

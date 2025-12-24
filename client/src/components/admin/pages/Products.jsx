@@ -14,7 +14,9 @@ import {
   Star,
   Store,
   Calendar,
-  Image as ImageIcon
+  Image as ImageIcon,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 
@@ -31,6 +33,10 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [categories, setCategories] = useState(['all']);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
   
   // Stats derived from local data to match client-side logic
   const [stats, setStats] = useState({
@@ -109,6 +115,7 @@ const Products = () => {
     }
 
     setFilteredProducts(result);
+    setCurrentPage(1); // Reset to first page on filter change
 
     // Update Stats based on CURRENT FULL LIST (products, not filteredProducts, usually global stats are preferred?)
     // Actually, dashboard stats should reflect the TOTAL state, not filtered state in search.
@@ -385,12 +392,59 @@ const Products = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredProducts.map(product => <ProductRow key={product.product_id} product={product} />)}
+                    {filteredProducts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(product => <ProductRow key={product.product_id} product={product} />)}
                   </tbody>
                 </table>
               </div>
-              <div className="px-6 py-4 border-t border-gray-200 text-sm text-gray-500">
-                Showing {filteredProducts.length} of {products.length} products
+              <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                <div className="text-sm text-gray-500">
+                  Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredProducts.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredProducts.length)}</span> of <span className="font-medium">{filteredProducts.length}</span> results
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                    disabled={currentPage === 1}
+                    className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+                  {Array.from({ length: Math.min(5, Math.ceil(filteredProducts.length / itemsPerPage)) }, (_, i) => {
+                    // Logic to show a sliding window of page numbers or just first 5 for simplicity?
+                    // Let's implement a simple sliding window or just simple pagination
+                    // For better UX, let's just show current page and total pages if plain, or use a simpler prev/next with numbers logic.
+                    // Let's do a simple one: Prev [Current] Next. 
+                    // Or if we want numbers:
+                    let startPage = Math.max(1, currentPage - 2);
+                    let endPage = Math.min(Math.ceil(filteredProducts.length / itemsPerPage), startPage + 4);
+                    if (endPage - startPage < 4) {
+                      startPage = Math.max(1, endPage - 4);
+                    }
+                    
+                    const pageNum = startPage + i;
+                    if (pageNum > Math.ceil(filteredProducts.length / itemsPerPage)) return null;
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                          currentPage === pageNum
+                            ? 'bg-green-600 text-white border-green-600'
+                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredProducts.length / itemsPerPage)))}
+                    disabled={currentPage >= Math.ceil(filteredProducts.length / itemsPerPage)}
+                    className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </>
           )}

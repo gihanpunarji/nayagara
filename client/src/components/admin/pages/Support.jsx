@@ -13,7 +13,9 @@ import {
   XCircle,
   Send,
   Paperclip,
-  Mail
+  Mail,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 
@@ -24,6 +26,10 @@ const Support = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [selectedTickets, setSelectedTickets] = useState([]);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const mockTickets = [
     {
@@ -159,6 +165,7 @@ const Support = () => {
     filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     setFilteredTickets(filtered);
+    setCurrentPage(1); // Reset page
   }, [tickets, selectedFilter, searchQuery]);
 
   const getStatusColor = (status) => {
@@ -503,7 +510,7 @@ const Support = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredTickets.map(ticket => (
+                    {filteredTickets.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(ticket => (
                       <TicketRow key={ticket.id} ticket={ticket} />
                     ))}
                   </tbody>
@@ -513,14 +520,46 @@ const Support = () => {
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-700">
-                    Showing {filteredTickets.length} of {tickets.length} tickets
+                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredTickets.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredTickets.length)}</span> of <span className="font-medium">{filteredTickets.length}</span> tickets
                   </p>
                   <div className="flex items-center space-x-2">
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Previous
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Next
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredTickets.length / itemsPerPage)) }, (_, i) => {
+                      let startPage = Math.max(1, currentPage - 2);
+                      let endPage = Math.min(Math.ceil(filteredTickets.length / itemsPerPage), startPage + 4);
+                      if (endPage - startPage < 4) {
+                        startPage = Math.max(1, endPage - 4);
+                      }
+                      
+                      const pageNum = startPage + i;
+                      if (pageNum > Math.ceil(filteredTickets.length / itemsPerPage)) return null;
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredTickets.length / itemsPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredTickets.length / itemsPerPage)}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

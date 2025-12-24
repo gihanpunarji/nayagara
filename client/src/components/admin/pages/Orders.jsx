@@ -54,7 +54,7 @@ const Orders = () => {
     const fetchOrders = async () => {
       setLoading(true);
       try {
-        const response = await getAdminOrders({ page: currentPage, limit: 25 });
+        const response = await getAdminOrders({ page: currentPage, limit: 20 });
         if (response.data && Array.isArray(response.data)) {
           setOrders(response.data);
           setPagination(response.pagination);

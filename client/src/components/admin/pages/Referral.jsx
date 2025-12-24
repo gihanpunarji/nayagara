@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../layout/AdminLayout';
 import api from '../../../api/axios'; // Assuming you have this configured
-import { ChevronLeft, ChevronRight, Loader } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Loader, Search, RefreshCw } from 'lucide-react';
 
 const SystemSettings = () => {
   const [settings, setSettings] = useState({});
@@ -88,37 +88,76 @@ const SystemSettings = () => {
 const UserReferralData = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 20,
+    total: 0,
+    totalPages: 1
+  });
+
+  const fetchUsers = async (page = 1, search = '') => {
+    setLoading(true);
+    try {
+      const response = await api.get(`/admin/referrals/users?page=${page}&limit=${pagination.limit}&search=${search}`);
+      if (response.data.success) {
+        setUsers(response.data.data);
+        setPagination(prev => ({ ...prev, ...response.data.pagination }));
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const response = await api.get('/admin/referrals/users');
-        if (response.data.success) {
-          setUsers(response.data.data);
-        }
-      } catch (error) {
-        console.error('Failed to fetch users:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchUsers();
-  }, []);
+    // Debounce search
+    const timer = setTimeout(() => {
+      fetchUsers(1, searchQuery);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
-  if (loading) {
-    return <Loader className="w-6 h-6 text-gray-400 animate-spin mx-auto" />;
-  }
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= pagination.totalPages) {
+      fetchUsers(newPage, searchQuery);
+    }
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md border border-gray-200 mb-6">
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-xl font-semibold text-gray-700">User Referral Data</h2>
+        
+        <div className="flex items-center space-x-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search by Mobile or NIC..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-64"
+            />
+          </div>
+          <button
+            onClick={() => fetchUsers(pagination.page, searchQuery)}
+            className="p-2 text-gray-600 hover:text-indigo-600 hover:bg-gray-100 rounded-lg transition-colors"
+            title="Refresh"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </button>
+        </div>
       </div>
+
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NIC</th>
+              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mobile</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Purchase</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Link Unlocked</th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Referred By</th>
@@ -126,35 +165,83 @@ const UserReferralData = () => {
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.map((user) => (
-              <tr key={user.user_id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</div>
-                  <div className="text-sm text-gray-500">ID: {user.user_id}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs. {parseFloat(user.total_purchase_amount).toFixed(2)}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                  <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.referral_link_unlocked ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                    {user.referral_link_unlocked ? 'Yes' : 'No'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.referred_by || (user.referral_link_unlocked ? (
-                    <span className="text-blue-600 font-medium">System</span>
-                  ) : 'N/A')}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.referral_link_unlocked && user.referral_link ? (
-                    <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono">
-                      {user.referral_link}
-                    </span>
-                  ) : 'N/A'}
+            {loading ? (
+              <tr>
+                <td colSpan="7" className="px-6 py-12 text-center">
+                  <Loader className="w-8 h-8 text-indigo-500 animate-spin mx-auto" />
                 </td>
               </tr>
-            ))}
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan="7" className="px-6 py-8 text-center text-gray-500">
+                  No users found matching your search.
+                </td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <tr key={user.user_id}>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">{user.first_name} {user.last_name}</div>
+                    <div className="text-sm text-gray-500">ID: {user.user_id}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.nic || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.user_mobile || 'N/A'}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">Rs. {parseFloat(user.total_purchase_amount || 0).toFixed(2)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${user.referral_link_unlocked ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      {user.referral_link_unlocked ? 'Yes' : 'No'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.referred_by || (user.referral_link_unlocked ? (
+                      <span className="text-blue-600 font-medium">System</span>
+                    ) : 'N/A')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.referral_link_unlocked && user.referral_link ? (
+                      <span className="text-xs bg-gray-100 px-2 py-1 rounded font-mono select-all">
+                        {user.referral_link.split('ref=')[1]}
+                      </span>
+                    ) : 'N/A'}
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
+      
+      {/* Pagination */}
+      {!loading && users.length > 0 && (
+        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+          <div className="text-sm text-gray-500">
+            Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total)}</span> of <span className="font-medium">{pagination.total}</span> users
+          </div>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => handlePageChange(pagination.page - 1)}
+              disabled={pagination.page === 1}
+              className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-sm text-gray-600">
+              Page {pagination.page} of {pagination.totalPages}
+            </span>
+            <button
+              onClick={() => handlePageChange(pagination.page + 1)}
+              disabled={pagination.page === pagination.totalPages}
+              className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

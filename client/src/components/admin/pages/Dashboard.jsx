@@ -115,7 +115,7 @@ const Dashboard = () => {
                 {trend > 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
                 {Math.abs(trend)}%
              </span>
-             <span className="text-gray-400 ml-2">vs last month</span>
+             <span className="text-gray-400 ml-2">month</span>
         </div>
       )}
     </div>
@@ -150,7 +150,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 relative z-10">
                 <div className="text-center md:text-left">
                     <p className="text-gray-400 text-sm mb-1">Active Users</p>
-                    <p className="text-3xl font-bold tracking-tight">{realTimeData.activeUsers.toLocaleString()}</p>
+                    <p className="text-3xl font-bold tracking-tight">{stats?.totalUsers?.toLocaleString() || '0'}</p>
                 </div>
                 <div className="text-center md:text-left">
                     <p className="text-gray-400 text-sm mb-1">Server Load</p>
@@ -181,28 +181,24 @@ const Dashboard = () => {
                     value={`Rs. ${(stats.totalRevenue || 0).toLocaleString()}`} 
                     icon={DollarSign} 
                     color="bg-emerald-500" 
-                    trend={12.5}
                  />
                  <StatCard 
                     title="Active Sellers" 
                     value={stats.activeSellers} 
                     icon={Store} 
                     color="bg-blue-500" 
-                    trend={8.2}
                  />
                  <StatCard 
                     title="Total Products" 
                     value={stats.totalProducts} 
                     icon={Package} 
                     color="bg-indigo-500" 
-                    trend={-2.4}
                  />
                  <StatCard 
                     title="Orders Today" 
                     value={stats.ordersToday} 
                     icon={ShoppingCart} 
                     color="bg-orange-500"
-                    trend={5.0} 
                  />
             </div>
         )}

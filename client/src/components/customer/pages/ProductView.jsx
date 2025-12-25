@@ -88,6 +88,8 @@ export const ProductView = () => {
 
         if (response.data.success) {
           setProduct(response.data.data);
+          // Increment view count
+          publicApi.post(`/products/${id}/view`).catch(err => console.error('Failed to increment view', err));
         } else {
           setError("Product not found");
         }

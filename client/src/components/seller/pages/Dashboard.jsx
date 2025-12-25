@@ -201,10 +201,10 @@ const Dashboard = () => {
                   </div>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-gray-600 text-sm sm:text-base">Profile Views</span>
+                  <span className="text-gray-600 text-sm sm:text-base">Product Views</span>
                   <div className="flex items-center space-x-1">
                     <Eye className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
-                    <span className="font-bold text-gray-900 text-sm sm:text-base">1,234</span>
+                    <span className="font-bold text-gray-900 text-sm sm:text-base">{stats.views?.toLocaleString()}</span>
                   </div>
                 </div>
                 <div className="flex items-center justify-between">

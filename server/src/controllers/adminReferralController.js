@@ -42,7 +42,10 @@ exports.updateSettings = async (req, res) => {
 
 exports.getUsers = async (req, res) => {
   try {
-    const users = await User.getAllWithReferralInfo();
+    const { page = 1, limit = 20, search = '' } = req.query;
+    const offset = (page - 1) * limit;
+
+    const { users, total } = await User.getAllWithReferralInfo(search, limit, offset);
 
     // Add referral_link to each user
     const usersWithLinks = users.map(user => ({
@@ -55,7 +58,16 @@ exports.getUsers = async (req, res) => {
         : null
     }));
 
-    res.json({ success: true, data: usersWithLinks });
+    res.json({
+      success: true,
+      data: usersWithLinks,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     console.error('Error getting users:', error);
     res.status(500).json({ success: false, message: 'Internal server error' });
@@ -66,7 +78,7 @@ exports.getTiers = async (req, res) => {
   try {
     const settingsMap = await Settings.getAll();
     const tiers = {};
-    
+
     // Convert Map to plain object and parse numbers
     if (settingsMap instanceof Map) {
       settingsMap.forEach((value, key) => {
@@ -79,7 +91,7 @@ exports.getTiers = async (req, res) => {
     } else {
       Object.assign(tiers, settingsMap);
     }
-    
+
     res.json({ success: true, data: tiers });
   } catch (error) {
     console.error('Error getting tiers:', error);

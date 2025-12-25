@@ -32,7 +32,7 @@ const ReviewsRatings = () => {
   const [selectedRating, setSelectedRating] = useState('all');
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 10,
+    limit: 20,
     total: 0,
     totalPages: 0
   });

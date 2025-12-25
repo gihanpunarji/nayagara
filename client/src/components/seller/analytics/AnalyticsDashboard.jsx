@@ -44,6 +44,9 @@ const AnalyticsDashboard = () => {
           // Ensure all necessary fields exist with defaults
           const sanitizedData = {
             overview: {
+              totalProducts: data.overview?.totalProducts || 0,
+              activeProducts: data.overview?.activeProducts || 0,
+              inactiveProducts: data.overview?.inactiveProducts || 0,
               totalViews: data.overview?.totalViews || 0,
               totalOrders: data.overview?.totalOrders || 0,
               conversionRate: data.overview?.conversionRate || 0,
@@ -342,8 +345,8 @@ const AnalyticsDashboard = () => {
         <MetricCard
           icon={Package}
           title="Products Listed"
-          value={124}
-          subtitle="89 active, 35 inactive"
+          value={analytics.overview?.totalProducts}
+          subtitle={`${analytics.overview?.activeProducts} active, ${analytics.overview?.inactiveProducts} inactive`}
           color="from-gray-500 to-gray-600"
         />
       </div>

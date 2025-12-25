@@ -33,7 +33,6 @@ const ProfileSettings = ({
   handleProfilePictureUpload,
   saving,
   businessAddress,
-  adminMobile,
   bankFormData,
   handleBankInputChange
 }) => {
@@ -202,7 +201,7 @@ const ProfileSettings = ({
                 className="text-primary-600 hover:text-primary-700 text-sm font-medium"
                 onClick={() => adminMobile && window.open(`tel:${adminMobile}`, '_self')}
               >
-                Request Address Change {adminMobile && `(${adminMobile})`}
+                Request Address Change 0776613003
               </button>
             </div>
           </div>
@@ -219,6 +218,7 @@ const ProfileSettings = ({
             <input
               type="text"
               name="bankName"
+              disabled
               value={bankFormData.bankName}
               onChange={handleBankInputChange}
               placeholder="Enter bank name"
@@ -233,6 +233,7 @@ const ProfileSettings = ({
               name="accountNumber"
               value={bankFormData.accountNumber}
               onChange={handleBankInputChange}
+              disabled
               placeholder="Enter account number"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
@@ -243,6 +244,7 @@ const ProfileSettings = ({
             <input
               type="text"
               name="holderName"
+              disabled
               value={bankFormData.holderName}
               onChange={handleBankInputChange}
               placeholder="Enter account holder name"
@@ -255,6 +257,7 @@ const ProfileSettings = ({
             <input
               type="text"
               name="bankCode"
+              disabled
               value={bankFormData.bankCode}
               onChange={handleBankInputChange}
               placeholder="Enter bank code"
@@ -267,12 +270,14 @@ const ProfileSettings = ({
             <input
               type="text"
               name="branchName"
+              disabled
               value={bankFormData.branchName}
               onChange={handleBankInputChange}
               placeholder="Enter branch name"
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
             />
           </div>
+          <span className="text-green-500 text-sm">Please update bank details in Payment Section</span>
         </div>
       </div>
 

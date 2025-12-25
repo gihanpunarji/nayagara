@@ -17,7 +17,7 @@ class Store {
       [userId, storeName, storeDescription]
     );
     console.log(result);
-    
+
     return result.insertId;
   }
 
@@ -33,12 +33,20 @@ class Store {
   static async createOrUpdate({ userId, storeName, storeDescription }) {
     console.log(userId, storeName, storeDescription);
     const existingStore = await this.findByUserId(userId);
-    
+
     if (existingStore) {
       return await this.update({ userId, storeName, storeDescription });
     } else {
       return await this.create({ userId, storeName, storeDescription });
     }
+  }
+  static async incrementViewCount(userId) {
+    const connection = getConnection();
+    const [result] = await connection.execute(
+      "UPDATE store SET view_count = COALESCE(view_count, 0) + 1 WHERE user_id = ?",
+      [userId]
+    );
+    return result.affectedRows;
   }
 }
 

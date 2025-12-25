@@ -102,7 +102,7 @@ const register = async (req, res, role = "customer") => {
     res.status(201).json({
       success: true,
       message: "Registration Successful",
-      user: { first_name, last_name, user_role },
+      user: { first_name, last_name, user_role, status: user.user_status },
       token,
     });
 
@@ -189,7 +189,7 @@ const sellerRegister = async (req, res, role = "seller") => {
     res.status(201).json({
       success: true,
       message: "Registration Successful",
-      user: { first_name, last_name, user_role },
+      user: { first_name, last_name, user_role, status: user.user_status },
       token,
     });
   } catch (error) {
@@ -251,7 +251,7 @@ const login = async (req, res, role = "customer") => {
     res.json({
       success: true,
       message: "Login successful",
-      user: { first_name, last_name, user_role },
+      user: { first_name, last_name, user_role, status: user.user_status },
       token,
     });
   } catch (error) {
@@ -316,7 +316,7 @@ const sellerLogin = async (req, res, role = "seller") => {
     res.json({
       success: true,
       message: "Login successful",
-      user: { first_name, last_name, user_role },
+      user: { first_name, last_name, user_role, status: user.user_status },
       token,
     });
   } catch (error) {

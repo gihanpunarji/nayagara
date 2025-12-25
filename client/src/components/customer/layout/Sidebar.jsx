@@ -68,8 +68,8 @@ const Sidebar = ({ mainCategories }) => {
 
   return (
     <>
-      {/* Desktop Sidebar */}
-      <div className="hidden lg:block w-64">
+      {/* Desktop Sidebar - Only show on XL screens and up */}
+      <div className="hidden xl:block w-64">
         <div className="bg-white rounded-lg shadow-green p-4 sticky top-24">
           <h3 className="font-heading font-bold text-lg mb-4 text-gray-800">Shop by Category</h3>
           <div className="space-y-2">
@@ -140,23 +140,23 @@ const Sidebar = ({ mainCategories }) => {
         </div>
       )}
 
-      {/* Mobile Categories - Horizontal Scroll */}
-      <div className="lg:hidden mb-6">
-        <div className="bg-black rounded-lg shadow-green p-4">
-          <h3 className="font-heading font-bold text-lg mb-4 text-gray-800">Shop by Category</h3>
-          <div className="flex space-x-4 overflow-x-auto scrollbar-hide pb-2">
+      {/* Mobile Categories - Horizontal Scroll - Show on screens smaller than XL */}
+      <div className="xl:hidden mb-6">
+        <div className="rounded-lg shadow-green p-3 md:p-4">
+          <h3 className="font-heading font-bold text-base md:text-lg mb-3 md:mb-4 text-gray-800">Shop by Category</h3>
+          <div className="flex space-x-3 md:space-x-4 overflow-x-auto scrollbar-hide pb-2">
             {mainCategories.map((category, idx) => (
               <div key={idx} className="flex-shrink-0">
                 <div
-                  className="flex flex-col items-center p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors min-w-[80px]"
+                  className="flex flex-col items-center p-2 md:p-3 rounded-lg hover:bg-primary-50 cursor-pointer transition-colors min-w-[70px] md:min-w-[90px]"
                   onClick={() => handleCategoryClick(category)}
                 >
                   {category.icon && category.icon.startsWith('http') ? (
-                    <img src={category.icon} alt={category.name} className="w-8 h-8 object-cover rounded mb-2" />
+                    <img src={category.icon} alt={category.name} className="w-7 h-7 md:w-9 md:h-9 object-cover rounded mb-1.5 md:mb-2" />
                   ) : (
-                    <span className="text-2xl mb-2">{category.icon}</span>
+                    <span className="text-xl md:text-2xl mb-1.5 md:mb-2">{category.icon}</span>
                   )}
-                  <span className="text-xs font-medium text-gray-700 text-center leading-tight">{category.name}</span>
+                  <span className="text-xs md:text-sm font-medium text-gray-700 text-center leading-tight">{category.name}</span>
                 </div>
               </div>
             ))}

@@ -35,7 +35,7 @@ const MobileLayout = ({ children, user = null, mainCategories = [] }) => {
       />
 
       {/* Main Content */}
-      <main className="pb-16 md:pb-0">
+      <main className="pb-16 xl:pb-0">
         {children}
       </main>
 

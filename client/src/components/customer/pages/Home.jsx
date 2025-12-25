@@ -3,9 +3,12 @@ import { useLocation } from "react-router-dom";
 
 // Import layout components
 import Header from "../layout/Header";
+import MobileHeader from "../layout/MobileHeader";
 import Sidebar from "../layout/Sidebar";
 import Footer from "../layout/Footer";
 import MobileLayout from "../layout/MobileLayout";
+import MobileBottomNav from "../layout/MobileBottomNav";
+import MobileMenu from "../layout/MobileMenu";
 
 // Import page components
 import HeroSection from "../sections/HeroSection";
@@ -17,6 +20,8 @@ import MobileHome from "./MobileHome";
 
 
 import { publicApi } from "../../../api/axios";
+import { useCart } from "../../../context/CartContext";
+import { useAuth } from "../../../context/AuthContext";
 
 // Responsive Layout Component (moved outside to prevent re-creation)
 const ResponsiveLayout = ({ children, user }) => {
@@ -54,25 +59,53 @@ const DesktopHomePage = ({
   mainCategories,
   quickLinks,
   serverStatus,
+  user
 }) => {
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { itemCount: cartCount } = useCart();
+  const { user: contextUser } = useAuth();
+  const currentUser = user || contextUser;
+
   return (
-    <div className="min-h-screen bg-primary-50">
-      {/* Header Component */}
-      <Header
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        showCategories={showCategories}
-        setShowCategories={setShowCategories}
+    <div className="min-h-screen bg-primary-50 pb-16 xl:pb-0">
+      {/* Desktop Header - Visible on XL screens and up */}
+      <div className="hidden xl:block">
+        <Header
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+          showCategories={showCategories}
+          setShowCategories={setShowCategories}
+          mainCategories={mainCategories}
+          quickLinks={quickLinks}
+          serverStatus={serverStatus}
+        />
+      </div>
+
+      {/* Mobile/Tablet Header - Visible on screens smaller than XL */}
+      <div className="xl:hidden">
+        <MobileHeader
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          user={currentUser}
+          wishlistCount={0}
+          onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        />
+      </div>
+
+      {/* Mobile Menu for Medium/Large Screens */}
+      <MobileMenu
+        isOpen={isMobileMenuOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        user={currentUser}
         mainCategories={mainCategories}
-        quickLinks={quickLinks}
-        serverStatus={serverStatus}
       />
 
+
       {/* Main Container */}
-      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div className="flex flex-col lg:flex-row gap-6">
+      <div className="max-w-[95%] md:max-w-[90%] xl:max-w-[85%] mx-auto px-3 md:px-4 xl:px-8 py-4 md:py-5 xl:py-6">
+        <div className="flex flex-col xl:flex-row gap-4 md:gap-5 xl:gap-6">
           {/* Sidebar Component */}
           <Sidebar mainCategories={mainCategories} />
 
@@ -98,6 +131,12 @@ const DesktopHomePage = ({
 
       {/* Footer Component */}
       <Footer />
+
+      {/* Mobile Bottom Navigation - Show on medium screens */}
+      <MobileBottomNav
+        cartCount={cartCount}
+        onMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+      />
     </div>
   );
 };
@@ -183,6 +222,7 @@ const App = () => {
           mainCategories={mainCategories}
           quickLinks={quickLinks}
           serverStatus={serverStatus}
+          user={user}
         />
       </div>
       {/* Mobile Home */}

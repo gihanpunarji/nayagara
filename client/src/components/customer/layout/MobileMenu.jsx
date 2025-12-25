@@ -90,7 +90,7 @@ const MobileMenu = ({
     <>
       {/* Backdrop */}
       <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-[60] transition-opacity duration-300 md:hidden ${
+        className={`fixed inset-0 bg-black bg-opacity-50 z-[60] transition-opacity duration-300 xl:hidden ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
@@ -100,7 +100,7 @@ const MobileMenu = ({
       <div
         className={`fixed top-0 right-0 ${
           navItems ? 'bottom-0' : 'bottom-16'
-        } w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out md:hidden flex flex-col ${
+        } w-80 bg-white shadow-2xl z-[70] transform transition-transform duration-300 ease-in-out xl:hidden flex flex-col ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

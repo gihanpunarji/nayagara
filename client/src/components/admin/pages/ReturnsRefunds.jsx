@@ -14,7 +14,9 @@ import {
   Package,
   User,
   FileText,
-  TrendingUp
+  TrendingUp,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 
@@ -25,6 +27,10 @@ const ReturnsRefunds = () => {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [selectedRequests, setSelectedRequests] = useState([]);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   const mockRequests = [
     {
@@ -157,9 +163,18 @@ const ReturnsRefunds = () => {
     }
 
     filtered.sort((a, b) => new Date(b.requestDate) - new Date(a.requestDate));
-
+    
     setFilteredRequests(filtered);
+    setCurrentPage(1); // Reset page
   }, [requests, selectedFilter, searchQuery]);
+
+  // Pagination logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredRequests.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredRequests.length / itemsPerPage);
+
+  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -512,7 +527,7 @@ const ReturnsRefunds = () => {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredRequests.map(request => (
+                    {filteredRequests.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(request => (
                       <RequestRow key={request.id} request={request} />
                     ))}
                   </tbody>
@@ -522,14 +537,46 @@ const ReturnsRefunds = () => {
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-700">
-                    Showing {filteredRequests.length} of {requests.length} requests
+                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredRequests.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredRequests.length)}</span> of <span className="font-medium">{filteredRequests.length}</span> requests
                   </p>
                   <div className="flex items-center space-x-2">
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Previous
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Next
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredRequests.length / itemsPerPage)) }, (_, i) => {
+                      let startPage = Math.max(1, currentPage - 2);
+                      let endPage = Math.min(Math.ceil(filteredRequests.length / itemsPerPage), startPage + 4);
+                      if (endPage - startPage < 4) {
+                        startPage = Math.max(1, endPage - 4);
+                      }
+                      
+                      const pageNum = startPage + i;
+                      if (pageNum > Math.ceil(filteredRequests.length / itemsPerPage)) return null;
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredRequests.length / itemsPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredRequests.length / itemsPerPage)}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

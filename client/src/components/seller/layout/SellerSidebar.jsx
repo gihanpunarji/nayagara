@@ -47,7 +47,6 @@ const SellerSidebar = ({ showMobileMenu, onMenuToggle }) => {
       icon: ShoppingCart,
       label: 'Orders',
       path: '/seller/orders',
-      badge: '23'
     },
     {
       icon: Users,
@@ -71,7 +70,6 @@ const SellerSidebar = ({ showMobileMenu, onMenuToggle }) => {
       icon: MessageCircle,
       label: 'Messages',
       path: '/seller/messages',
-      badge: '5'
     }
   ];
 

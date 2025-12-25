@@ -120,7 +120,7 @@ class User {
     }
   }
 
-  static async createReferralUser() {}
+  static async createReferralUser() { }
 
   static async findByNIC(identifier) {
     const pool = getConnection();
@@ -364,7 +364,7 @@ class User {
     let connection;
     try {
       connection = await pool.getConnection();
-      
+
       let whereClause = "WHERE u.user_type = 'seller'";
       const queryParams = [];
 
@@ -388,7 +388,7 @@ class User {
         LEFT JOIN store s ON u.user_id = s.user_id
         ${whereClause}
       `;
-      
+
       const [countResult] = await connection.execute(countQuery, queryParams);
       const total = countResult[0].total;
 
@@ -434,7 +434,7 @@ class User {
 
       // Copy query params and add limit/offset
       const finalQueryParams = [...queryParams, parseInt(limit), parseInt(offset)];
-      
+
       const [rows] = await connection.execute(query, finalQueryParams);
       return { sellers: rows, total };
     } finally {
@@ -447,17 +447,33 @@ class User {
   /**
    * Gets all users with referral information for admin dashboard
    */
-  static async getAllWithReferralInfo() {
+  static async getAllWithReferralInfo(search = '', limit = 20, offset = 0) {
     const pool = getConnection();
     let connection;
     try {
       connection = await pool.getConnection();
-      const [rows] = await connection.execute(`
+
+      let baseQuery = "FROM users u LEFT JOIN users referrer ON u.referred_by_user_id = referrer.user_id WHERE u.user_type = 'customer'";
+      const params = [];
+
+      if (search) {
+        baseQuery += " AND (u.user_mobile LIKE ? OR u.nic LIKE ?)";
+        params.push(`%${search}%`, `%${search}%`);
+      }
+
+      // Get total count
+      const [countResult] = await connection.execute(`SELECT COUNT(*) as total ${baseQuery}`, params);
+      const total = countResult[0].total;
+
+      // Get paginated data
+      const query = `
         SELECT 
           u.user_id,
           u.first_name,
           u.last_name,
           u.user_email,
+          u.nic,
+          u.user_mobile,
           u.total_purchase_amount,
           u.referral_link_unlocked,
           u.referral_code,
@@ -466,12 +482,13 @@ class User {
           referrer.last_name as referred_by_last_name,
           (SELECT COUNT(*) FROM referral_chain rc WHERE rc.level_1_user_id = u.user_id) as direct_referrals,
           (SELECT SUM(rc.commission_amount) FROM referral_commissions rc WHERE rc.referrer_user_id = u.user_id) as total_commissions
-        FROM users u 
-        LEFT JOIN users referrer ON u.referred_by_user_id = referrer.user_id
-        WHERE u.user_type = 'customer'
+        ${baseQuery}
         ORDER BY u.total_purchase_amount DESC
-      `);
-      return rows;
+        LIMIT ? OFFSET ?
+      `;
+
+      const [rows] = await connection.execute(query, [...params, parseInt(limit), parseInt(offset)]);
+      return { users: rows, total };
     } finally {
       if (connection) connection.release();
     }
@@ -498,13 +515,13 @@ class User {
       );
 
       const newUserId = result.insertId;
-      
+
       // Generate referral code for the new user
       const crypto = require("crypto");
       const timestamp = Date.now().toString();
       const hash = crypto.createHash('md5').update(`${newUserId}${timestamp}`).digest('hex');
       const newUserReferralCode = `REF${String(newUserId).padStart(6, '0')}${hash.substring(0, 6).toUpperCase()}`;
-      
+
       await connection.execute(
         "UPDATE users SET referral_code = ? WHERE user_id = ?",
         [newUserReferralCode, newUserId]
@@ -519,7 +536,7 @@ class User {
 
         if (referrerRows[0]) {
           const referrerUserId = referrerRows[0].user_id;
-          
+
           // Get the referrer's chain to extend it
           const [referrerChainRows] = await connection.execute(
             "SELECT * FROM referral_chain WHERE user_id = ?",

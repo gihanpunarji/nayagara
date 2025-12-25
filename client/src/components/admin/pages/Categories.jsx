@@ -7,16 +7,13 @@ import {
   Trash2,
   Eye,
   ChevronRight,
-  Grid,
   RefreshCw,
-  Download,
   MoreVertical,
-  Package,
-  TrendingUp,
-  AlertCircle,
+
   CheckCircle,
   Image as ImageIcon,
-  XIcon as X
+  XIcon as X,
+  ChevronLeft,
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 import { getAdminCategories } from '../../../api/admin';
@@ -37,6 +34,11 @@ const Categories = () => {
   const [selectedCategoryForSubcategory, setSelectedCategoryForSubcategory] = useState(null);
   const [actionError, setActionError] = useState('');
   const [openDropdown, setOpenDropdown] = useState(null);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
   const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Categories', count: 0, color: 'gray' },
     { key: 'active', label: 'Active', count: 0, color: 'green' },
@@ -147,6 +149,7 @@ const Categories = () => {
     filtered.sort((a, b) => b.totalProducts - a.totalProducts);
 
     setFilteredCategories(filtered);
+    setCurrentPage(1); // Reset page on filter change
   }, [categories, selectedFilter, searchQuery]);
 
   const getStatusColor = (status) => {
@@ -339,7 +342,7 @@ const Categories = () => {
             </button>
 
             {openDropdown === category.id && (
-              <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-10">
+              <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 z-50">
                 <div className="py-1">
                   <button
                     onClick={() => {
@@ -621,7 +624,7 @@ const Categories = () => {
         </div>
 
         {/* Categories Table */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <div className={`bg-white rounded-xl shadow-sm border border-gray-200 ${filteredCategories.length < 3 ? 'overflow-visible' : 'overflow-hidden'}`}>
           {filteredCategories.length === 0 ? (
             <div className="p-12 text-center">
               <Folder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -636,7 +639,7 @@ const Categories = () => {
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              <div className={filteredCategories.length < 3 ? 'overflow-visible' : 'overflow-x-auto'}>
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
@@ -677,8 +680,8 @@ const Categories = () => {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredCategories.map(category => (
+                  <tbody className="bg-white divide-y divide-gray-200 mb-4">
+                    {filteredCategories.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(category => (
                       <CategoryRow key={category.id} category={category} />
                     ))}
                   </tbody>
@@ -689,14 +692,46 @@ const Categories = () => {
               <div className="px-6 py-4 border-t border-gray-200">
                 <div className="flex items-center justify-between">
                   <p className="text-sm text-gray-700">
-                    Showing {filteredCategories.length} of {categories.length} categories
+                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredCategories.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredCategories.length)}</span> of <span className="font-medium">{filteredCategories.length}</span> categories
                   </p>
                   <div className="flex items-center space-x-2">
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Previous
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
                     </button>
-                    <button className="px-3 py-1 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition-colors text-sm">
-                      Next
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredCategories.length / itemsPerPage)) }, (_, i) => {
+                      let startPage = Math.max(1, currentPage - 2);
+                      let endPage = Math.min(Math.ceil(filteredCategories.length / itemsPerPage), startPage + 4);
+                      if (endPage - startPage < 4) {
+                        startPage = Math.max(1, endPage - 4);
+                      }
+                      
+                      const pageNum = startPage + i;
+                      if (pageNum > Math.ceil(filteredCategories.length / itemsPerPage)) return null;
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredCategories.length / itemsPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredCategories.length / itemsPerPage)}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
                     </button>
                   </div>
                 </div>

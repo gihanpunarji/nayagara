@@ -4,7 +4,7 @@ import {
   Search,
   Download,
   RefreshCw,
-  TrendingUp,
+  ArrowUp,
   Users,
   Calendar,
   CreditCard

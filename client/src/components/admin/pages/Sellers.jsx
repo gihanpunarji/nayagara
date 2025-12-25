@@ -11,7 +11,10 @@ import {
   MoreVertical,
   Eye,
   Ban,
-  UserCheck
+  UserCheck,
+  ChevronLeft,
+  ChevronRight,
+  CheckCircle
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 import { getAdminSellers, updateUserStatus } from '../../../api/admin';
@@ -25,6 +28,10 @@ const Sellers = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedSellers, setSelectedSellers] = useState([]);
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
 
   // Filter options
   const [filterOptions, setFilterOptions] = useState([
@@ -107,6 +114,7 @@ const Sellers = () => {
     }
 
     setFilteredSellers(result);
+    setCurrentPage(1); // Reset to first page on filter change
   }, [sellers, selectedFilter, searchQuery]);
 
 
@@ -137,13 +145,19 @@ const Sellers = () => {
       if (action === 'suspend') {
         if (window.confirm('Are you sure you want to suspend this seller?')) {
           await updateUserStatus(sellerId, 'suspended');
-          // Update local state locally to avoid refetch
           setSellers(sellers.map(seller =>
             seller.id === sellerId ? { ...seller, status: 'suspended' } : seller
           ));
         }
       } else if (action === 'activate') {
         if (window.confirm('Are you sure you want to activate this seller?')) {
+          await updateUserStatus(sellerId, 'active');
+          setSellers(sellers.map(seller =>
+            seller.id === sellerId ? { ...seller, status: 'active' } : seller
+          ));
+        }
+      } else if (action === 'approve') {
+        if (window.confirm('Are you sure you want to approve this seller?')) {
           await updateUserStatus(sellerId, 'active');
           setSellers(sellers.map(seller =>
             seller.id === sellerId ? { ...seller, status: 'active' } : seller
@@ -271,7 +285,18 @@ const Sellers = () => {
                     <Package className="w-4 h-4" />
                     <span>View Products</span>
                   </button>
-                {seller.status !== 'suspended' ? (
+                {seller.status === 'pending_verification' && (
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSellerAction('approve', seller.id);
+                    }}
+                    className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
+                  >
+                    <CheckCircle className="w-4 h-4" /><span>Approve</span>
+                  </button>
+                )}
+                {seller.status !== 'suspended' && seller.status !== 'pending_verification' && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -282,7 +307,8 @@ const Sellers = () => {
                     <Ban className="w-4 h-4" />
                     <span>Suspend Account</span>
                   </button>
-                ) : (
+                )}
+                {seller.status === 'suspended' && (
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -489,15 +515,57 @@ const Sellers = () => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredSellers.map(seller => (
+                  {filteredSellers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage).map(seller => (
                     <SellerRow key={seller.id} seller={seller} />
                   ))}
                 </tbody>
               </table>
               
-              <div className="px-6 py-4 border-t border-gray-200 text-sm text-gray-500">
-                Showing {filteredSellers.length} of {sellers.length} sellers
-              </div>
+                <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+                  <div className="text-sm text-gray-500">
+                    Showing <span className="font-medium">{Math.min((currentPage - 1) * itemsPerPage + 1, filteredSellers.length)}</span> to <span className="font-medium">{Math.min(currentPage * itemsPerPage, filteredSellers.length)}</span> of <span className="font-medium">{filteredSellers.length}</span> sellers
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                      disabled={currentPage === 1}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    {Array.from({ length: Math.min(5, Math.ceil(filteredSellers.length / itemsPerPage)) }, (_, i) => {
+                      let startPage = Math.max(1, currentPage - 2);
+                      let endPage = Math.min(Math.ceil(filteredSellers.length / itemsPerPage), startPage + 4);
+                      if (endPage - startPage < 4) {
+                        startPage = Math.max(1, endPage - 4);
+                      }
+                      
+                      const pageNum = startPage + i;
+                      if (pageNum > Math.ceil(filteredSellers.length / itemsPerPage)) return null;
+                      
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setCurrentPage(pageNum)}
+                          className={`px-3 py-1 border rounded-md text-sm font-medium ${
+                            currentPage === pageNum
+                              ? 'bg-green-600 text-white border-green-600'
+                              : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(filteredSellers.length / itemsPerPage)))}
+                      disabled={currentPage >= Math.ceil(filteredSellers.length / itemsPerPage)}
+                      className="p-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
             </div>
           )}
         </div>

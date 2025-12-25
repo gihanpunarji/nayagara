@@ -43,6 +43,23 @@ export const AuthProvider = ({ children }) => {
           const parsedUser = JSON.parse(userData);
           setUser(parsedUser);
           setUserRole(storedRole || parsedUser.user_role || 'customer');
+
+          // Refresh seller profile to get latest status
+          if ((storedRole === 'seller' || parsedUser.user_role === 'seller')) {
+            try {
+              const res = await api.get('/seller/profile');
+              if (res.data && res.data.success) {
+                const freshUser = {
+                  ...res.data.user,
+                  status: res.data.user.user_status || res.data.user.status 
+                };
+                setUser(freshUser);
+                localStorage.setItem('user', JSON.stringify(freshUser));
+              }
+            } catch (err) {
+              console.error("Failed to refresh seller profile", err);
+            }
+          }
         } catch (error) {
           // Token is invalid, clear auth
           clearAuth();

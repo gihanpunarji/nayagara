@@ -1,7 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const crypto = require("crypto");
-const redis = require("redis");
 
 const JWT_SECRET = process.env.JWT_SECRET || "nayagara_secret_key";
 

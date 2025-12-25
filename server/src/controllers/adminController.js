@@ -71,27 +71,21 @@ const getAdminDashboardData = async (req, res) => {
 
 const getAdminCategories = async (req, res) => {
   try {
-    const categories = await Category.getAllCategoriesWithStats();
+    // OPTIMIZED: Single query with JOIN instead of N+1
+    const categories = await Category.getAllCategoriesWithSubcategories();
 
-    // Get subcategories for each category
-    const categoriesWithSubcategories = await Promise.all(
-      categories.map(async (category) => {
-        const subcategories = await SubCategory.findByCategoryId(category.id);
-        return {
-          ...category,
-          status: category.is_active ? 'active' : 'inactive',
-          subCategories: subcategories.map(sub => sub.sub_category_name),
-          totalProducts: parseInt(category.total_products) || 0,
-          activeProducts: parseInt(category.active_products) || 0,
-          totalSales: parseFloat(category.total_sales) || 0,
-          subcategory_count: parseInt(category.subcategory_count) || 0,
-          icon: category.icon || null,
-          icon_image: category.image || null
-        };
-      })
-    );
+    const formattedCategories = categories.map(category => ({
+      ...category,
+      status: category.is_active ? 'active' : 'inactive',
+      totalProducts: parseInt(category.total_products) || 0,
+      activeProducts: parseInt(category.active_products) || 0,
+      totalSales: parseFloat(category.total_sales) || 0,
+      subcategory_count: parseInt(category.subcategory_count) || 0,
+      icon: category.icon || null,
+      icon_image: category.image || null
+    }));
 
-    res.json({ success: true, categories: categoriesWithSubcategories });
+    res.json({ success: true, categories: formattedCategories });
   } catch (error) {
     console.error("Error fetching admin categories:", error);
     res.status(500).json({ success: false, message: "Failed to fetch categories" });

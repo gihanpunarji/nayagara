@@ -35,6 +35,11 @@ class Dashboard {
         "SELECT COUNT(*) as count FROM products WHERE seller_id = ? AND stock_quantity < 5",
         [sellerId]
       );
+      const [productViews] = await connection.execute(
+        "SELECT SUM(view_count) as sum FROM products WHERE seller_id = ?",
+        [sellerId]
+      );
+      const totalViews = parseInt(productViews[0].sum) || 0;
 
       return {
         totalProducts: totalProducts[0].count || 0,
@@ -44,6 +49,7 @@ class Dashboard {
         avgRating: avgRating[0].avg || 0,
         pendingOrders: pendingOrders[0].count || 0,
         lowStockProducts: lowStockProducts[0].count || 0,
+        views: totalViews
       };
     } finally {
       if (connection) connection.release();
@@ -122,11 +128,11 @@ class Dashboard {
          ORDER BY date ASC`,
         [sellerId, startDateStr]
       );
-      
+
       // Fill in missing dates with 0
       const result = [];
       const map = new Map(rows.map(r => [r.date.toISOString().split('T')[0], r]));
-      
+
       for (let d = new Date(startDate); d <= new Date(); d.setDate(d.getDate() + 1)) {
         const dateStr = d.toISOString().split('T')[0];
         const data = map.get(dateStr);
@@ -136,7 +142,7 @@ class Dashboard {
           revenue: data ? parseFloat(data.revenue) : 0
         });
       }
-      
+
       return result;
     } finally {
       if (connection) connection.release();
@@ -170,15 +176,15 @@ class Dashboard {
          LIMIT ?`,
         [startDateStr, sellerId, limit]
       );
-      
+
       return rows.map(row => ({
         ...row,
         views: parseInt(row.views) || 0,
         orders: parseInt(row.orders) || 0,
         revenue: parseFloat(row.revenue) || 0,
         conversionRate: parseFloat(row.conversionRate) || 0,
-         // Add default image if null
-         image: row.image || 'https://via.placeholder.com/400' 
+        // Add default image if null
+        image: row.image || 'https://via.placeholder.com/400'
       }));
     } finally {
       if (connection) connection.release();
@@ -209,7 +215,7 @@ class Dashboard {
          ORDER BY revenue DESC`,
         [startDateStr, sellerId]
       );
-      
+
       return rows.map(row => ({
         category: row.category,
         views: parseInt(row.views) || 0,
@@ -229,7 +235,7 @@ class Dashboard {
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
       const startDateStr = startDate.toISOString().split('T')[0];
-      
+
       // Previous period start date
       const prevStartDate = new Date(startDate);
       prevStartDate.setDate(prevStartDate.getDate() - days);
@@ -251,22 +257,34 @@ class Dashboard {
         );
         return res[0];
       };
-      
+
       // Get Products Views (Total for period is hard because view_count is cumulative, 
       // typically we'd track daily views in a separate table.
       // For now, we will sum current view counts of all products
-      const [viewsResult] = await connection.execute(
-        `SELECT SUM(view_count) as totalViews FROM products WHERE seller_id = ?`,
+      const [storeViewsResult] = await connection.execute(
+        "SELECT view_count FROM store WHERE user_id = ?",
         [sellerId]
       );
-      const totalViews = parseInt(viewsResult[0].totalViews) || 0;
+      const totalViews = parseInt(storeViewsResult[0].view_count) || 0;
+
+      const [productCountResult] = await connection.execute(
+        `SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN product_status = 'active' THEN 1 ELSE 0 END) as active,
+          SUM(CASE WHEN product_status != 'active' THEN 1 ELSE 0 END) as inactive
+         FROM products WHERE seller_id = ?`,
+        [sellerId]
+      );
+      const totalProducts = parseInt(productCountResult[0].total) || 0;
+      const activeProducts = parseInt(productCountResult[0].active) || 0;
+      const inactiveProducts = parseInt(productCountResult[0].inactive) || 0;
 
       // Current Period Stats
       const currentStats = await getRangeStats(startDateStr, new Date().toISOString().split('T')[0] + ' 23:59:59');
-      
+
       // Previous Period Stats
       const prevStats = await getRangeStats(prevStartDateStr, startDateStr);
-      
+
       // Ratings
       const [ratingResult] = await connection.execute(
         `SELECT AVG(rating) as rating, COUNT(*) as count FROM product_reviews pr 
@@ -274,7 +292,7 @@ class Dashboard {
          WHERE p.seller_id = ?`,
         [sellerId]
       );
-      
+
       const calculateChange = (current, previous) => {
         if (previous === 0) return current > 0 ? 100 : 0;
         return ((current - previous) / previous) * 100;
@@ -282,6 +300,9 @@ class Dashboard {
 
       return {
         overview: {
+          totalProducts: totalProducts,
+          activeProducts: activeProducts,
+          inactiveProducts: inactiveProducts,
           totalViews: totalViews, // Note: This is lifetime views, not period specific without tracking table
           totalOrders: parseInt(currentStats.orders),
           totalRevenue: parseFloat(currentStats.revenue),
@@ -294,14 +315,14 @@ class Dashboard {
         },
         trends: {
           views: { current: totalViews, previous: 0, change: 0 }, // Placeholder
-          orders: { 
-            current: parseInt(currentStats.orders), 
-            previous: parseInt(prevStats.orders), 
+          orders: {
+            current: parseInt(currentStats.orders),
+            previous: parseInt(prevStats.orders),
             change: calculateChange(parseInt(currentStats.orders), parseInt(prevStats.orders))
           },
-          revenue: { 
-            current: parseFloat(currentStats.revenue), 
-            previous: parseFloat(prevStats.revenue), 
+          revenue: {
+            current: parseFloat(currentStats.revenue),
+            previous: parseFloat(prevStats.revenue),
             change: calculateChange(parseFloat(currentStats.revenue), parseFloat(prevStats.revenue))
           },
           customers: {

@@ -1,12 +1,12 @@
 const express = require("express");
-const { 
-  createProduct, 
-  getSellerProducts, 
+const {
+  createProduct,
+  getSellerProducts,
   getProductById,
   updateProduct,
   getPublicProducts,
   filterProducts,
-  getPublicProductById 
+  getPublicProductById
 } = require("../controllers/productController");
 const { authenticateToken } = require("../middleware/auth");
 const { productImageUpload } = require("../middleware/cloudinaryUpload");
@@ -22,6 +22,17 @@ router.get("/filter", filterProducts);
 
 // Public single product endpoint (no authentication required)
 router.get("/public/:productId", getPublicProductById);
+
+// Increment view count
+router.post("/:productId/view", async (req, res) => {
+  const Product = require("../models/Product");
+  try {
+    await Product.incrementViewCount(req.params.productId);
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Create a new product with images
 router.post("/", authenticateToken, ...productImageUpload.array('images', 10), createProduct);

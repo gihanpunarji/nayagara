@@ -17,6 +17,7 @@ const ShopPage = () => {
   const districtFromUrl = searchParams.get('district') || '';
   const priceMinFromUrl = searchParams.get('priceMin') || '';
   const priceMaxFromUrl = searchParams.get('priceMax') || '';
+  const sellerFromUrl = searchParams.get('seller') || '';
 
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('newest');
@@ -89,6 +90,13 @@ const ShopPage = () => {
       if (districtFromUrl) params.append('district', districtFromUrl);
       if (priceMinFromUrl) params.append('priceMin', priceMinFromUrl);
       if (priceMaxFromUrl) params.append('priceMax', priceMaxFromUrl);
+      if (sellerFromUrl) {
+        params.append('seller', sellerFromUrl);
+        // Trigger profile view count (fire and forget)
+        if (pageNum === 1 && !append) {
+           publicApi.post(`/store/view/${sellerFromUrl}`).catch(err => console.error('Failed to count view', err));
+        }
+      }
       
       // Add sort parameter
       switch (sortBy) {
@@ -126,7 +134,7 @@ const ShopPage = () => {
     }
 
     setLoading(false);
-  }, [searchQuery, selectedCategory, selectedSubcategory, districtFromUrl, priceMinFromUrl, priceMaxFromUrl, sortBy]);
+  }, [searchQuery, selectedCategory, selectedSubcategory, districtFromUrl, priceMinFromUrl, priceMaxFromUrl, sortBy, sellerFromUrl]);
 
   // Load more products for infinite scroll
   const loadMoreProducts = useCallback(async () => {
@@ -298,7 +306,8 @@ const ShopPage = () => {
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  {searchQuery ? `Search results for "${searchQuery}"` : 
+                  {sellerFromUrl ? 'Seller Shop' : 
+                   searchQuery ? `Search results for "${searchQuery}"` : 
                    selectedCategory === 'all' ? 'All Products' : capitalizeFirstLetter(selectedCategory)}
                 </h1>
               </div>

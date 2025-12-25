@@ -16,6 +16,7 @@ const walletRoutes = require("./routes/walletRoutes");
 const adminReferralRoutes = require("./routes/adminReferralRoutes");
 const adminRoutes = require("./routes/adminRoutes"); // Import admin routes
 const referralRoutes = require("./routes/referralRoutes"); // Import referral routes
+const storeRoutes = require("./routes/storeRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -51,6 +52,7 @@ app.use("/api", walletRoutes);
 app.use("/api/admin/referrals", adminReferralRoutes);
 app.use("/api/admin", adminRoutes); // Use admin routes
 app.use("/api/referral", referralRoutes); // Use referral routes
+app.use("/api/store", storeRoutes);
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running successfully!" });

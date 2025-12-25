@@ -496,6 +496,12 @@ const getPublicProducts = async (req, res) => {
       whereClause += ` AND p.is_featured = 1`;
     }
 
+    // Add seller filter
+    if (req.query.seller) {
+      whereClause += ` AND p.seller_id = ?`;
+      queryParams.push(req.query.seller);
+    }
+
     // Get total count
     const countQuery = `
       SELECT COUNT(DISTINCT p.product_id) as total

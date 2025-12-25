@@ -133,30 +133,25 @@ const getSellerProducts = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    // If no filters are applied, use the simple method
+    // If no filters are applied, use the optimized method
     if (!search && (!status || status === 'all') && !category && sort === 'newest') {
-      const products = await Product.findBySellerId(sellerId, parseInt(limit), offset);
+      // OPTIMIZED: Single query with JOIN instead of N+1
+      const productsWithImages = await Product.findBySellerIdWithImages(sellerId, parseInt(limit), offset);
 
-      // Get images for each product
-      const productsWithImages = await Promise.all(
-        products.map(async (product) => {
-          const images = await ProductImage.findByProductId(product.product_id);
-          return {
-            ...product,
-            product_attributes: Product.parseProductAttributes(product.product_attributes),
-            images: images
-          };
-        })
-      );
+      const formattedProducts = productsWithImages.map(product => ({
+        ...product,
+        product_attributes: Product.parseProductAttributes(product.product_attributes),
+        images: product.images
+      }));
 
       return res.json({
         success: true,
         message: "Products fetched successfully",
-        data: productsWithImages,
+        data: formattedProducts,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: productsWithImages.length
+          total: formattedProducts.length
         }
       });
     }
@@ -165,13 +160,22 @@ const getSellerProducts = async (req, res) => {
     const { getConnection } = require("../config/database");
     const connection = getConnection();
 
+    // OPTIMIZED: Add images to the JOIN query to avoid N+1
     let query = `
-      SELECT p.*, 
+      SELECT p.*,
              c.category_name,
-             sc.sub_category_name
+             sc.sub_category_name,
+             GROUP_CONCAT(
+               JSON_OBJECT(
+                 'image_id', pi.image_id,
+                 'image_url', pi.image_url,
+                 'image_alt', pi.image_alt
+               )
+             ) as images_json
       FROM products p
       LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
       LEFT JOIN categories c ON sc.categories_category_id = c.category_id
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id
       WHERE p.seller_id = ?
     `;
     const queryParams = [sellerId];
@@ -198,6 +202,9 @@ const getSellerProducts = async (req, res) => {
       query += ` AND c.category_name = ?`;
       queryParams.push(category.trim());
     }
+
+    // GROUP BY is required when using GROUP_CONCAT
+    query += ` GROUP BY p.product_id`;
 
     // Add sorting
     switch (sort) {
@@ -228,17 +235,12 @@ const getSellerProducts = async (req, res) => {
 
     const [products] = await connection.execute(query, queryParams);
 
-    // Get images for each product
-    const productsWithImages = await Promise.all(
-      products.map(async (product) => {
-        const images = await ProductImage.findByProductId(product.product_id);
-        return {
-          ...product,
-          product_attributes: Product.parseProductAttributes(product.product_attributes),
-          images: images
-        };
-      })
-    );
+    // OPTIMIZED: Parse images from JSON instead of separate queries
+    const productsWithImages = products.map(product => ({
+      ...product,
+      product_attributes: Product.parseProductAttributes(product.product_attributes),
+      images: product.images_json ? JSON.parse(`[${product.images_json}]`) : []
+    }));
 
     res.json({
       success: true,

@@ -109,6 +109,47 @@ class Category {
       if (connection) connection.release();
     }
   }
+
+  // OPTIMIZED: Fetch categories with subcategories in a single query (fixes N+1 problem)
+  static async getAllCategoriesWithSubcategories() {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [rows] = await connection.execute(`
+        SELECT
+          c.category_id AS id,
+          c.category_name AS name,
+          c.category_slug,
+          c.icon,
+          c.image,
+          CAST(c.is_active AS UNSIGNED) as is_active,
+          COUNT(DISTINCT sc.sub_category_id) AS subcategory_count,
+          COUNT(DISTINCT CASE WHEN p.product_status = 'active' THEN p.product_id END) AS active_products,
+          COUNT(DISTINCT p.product_id) AS total_products,
+          COALESCE(SUM(DISTINCT oi.total_price), 0) AS total_sales,
+          GROUP_CONCAT(
+            DISTINCT sc.sub_category_name
+            ORDER BY sc.sub_category_name
+            SEPARATOR ','
+          ) AS subcategories
+        FROM categories c
+        LEFT JOIN sub_categories sc ON sc.categories_category_id = c.category_id
+        LEFT JOIN products p ON p.category_id = c.category_id
+        LEFT JOIN order_items oi ON oi.product_id = p.product_id
+        GROUP BY c.category_id, c.category_name, c.category_slug, c.icon, c.image, c.is_active
+        ORDER BY c.category_name;
+      `);
+
+      // Parse subcategories from comma-separated string
+      return rows.map(row => ({
+        ...row,
+        subCategories: row.subcategories ? row.subcategories.split(',') : []
+      }));
+    } finally {
+      if (connection) connection.release();
+    }
+  }
 }
 
 module.exports = Category;

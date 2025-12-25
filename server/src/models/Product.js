@@ -208,6 +208,77 @@ class Product {
       return 0;
     }
   }
+
+  // OPTIMIZED: Fetch products with images in a single query (fixes N+1 problem)
+  static async findBySellerIdWithImages(sellerId, limit = 50, offset = 0) {
+    const connection = getConnection();
+    const [rows] = await connection.execute(
+      `SELECT
+        p.*,
+        GROUP_CONCAT(
+          JSON_OBJECT(
+            'image_id', pi.image_id,
+            'image_url', pi.image_url,
+            'image_alt', pi.image_alt
+          )
+        ) as images_json
+      FROM products p
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      WHERE p.seller_id = ?
+      GROUP BY p.product_id
+      ORDER BY p.created_at DESC
+      LIMIT ? OFFSET ?`,
+      [sellerId, limit, offset]
+    );
+
+    // Parse images JSON
+    return rows.map(row => ({
+      ...row,
+      images: row.images_json ? JSON.parse(`[${row.images_json}]`) : []
+    }));
+  }
+
+  // OPTIMIZED: Fetch all products with images for public view
+  static async findAllWithImages(limit = 50, offset = 0, filters = {}) {
+    const connection = getConnection();
+    let query = `
+      SELECT
+        p.*,
+        GROUP_CONCAT(
+          JSON_OBJECT(
+            'image_id', pi.image_id,
+            'image_url', pi.image_url,
+            'image_alt', pi.image_alt
+          )
+        ) as images_json
+      FROM products p
+      LEFT JOIN product_images pi ON p.product_id = pi.product_id
+      WHERE p.product_status = 'approved'
+    `;
+    const params = [];
+
+    if (filters.category) {
+      query += ` AND p.category_id = ?`;
+      params.push(filters.category);
+    }
+
+    if (filters.search) {
+      query += ` AND (p.product_title LIKE ? OR p.product_description LIKE ?)`;
+      const searchTerm = `%${filters.search}%`;
+      params.push(searchTerm, searchTerm);
+    }
+
+    query += ` GROUP BY p.product_id ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
+    params.push(limit, offset);
+
+    const [rows] = await connection.execute(query, params);
+
+    // Parse images JSON
+    return rows.map(row => ({
+      ...row,
+      images: row.images_json ? JSON.parse(`[${row.images_json}]`) : []
+    }));
+  }
 }
 
 module.exports = Product;

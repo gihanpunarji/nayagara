@@ -1,9 +1,9 @@
-# Dependencies
-node_modules
-
 # Development files
 .env.local
 .env.development
+README.md
+OPTIMIZATION_SUMMARY.md
+REFERRAL_SYSTEM_IMPLEMENTATION.md
 
 # Build files
 *.log
@@ -14,11 +14,13 @@ yarn-error.log*
 # Local uploads (use Cloudinary instead)
 uploads/
 
-# Scripts
+# Scripts (not needed in production)
 src/scripts/
+scripts/
 
 # Database dumps
 *.sql
+sql/
 
 # OS files
 .DS_Store
@@ -29,3 +31,7 @@ Thumbs.db
 .idea
 *.swp
 *.swo
+
+# Git
+.git
+.gitignore

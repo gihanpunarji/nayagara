@@ -1,9 +1,17 @@
 {
   "version": 2,
+  "buildCommand": "echo 'No build required'",
+  "installCommand": "npm install --production",
   "rewrites": [
     {
       "source": "/(.*)",
       "destination": "/api"
     }
-  ]
+  ],
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30,
+      "memory": 1024
+    }
+  }
 }

@@ -144,8 +144,8 @@ const addCategory = async (req, res) => {
     const result = await Category.create({
       categoryName,
       categorySlug,
-      icon: iconUrl,        // .ico file goes to icon column
-      icoFile: imageUrl,    // image file goes to image column
+      icon: imageUrl,       // image file goes to icon column
+      icoFile: iconUrl,     // .ico file goes to image column
       isActive: 1
     });
 

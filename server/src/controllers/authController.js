@@ -245,6 +245,14 @@ const login = async (req, res, role = "customer") => {
       });
     }
 
+    // Check if customer account is suspended
+    if (user.user_status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended. Please contact support for assistance."
+      });
+    }
+
     const token = generateToken(user.user_id, user.user_type);
     const { first_name, last_name, user_role } = user;
 
@@ -303,6 +311,15 @@ const sellerLogin = async (req, res, role = "seller") => {
       return res
         .status(403)
         .json({ success: false, message: "This account is not registered as a seller. Please use customer login or register as a seller." });
+    }
+
+    console.log("User status:", user.user_status);
+    // Check if seller account is suspended
+    if (user.user_status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended. Please contact support for assistance."
+      });
     }
 
     const isMobileVerified = await User.isMobileVerified(emailOrMobile);

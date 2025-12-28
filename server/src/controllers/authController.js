@@ -369,10 +369,13 @@ const forgotPassword = async (req, res) => {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     await transporter.sendMail({
-      from: `"Support" <${process.env.EMAIL_USER}>`,
+      from: `"Nayagara Support" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "Password Reset Request",
       html: `<!DOCTYPE html>
@@ -756,10 +759,6 @@ const forgotPassword = async (req, res) => {
         
         <!-- Content -->
         <div class="content">
-            <!-- Lock Icon -->
-            <div class="icon-section">
-                <div class="lock-icon"></div>
-            </div>
             
             <div class="greeting">Hello there!</div>
             
@@ -935,17 +934,20 @@ const sendEmail = async (req, res) => {
 
     const transporter = nodeMailer.createTransport({
       host: 'smtp.hostinger.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     // Send email
     await transporter.sendMail({
-      from: `"Zipzipy" <${process.env.EMAIL_USER}>`,
+      from: `"Nayagara Admin" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "Admin Verification Code",
       html: `

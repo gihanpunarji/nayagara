@@ -1,31 +1,43 @@
 const User = require("../models/User");
 
-const validMobileRegex = /^947[0-9]{8}$/;
+// Validate Sri Lankan mobile numbers (07X XXXXXXX format)
+const validSriLankanMobileRegex = /^0(7[0-9])[0-9]{7}$/;
+
+// Helper function to convert Sri Lankan mobile to international format (947XXXXXXXX)
+const formatMobileForSMS = (mobile) => {
+  // If starts with 0, remove it and add 94
+  if (mobile.startsWith("0")) {
+    return "94" + mobile.slice(1);
+  }
+  // If already starts with 94, return as is
+  if (mobile.startsWith("94")) {
+    return mobile;
+  }
+  // Otherwise, add 94 prefix
+  return "94" + mobile;
+};
 
 const mobile = async (req, res) => {
   try {
     const { mobile, email } = req.body;
-    let newMobile;
-    if(mobile.startsWith("0")) {
-      newMobile = mobile.slice(1);
-      newMobile = "94" + newMobile;
-    } else {
-      newMobile = mobile;
-      newMobile = "94" + newMobile;
-    }
-    
-    if (!newMobile) {
+
+    if (!mobile) {
       return res.status(400).json({
         success: false,
         message: "Mobile number is required",
       });
+    }
 
-    } else if (!validMobileRegex.test(newMobile)) {
+    // Validate Sri Lankan mobile number format
+    if (!validSriLankanMobileRegex.test(mobile)) {
       return res.status(400).json({
         success: false,
-        message: "Please enter a valid mobile number",
+        message: "Please enter a valid Sri Lankan mobile number (07X XXXXXXX)",
       });
     }
+
+    // Convert to international format for SMS gateway (947XXXXXXXX)
+    const newMobile = formatMobileForSMS(mobile);
     
     const exsistingSeller = await User.findByMobile(newMobile);
     if(exsistingSeller) {
@@ -81,26 +93,24 @@ const mobile = async (req, res) => {
 const verifyOtp = async (req, res) => {
   try {
     const { mobile, email, verificationCode } = req.body;
-    let newMobile;
-    if(mobile.startsWith("0")) {
-      newMobile = mobile.slice(1);
-      newMobile = "94" + newMobile;
-    } else {
-      newMobile = mobile;
-      newMobile = "94" + newMobile;
-    }
 
-    if (!newMobile || !email || !verificationCode) {
+    if (!mobile || !email || !verificationCode) {
       return res.status(400).json({
         success: false,
         message: "Mobile number, email and verification code are required",
       });
-    } else if (!validMobileRegex.test(newMobile)) {
+    }
+
+    // Validate Sri Lankan mobile number format
+    if (!validSriLankanMobileRegex.test(mobile)) {
       return res.status(400).json({
         success: false,
-        message: "Not a valid mobile number",
+        message: "Please enter a valid Sri Lankan mobile number (07X XXXXXXX)",
       });
     }
+
+    // Convert to international format for database lookup (947XXXXXXXX)
+    const newMobile = formatMobileForSMS(mobile);
 
     const seller = await User.findByMobile(newMobile);
     if (!seller || seller.user_email !== email) {

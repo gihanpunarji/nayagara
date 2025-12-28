@@ -615,16 +615,13 @@ function SellerRegistration() {
                     </div>
                     <input
                       type="tel"
-                      placeholder="77 123 4567"
+                      placeholder="077 123 4567"
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                       required
                       className="flex-1 px-4 py-3 border border-gray-300 border-l-0 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Enter your mobile number without the country code
-                  </p>
                 </div>
                 
                 <div className="flex gap-4 pt-4">

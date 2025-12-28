@@ -9,7 +9,7 @@ import {
   ChevronRight,
   RefreshCw,
   MoreVertical,
-
+  AlertCircle,
   CheckCircle,
   Image as ImageIcon,
   XIcon as X,
@@ -597,30 +597,6 @@ const Categories = () => {
               className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
             />
           </div>
-
-          {/* Bulk Actions */}
-          {selectedCategories.length > 0 && (
-            <div className="mt-4 flex items-center justify-between p-3 bg-red-50 rounded-lg border border-red-200">
-              <span className="text-sm text-red-700">
-                {selectedCategories.length} categor{selectedCategories.length > 1 ? 'ies' : 'y'} selected
-              </span>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handleBulkAction('activate')}
-                  className="px-3 py-1 bg-green-600 text-white rounded text-sm hover:bg-green-700 transition-colors"
-                >
-                  Bulk Activate
-                </button>
-                
-                <button
-                  onClick={() => handleBulkAction('delete')}
-                  className="px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
-          )}
         </div>
 
         {/* Categories Table */}

@@ -55,7 +55,7 @@ const Footer = () => {
               <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">How to Sell</a>
               <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Payment Methods</a>
               <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Shipping Info</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Return Policy</a>
+              <a href="/refund-policy" className="block text-gray-600 hover:text-primary-600 transition-colors">Refund Policy</a>
             </div>
           </div>
           
@@ -114,9 +114,9 @@ const Footer = () => {
             © 2025 Nayagara.lk. All rights reserved. 
           </p>
           <div className="flex flex-wrap items-center gap-6 text-sm">
-            <a href="#" className="text-gray-500 hover:text-primary-600 transition-colors">Privacy Policy</a>
-            <a href="#" className="text-gray-500 hover:text-primary-600 transition-colors">Terms of Service</a>
-            <a href="#" className="text-gray-500 hover:text-primary-600 transition-colors">Cookie Policy</a>
+            <a href="/privacy-policy" className="text-gray-500 hover:text-primary-600 transition-colors">Privacy Policy</a>
+            <a href="/terms-conditions" className="text-gray-500 hover:text-primary-600 transition-colors">Terms & Conditions</a>
+            <a href="/refund-policy" className="text-gray-500 hover:text-primary-600 transition-colors">Refund Policy</a>
             <div className="flex items-center space-x-2 text-gray-500">
               <Globe className="w-4 h-4" />
               <span>Design and developed by ZipZipy PVT LTD</span>

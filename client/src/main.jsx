@@ -32,6 +32,9 @@ import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
 import ChatView from "./components/customer/pages/ChatView.jsx";
 import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
 import HelpCenter from "./components/customer/pages/HelpCenter.jsx";
+import RefundPolicy from "./components/customer/pages/RefundPolicy.jsx";
+import PrivacyPolicy from "./components/customer/pages/PrivacyPolicy.jsx";
+import TermsConditions from "./components/customer/pages/TermsConditions.jsx";
 
 // Advertisement Components
 import PostAd from "./components/customer/pages/PostAd.jsx";
@@ -441,6 +444,30 @@ createRoot(document.getElementById("root")).render(
                           element={
                             <PageWrapper>
                               <NayagaraWaterHome />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/refund-policy"
+                          element={
+                            <PageWrapper>
+                              <RefundPolicy />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/privacy-policy"
+                          element={
+                            <PageWrapper>
+                              <PrivacyPolicy />
+                            </PageWrapper>
+                          }
+                        />
+                        <Route
+                          path="/terms-conditions"
+                          element={
+                            <PageWrapper>
+                              <TermsConditions />
                             </PageWrapper>
                           }
                         />

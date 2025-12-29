@@ -245,6 +245,14 @@ const login = async (req, res, role = "customer") => {
       });
     }
 
+    // Check if customer account is suspended
+    if (user.user_status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended. Please contact support for assistance."
+      });
+    }
+
     const token = generateToken(user.user_id, user.user_type);
     const { first_name, last_name, user_role } = user;
 
@@ -303,6 +311,15 @@ const sellerLogin = async (req, res, role = "seller") => {
       return res
         .status(403)
         .json({ success: false, message: "This account is not registered as a seller. Please use customer login or register as a seller." });
+    }
+
+    console.log("User status:", user.user_status);
+    // Check if seller account is suspended
+    if (user.user_status === 'suspended') {
+      return res.status(403).json({
+        success: false,
+        message: "Your account has been suspended. Please contact support for assistance."
+      });
     }
 
     const isMobileVerified = await User.isMobileVerified(emailOrMobile);
@@ -369,10 +386,13 @@ const forgotPassword = async (req, res) => {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     await transporter.sendMail({
-      from: `"Support" <${process.env.EMAIL_USER}>`,
+      from: `"Nayagara Support" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "Password Reset Request",
       html: `<!DOCTYPE html>
@@ -756,10 +776,6 @@ const forgotPassword = async (req, res) => {
         
         <!-- Content -->
         <div class="content">
-            <!-- Lock Icon -->
-            <div class="icon-section">
-                <div class="lock-icon"></div>
-            </div>
             
             <div class="greeting">Hello there!</div>
             
@@ -935,17 +951,20 @@ const sendEmail = async (req, res) => {
 
     const transporter = nodeMailer.createTransport({
       host: 'smtp.hostinger.com',
-      port: 465,
-      secure: true,
+      port: 587,
+      secure: false,
       auth: {
         user: process.env.EMAIL_USERNAME,
         pass: process.env.EMAIL_PASSWORD,
       },
+      tls: {
+        rejectUnauthorized: false
+      }
     });
 
     // Send email
     await transporter.sendMail({
-      from: `"Zipzipy" <${process.env.EMAIL_USER}>`,
+      from: `"Nayagara Admin" <${process.env.EMAIL_USERNAME}>`,
       to: email,
       subject: "Admin Verification Code",
       html: `

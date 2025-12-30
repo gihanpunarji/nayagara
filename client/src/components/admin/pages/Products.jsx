@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAdminProducts, updateProductStatus } from '../../../api/admin';
+import { getAdminProducts, updateProductStatus, deleteProduct } from '../../../api/admin';
 import {
   Package,
   Search,
@@ -16,7 +16,8 @@ import {
   Calendar,
   Image as ImageIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
 
@@ -138,12 +139,32 @@ const Products = () => {
       // Optimistic update locally or refetch
       // Optimistic:
       setProducts(prev => prev.map(p => p.product_id === productId ? { ...p, product_status: newStatus } : p));
-      
+
       // Also refetch to be safe/sync
-      // setRefreshTrigger(prev => prev + 1); 
+      // setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Failed to update product status', error);
       alert('Failed to update status');
+    }
+  };
+
+  const handleDeleteProduct = async (productId, productTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${productTitle}"?\n\nThis action cannot be undone. The product will only be deleted if it has no orders.`)) {
+      return;
+    }
+
+    try {
+      const response = await deleteProduct(productId);
+
+      if (response.success) {
+        // Remove from local state
+        setProducts(prev => prev.filter(p => p.product_id !== productId));
+        alert('Product deleted successfully');
+      }
+    } catch (error) {
+      console.error('Failed to delete product', error);
+      const errorMessage = error.message || 'Failed to delete product';
+      alert(errorMessage);
     }
   };
 
@@ -266,13 +287,19 @@ const Products = () => {
                 </button>
               )}
                {(product.product_status === 'inactive' || product.product_status === 'suspended') && (
-                <button 
+                <button
                   onClick={() => handleStatusUpdate(product.product_id, 'active')}
                   className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
                 >
                   <RefreshCw className="w-4 h-4" /><span>Re-activate</span>
                 </button>
               )}
+              <button
+                onClick={() => handleDeleteProduct(product.product_id, product.product_title)}
+                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-100"
+              >
+                <Trash2 className="w-4 h-4" /><span>Delete Product</span>
+              </button>
             </div>
           </div>
         </div>

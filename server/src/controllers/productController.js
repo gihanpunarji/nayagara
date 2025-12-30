@@ -968,6 +968,65 @@ const updateProductStatus = async (req, res) => {
   }
 };
 
+// Delete product (Admin only)
+const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required"
+      });
+    }
+
+    // Check if product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    // Check product relations
+    const relations = await Product.checkProductRelations(productId);
+
+    if (!relations.canDelete) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete this product. It has ${relations.orderCount} order(s) associated with it. Products with orders cannot be deleted to maintain order history.`,
+        data: {
+          orderCount: relations.orderCount,
+          reviewCount: relations.reviewCount
+        }
+      });
+    }
+
+    // Delete the product
+    const affectedRows = await Product.delete(productId);
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found or already deleted"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Product deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete product error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error"
+    });
+  }
+};
+
 module.exports = {
   createProduct,
   getSellerProducts,
@@ -977,5 +1036,6 @@ module.exports = {
   filterProducts,
   getPublicProductById,
   getAdminProducts,
-  updateProductStatus
+  updateProductStatus,
+  deleteProduct
 }

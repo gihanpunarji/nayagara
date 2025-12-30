@@ -165,6 +165,57 @@ class Product {
     return result.affectedRows;
   }
 
+  // Check if product has any orders or critical relationships
+  static async checkProductRelations(productId) {
+    const connection = getConnection();
+
+    // Check for orders containing this product
+    const [orderItems] = await connection.execute(
+      "SELECT COUNT(*) as count FROM order_items WHERE product_id = ?",
+      [productId]
+    );
+
+    // Check for reviews (if reviews table exists)
+    let reviewCount = 0;
+    try {
+      const [reviews] = await connection.execute(
+        "SELECT COUNT(*) as count FROM reviews WHERE product_id = ?",
+        [productId]
+      );
+      reviewCount = reviews[0].count;
+    } catch (error) {
+      // Reviews table might not exist, ignore error
+    }
+
+    return {
+      hasOrders: orderItems[0].count > 0,
+      orderCount: orderItems[0].count,
+      hasReviews: reviewCount > 0,
+      reviewCount: reviewCount,
+      canDelete: orderItems[0].count === 0 // Can delete if no orders
+    };
+  }
+
+  // Delete product (only if no orders exist)
+  static async delete(productId) {
+    const connection = getConnection();
+
+    // First check if product can be deleted
+    const relations = await this.checkProductRelations(productId);
+
+    if (!relations.canDelete) {
+      throw new Error(`Cannot delete product. It has ${relations.orderCount} order(s) associated with it.`);
+    }
+
+    // Delete product (CASCADE will handle product_images, cart, chat_conversations)
+    const [result] = await connection.execute(
+      "DELETE FROM products WHERE product_id = ?",
+      [productId]
+    );
+
+    return result.affectedRows;
+  }
+
   // Helper method to generate slug from title
   static generateSlug(title) {
     return title

@@ -5,7 +5,7 @@ const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminD
 const { getAllOrders } = require("../controllers/orderController");
 const { getAnalytics } = require("../controllers/analyticsController");
 const { getNotifications } = require("../controllers/notificationController");
-const { getAdminProducts, updateProductStatus } = require("../controllers/productController");
+const { getAdminProducts, updateProductStatus, deleteProduct } = require("../controllers/productController");
 const { getAllReviews, updateReviewStatus, deleteReview } = require("../controllers/reviewController");
 
 const router = express.Router();
@@ -47,6 +47,7 @@ router.get("/dashboard", getAdminDashboardData);
 router.get("/orders", getAllOrders);
 router.get("/products", getAdminProducts);
 router.patch("/products/:productId/status", updateProductStatus);
+router.delete("/products/:productId", deleteProduct);
 router.get("/categories", getAdminCategories);
 router.get("/notifications", getNotifications);
 router.post("/categories", categoryIconUpload.fields([

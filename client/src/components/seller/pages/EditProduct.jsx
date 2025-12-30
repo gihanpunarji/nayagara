@@ -29,6 +29,8 @@ const EditProduct = () => {
             title: product.product_title,
             description: product.product_description,
             price: product.price.toString(),
+            market_price: product.market_price.toString(),
+            cost: product.cost.toString(),
             category: product.category_id.toString(),
             subcategory: product.category_id.toString(), // Using same as category_id since API stores subcategory_id as category_id
             stock: product.stock_quantity.toString(),

@@ -44,13 +44,13 @@ const ProductGrid = () => {
             image: product.images?.length > 0 
               ? product.images[0].image_url 
               : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
-            rating: 4.5, // Placeholder if not in API
+            rating: 0.0, // Placeholder if not in API
             reviews: Math.floor(Math.random() * 500) + 50, // Placeholder
             badge: product.is_featured ? 'Featured' : null,
             discount: product.market_price && product.market_price > product.price 
               ? Math.round(((product.market_price - product.price) / product.market_price) * 100)
               : null,
-            shipping: 'Free Shipping', // Placeholder or logic based on price
+            shipping: '', // Placeholder or logic based on price
             location: product.location_city_name || 'Sri Lanka'
           }));
 

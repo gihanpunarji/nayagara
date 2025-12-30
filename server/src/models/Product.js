@@ -9,6 +9,7 @@ class Product {
     subcategoryId = null,
     sellerId,
     price,
+    market_price,
     cost,
     currencyCode = 'LKR',
     weightKg,
@@ -23,21 +24,21 @@ class Product {
     expiresAt
   }) {
     const connection = getConnection();
-    
+
     // Check if subcategory_id column exists, if not, create product without it
     try {
       const [result] = await connection.execute(
         `INSERT INTO products (
-          product_title, product_slug, product_description, category_id, subcategory_id, seller_id, 
-          price, weight_kg, stock_quantity, product_status, 
-          is_featured, is_promoted, location_city_id, meta_title, meta_description, 
-          product_attributes, created_at, updated_at, expires_at, cost
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          product_title, product_slug, product_description, category_id, subcategory_id, seller_id,
+          price, market_price, cost, weight_kg, stock_quantity, product_status,
+          is_featured, is_promoted, location_city_id, meta_title, meta_description,
+          product_attributes, created_at, updated_at, expires_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           productTitle, productSlug, productDescription, categoryId, subcategoryId, sellerId,
-          price, weightKg, stockQuantity, productStatus,
+          price, market_price, cost, weightKg, stockQuantity, productStatus,
           isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-          productAttributes, new Date(), new Date(), expiresAt, cost
+          productAttributes, new Date(), new Date(), expiresAt
         ]
       );
       return result;
@@ -47,16 +48,16 @@ class Product {
         console.log('Subcategory field not found, using original schema...');
         const [result] = await connection.execute(
           `INSERT INTO products (
-            product_title, product_slug, product_description, category_id, seller_id, 
-            price, weight_kg, stock_quantity, product_status, 
-            is_featured, is_promoted, location_city_id, meta_title, meta_description, 
-            product_attributes, created_at, updated_at, expires_at, cost
+            product_title, product_slug, product_description, category_id, seller_id,
+            price, market_price, cost, weight_kg, stock_quantity, product_status,
+            is_featured, is_promoted, location_city_id, meta_title, meta_description,
+            product_attributes, created_at, updated_at, expires_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             productTitle, productSlug, productDescription, categoryId, sellerId,
-            price, weightKg, stockQuantity, productStatus,
+            price, market_price, cost, weightKg, stockQuantity, productStatus,
             isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-            productAttributes, new Date(), new Date(), expiresAt, cost
+            productAttributes, new Date(), new Date(), expiresAt
           ]
         );
         return result;
@@ -92,38 +93,39 @@ class Product {
     return rows[0];
   }
 
-  static async update({ 
-    productId, 
-    productTitle, 
-    productSlug, 
-    productDescription, 
-    categoryId, 
-    price, 
+  static async update({
+    productId,
+    productTitle,
+    productSlug,
+    productDescription,
+    categoryId,
+    price,
+    market_price,
     cost,
-    weightKg, 
-    stockQuantity, 
-    productStatus, 
-    isFeatured, 
-    isPromoted, 
-    locationCityId, 
-    metaTitle, 
-    metaDescription, 
+    weightKg,
+    stockQuantity,
+    productStatus,
+    isFeatured,
+    isPromoted,
+    locationCityId,
+    metaTitle,
+    metaDescription,
     productAttributes,
-    expiresAt 
+    expiresAt
   }) {
     const connection = getConnection();
     const [result] = await connection.execute(
-      `UPDATE products SET 
-        product_title = ?, product_slug = ?, product_description = ?, category_id = ?, 
-        price = ?, weight_kg = ?, stock_quantity = ?, product_status = ?, 
-        is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?, 
-        product_attributes = ?, updated_at = ?, expires_at = ?, cost = ?
+      `UPDATE products SET
+        product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
+        price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+        is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+        product_attributes = ?, updated_at = ?, expires_at = ?
        WHERE product_id = ?`,
       [
         productTitle, productSlug, productDescription, categoryId,
-        price, weightKg, stockQuantity, productStatus,
+        price, market_price, cost, weightKg, stockQuantity, productStatus,
         isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-        productAttributes, new Date(), expiresAt, cost, productId
+        productAttributes, new Date(), expiresAt, productId
       ]
     );
     return result.affectedRows;

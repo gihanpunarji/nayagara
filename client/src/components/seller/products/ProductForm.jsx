@@ -568,37 +568,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
           </div>
         </div>
 
-        {/* Dynamic Fields */}
-        {formData.category && formData.subcategory && (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {subCategories.find(sub => sub.sub_category_id == formData.subcategory)?.sub_category_name || 'Category'} Details
-              </h2>
-              <div className="flex items-center space-x-2">
-                {isEdit && (
-                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    Cannot be changed when editing
-                  </span>
-                )}
-                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                  All fields optional
-                </span>
-              </div>
-            </div>
-
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-700">
-                💡 <strong>Tip:</strong> These fields are optional. You can leave them empty and include all product details in the description instead.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {renderDynamicFields()}
-            </div>
-          </div>
-        )}
-
         {/* Images */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Product Images</h2>

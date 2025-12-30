@@ -186,7 +186,8 @@ export const ProductView = () => {
         shortDescription:
           product.product_description || "No description available",
         price: parseFloat(product.price) || 0,
-        originalPrice: parseFloat(product.cost) || 0,
+        marketPrice: parseFloat(product.market_price) || 0,
+        originalPrice: parseFloat(product.market_price) || 0,
         cost: parseFloat(product.cost) || 0,
         rating: 4.5, // Default rating - you can implement actual ratings later
         reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
@@ -546,10 +547,20 @@ export const ProductView = () => {
               </div>
 
               {/* Price */}
-              <div className="flex items-center space-x-3">
-                <span className="text-3xl font-bold text-gray-900">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold text-primary-600">
                   Rs. {processedProduct.price.toLocaleString()}
-                </span>         
+                </span>
+                {processedProduct.marketPrice > 0 && processedProduct.marketPrice > processedProduct.price && (
+                  <>
+                    <span className="text-xl text-gray-400 line-through">
+                      Rs. {processedProduct.marketPrice.toLocaleString()}
+                    </span>
+                    <span className="bg-red-100 text-red-600 text-sm font-bold px-2 py-1 rounded">
+                      {Math.round(((processedProduct.marketPrice - processedProduct.price) / processedProduct.marketPrice) * 100)}% OFF
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Actions */}

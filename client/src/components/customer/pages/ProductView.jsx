@@ -153,7 +153,6 @@ export const ProductView = () => {
         price: parseFloat(product.price) || 0,
         originalPrice: parseFloat(product.cost) || 0,
         cost: parseFloat(product.cost) || 0,
-        discount: 0, // No discount calculation without original price
         rating: 4.5, // Default rating - you can implement actual ratings later
         reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
         images:

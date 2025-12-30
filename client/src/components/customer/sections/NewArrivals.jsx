@@ -33,7 +33,8 @@ const NewArrivals = () => {
 
   useEffect(() => {
     if (products.length > 0) {
-      setDisplayProducts([...products, ...products.slice(0, 5)]);
+      // Don't duplicate products - just show them once
+      setDisplayProducts(products);
     }
   }, [products]);
 
@@ -45,25 +46,28 @@ const NewArrivals = () => {
 
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    if (!scrollContainer || products.length === 0) return;
 
     let scrollInterval;
 
     const startScrolling = () => {
       scrollInterval = setInterval(() => {
-        if (scrollContainer.scrollLeft >= (products.length * 160)) { // 160 is the width of the card (w-40)
-            scrollContainer.scrollTo({ left: 0, behavior: 'auto' });
+        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+
+        // If we've reached the end, loop back to start
+        if (scrollContainer.scrollLeft >= maxScroll - 10) {
+          scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
         } else {
-            scroll(1);
+          scroll(1);
         }
-      }, 100);
+      }, 30);
     };
 
     const stopScrolling = () => {
       clearInterval(scrollInterval);
     };
 
-    if (!isHovering) {
+    if (!isHovering && products.length > 0) {
       startScrolling();
     }
 
@@ -105,9 +109,9 @@ const NewArrivals = () => {
           ref={scrollContainerRef}
         >
           <div className="flex space-x-2 sm:space-x-4 pb-2">
-            {displayProducts.map((product, index) => (
+            {displayProducts.map((product) => (
               <Link
-                key={`${product.product_id}-${index}`}
+                key={product.product_id}
                 to={`/product/${product.product_id}`}
                 className="bg-white rounded-xl p-2 sm:p-4 text-gray-800 hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0 w-40 sm:w-56"
               >

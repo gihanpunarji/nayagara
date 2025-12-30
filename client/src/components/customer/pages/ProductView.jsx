@@ -71,6 +71,41 @@ export const ProductView = () => {
     }
   };
 
+  // Handle share product
+  const handleShare = async () => {
+    if (!product) return;
+
+    const shareData = {
+      title: product.product_title,
+      text: `Check out ${product.product_title} - Rs. ${parseFloat(product.price).toLocaleString()}`,
+      url: window.location.href
+    };
+
+    try {
+      // Check if Web Share API is supported (mobile devices)
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Product link copied to clipboard!');
+      }
+    } catch (error) {
+      // User cancelled share or other error
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        // Fallback: try to copy to clipboard
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          alert('Product link copied to clipboard!');
+        } catch (clipboardError) {
+          console.error('Clipboard error:', clipboardError);
+          alert('Unable to share. Please copy the URL manually.');
+        }
+      }
+    }
+  };
+
   // Get cart info for this product
   const productId = product?.product_id;
   const inCart = productId ? isInCart(productId) : false;
@@ -506,7 +541,11 @@ export const ProductView = () => {
                   <Zap className="w-5 h-5" />
                   <span>Buy Now</span>
                 </button>
-                <button className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
+                <button
+                  onClick={handleShare}
+                  className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors hover:scale-105 active:scale-95"
+                  title="Share this product"
+                >
                   <Share2 className="w-5 h-5" />
                 </button>
               </div>

@@ -513,7 +513,7 @@ export const ProductView = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   {processedProduct.name}
                 </h1>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
                   {processedProduct.shortDescription}
                 </p>
               </div>

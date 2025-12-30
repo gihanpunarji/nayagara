@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Grid, List, Filter, ArrowUpDown, ChevronDown, Star, Heart,
-  ShoppingCart, MapPin, Truck, Eye, TrendingUp, Zap, Gift, Loader2
+  ShoppingCart, MapPin, Eye, Loader2
 } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { publicApi } from '../../../api/axios';
 import { useCart } from '../../../context/CartContext';
+import AdvancedFilters from '../layout/AdvancedFilters';
 
 const ShopPage = () => {
   const [searchParams] = useSearchParams();
@@ -27,6 +28,12 @@ const ShopPage = () => {
   const [selectedSubcategory, setSelectedSubcategory] = useState(subcategoryFromUrl);
   const [categories, setCategories] = useState([]);
   const [subcategories, setSubcategories] = useState([]);
+
+  // Applied filters from AdvancedFilters
+  const [appliedFilters, setAppliedFilters] = useState({
+    priceMin: priceMinFromUrl,
+    priceMax: priceMaxFromUrl
+  });
 
   // Products state
   const [products, setProducts] = useState([]);
@@ -56,11 +63,11 @@ const ShopPage = () => {
         const res = await publicApi.get('/categories-with-subcategories');
         const categoriesData = res.data.data || [];
         setCategories(categoriesData);
-        
+
         // Set subcategories based on selected category
         if (selectedCategory && selectedCategory !== 'all') {
-          const selectedCat = categoriesData.find(cat => 
-            cat.category_slug === selectedCategory || 
+          const selectedCat = categoriesData.find(cat =>
+            cat.category_slug === selectedCategory ||
             cat.category_name.toLowerCase() === selectedCategory.toLowerCase()
           );
           if (selectedCat && selectedCat.subcategories) {
@@ -87,9 +94,14 @@ const ShopPage = () => {
       if (searchQuery) params.append('search', searchQuery);
       if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
       if (selectedSubcategory) params.append('subcategory', selectedSubcategory);
-      if (districtFromUrl) params.append('district', districtFromUrl);
-      if (priceMinFromUrl) params.append('priceMin', priceMinFromUrl);
-      if (priceMaxFromUrl) params.append('priceMax', priceMaxFromUrl);
+
+      // Add all applied filters from AdvancedFilters
+      Object.keys(appliedFilters).forEach(key => {
+        if (appliedFilters[key] && appliedFilters[key] !== '' && appliedFilters[key] !== 'All' && appliedFilters[key] !== 'Any') {
+          params.append(key, appliedFilters[key]);
+        }
+      });
+
       if (sellerFromUrl) {
         params.append('seller', sellerFromUrl);
         // Trigger profile view count (fire and forget)
@@ -134,7 +146,7 @@ const ShopPage = () => {
     }
 
     setLoading(false);
-  }, [searchQuery, selectedCategory, selectedSubcategory, districtFromUrl, priceMinFromUrl, priceMaxFromUrl, sortBy, sellerFromUrl]);
+  }, [searchQuery, selectedCategory, selectedSubcategory, appliedFilters, sortBy, sellerFromUrl]);
 
   // Load more products for infinite scroll
   const loadMoreProducts = useCallback(async () => {
@@ -171,7 +183,12 @@ const ShopPage = () => {
   }, [loadMoreProducts]);
 
   const capitalizeFirstLetter = (string) => {
-    return string.charAt(0).toUpperCase() + string.slice(1);
+    if (!string) return '';
+    // Convert slug to proper name (e.g., "fashion-beauty" -> "Fashion Beauty")
+    return string
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
   };
 
   const ProductCard = ({ product, viewMode }) => {
@@ -297,8 +314,49 @@ const ShopPage = () => {
     );
   };
 
+  // Handle filters from AdvancedFilters component
+  const handleFiltersApply = (filters) => {
+    console.log('Filters applied:', filters);
+
+    // Store price filters
+    const newFilters = {
+      priceMin: filters.priceMin || '',
+      priceMax: filters.priceMax || ''
+    };
+
+    console.log('New filters:', newFilters);
+    setAppliedFilters(newFilters);
+
+    // If category changed in filter, update it
+    if (filters.category && filters.category !== 'All Categories') {
+      const categorySlug = filters.category.toLowerCase().replace(/\s+/g, '-');
+      console.log('Category changed to:', categorySlug);
+      setSelectedCategory(categorySlug);
+    }
+
+    // Reset pagination when filters change
+    setProducts([]);
+    setPage(1);
+    setHasMore(true);
+  };
+
+  // Format categories for AdvancedFilters
+  const mainCategories = categories.map(cat => ({
+    name: cat.category_name,
+    slug: cat.category_slug || cat.category_name.toLowerCase().replace(/\s+/g, '-')
+  }));
+
   return (
     <div className="min-h-screen bg-primary-50">
+      {/* Advanced Filters Modal */}
+      <AdvancedFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        onFiltersApply={handleFiltersApply}
+        selectedCategory={selectedCategory === 'all' ? 'All Categories' : capitalizeFirstLetter(selectedCategory)}
+        mainCategories={mainCategories}
+      />
+
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
@@ -313,6 +371,15 @@ const ShopPage = () => {
               </div>
 
               <div className="flex items-center space-x-2 sm:space-x-4">
+                {/* Filter Button - Both Mobile & Desktop */}
+                <button
+                  onClick={() => setShowFilters(true)}
+                  className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:border-primary-500 transition-colors"
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>Filters</span>
+                </button>
+
                 <div className="relative">
                   <button
                     onClick={() => setShowSortMenu(!showSortMenu)}
@@ -354,91 +421,102 @@ const ShopPage = () => {
                 </div>
               </div>
             </div>
-
-            {/* Category Filter */}
-            <div className="space-y-3">
-              <div className="flex flex-wrap gap-2">
-                <button
-                  key="all"
-                  onClick={() => {
-                    setSelectedCategory('all');
-                    setSelectedSubcategory('');
-                    setSubcategories([]);
-                  }}
-                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === 'all'
-                      ? 'bg-primary-500 text-white'
-                      : 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 border border-gray-300'
-                  }`}
-                >
-                  All Categories
-                </button>
-                {categories.map(category => (
-                  <button
-                    key={category.category_id}
-                    onClick={() => {
-                      const categorySlug = category.category_slug || category.category_name.toLowerCase().replace(/\s+/g, '-');
-                      setSelectedCategory(categorySlug);
-                      setSelectedSubcategory('');
-                      setSubcategories(category.subcategories || []);
-                    }}
-                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedCategory === (category.category_slug || category.category_name.toLowerCase().replace(/\s+/g, '-'))
-                        ? 'bg-primary-500 text-white'
-                        : 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 border border-gray-300'
-                    }`}
-                  >
-                    {category.category_name}
-                  </button>
-                ))}
-              </div>
-
-              {/* Subcategory Filter */}
-              {subcategories.length > 0 && (
-                <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-200">
-                  <span className="text-sm text-gray-500 py-2">Subcategories:</span>
-                  <button
-                    onClick={() => setSelectedSubcategory('')}
-                    className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                      !selectedSubcategory
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-                    }`}
-                  >
-                    All
-                  </button>
-                  {subcategories.map(subcat => (
-                    <button
-                      key={subcat.sub_category_id}
-                      onClick={() => setSelectedSubcategory(subcat.sub_category_id.toString())}
-                      className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
-                        selectedSubcategory === subcat.sub_category_id.toString()
-                          ? 'bg-blue-500 text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-                      }`}
-                    >
-                      {subcat.sub_category_name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </div>
 
-      {/* Products Grid */}
-      <div className="max-w-[85%] mx-auto px-0 sm:px-6 lg:px-8 py-8">
-        <div className="text-gray-600 mb-4">
-          <p>Found {totalProducts} product{totalProducts !== 1 ? 's' : ''}</p>
-          {searchQuery && <p> for "{searchQuery}"</p>}
-          {selectedCategory !== 'all' && <p> in {capitalizeFirstLetter(selectedCategory)}</p>}
+      {/* Category & Subcategory Filters */}
+      <div className="bg-white border-b">
+        <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          {/* Main Categories */}
+          <div className="mb-4">
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Categories</h3>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={() => {
+                  setSelectedCategory('all');
+                  setSelectedSubcategory('');
+                  setSubcategories([]);
+                }}
+                className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  selectedCategory === 'all'
+                    ? 'bg-primary-500 text-white'
+                    : 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 border border-gray-300'
+                }`}
+              >
+                All Categories
+              </button>
+              {categories.map(category => (
+                <button
+                  key={category.category_id}
+                  onClick={() => {
+                    const categorySlug = category.category_slug || category.category_name.toLowerCase().replace(/\s+/g, '-');
+                    setSelectedCategory(categorySlug);
+                    setSelectedSubcategory('');
+                    setSubcategories(category.subcategories || []);
+                  }}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === (category.category_slug || category.category_name.toLowerCase().replace(/\s+/g, '-'))
+                      ? 'bg-primary-500 text-white'
+                      : 'bg-white text-gray-600 hover:bg-primary-50 hover:text-primary-600 border border-gray-300'
+                  }`}
+                >
+                  {category.category_name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Subcategories */}
+          {subcategories.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Subcategories</h3>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  onClick={() => setSelectedSubcategory('')}
+                  className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    !selectedSubcategory
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  All
+                </button>
+                {subcategories.map(subcategory => (
+                  <button
+                    key={subcategory.sub_category_id}
+                    onClick={() => setSelectedSubcategory(subcategory.sub_category_id.toString())}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                      selectedSubcategory === subcategory.sub_category_id.toString()
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                    }`}
+                  >
+                    {subcategory.sub_category_name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
-        <div className={`grid gap-6 ${
-          viewMode === 'grid'
-            ? 'grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4'
-            : 'grid-cols-1'
-        }`}>
+      </div>
+
+      {/* Products Grid with Sidebar */}
+      <div className="max-w-[85%] mx-auto px-0 sm:px-6 lg:px-8 py-8">
+        <div className="lg:grid lg:grid-cols-12 lg:gap-8">
+        
+          {/* Products Section */}
+          <div className="lg:col-span-9">
+            <div className="text-gray-600 mb-4">
+              <p>Found {totalProducts} product{totalProducts !== 1 ? 's' : ''}</p>
+              {searchQuery && <p> for "{searchQuery}"</p>}
+              {selectedCategory !== 'all' && <p> in {capitalizeFirstLetter(selectedCategory)}</p>}
+            </div>
+            <div className={`grid gap-6 ${
+              viewMode === 'grid'
+                ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+                : 'grid-cols-1'
+            }`}>
           {products.map(product => (
             <ProductCard key={product.product_id} product={product} viewMode={viewMode} />
           ))}
@@ -459,16 +537,18 @@ const ShopPage = () => {
           </div>
         )}
 
-        {/* Empty State */}
-        {!loading && products.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <Filter className="w-12 h-12 text-gray-400" />
-            </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600">Try adjusting your filters or search terms</p>
+            {/* Empty State */}
+            {!loading && products.length === 0 && (
+              <div className="text-center py-16">
+                <div className="w-24 h-24 bg-gray-200 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Filter className="w-12 h-12 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
+                <p className="text-gray-600">Try adjusting your filters or search terms</p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );

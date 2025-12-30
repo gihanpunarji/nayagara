@@ -466,7 +466,9 @@ const getPublicProducts = async (req, res) => {
       category,
       subcategory,
       sort = 'newest',
-      featured = false
+      featured = false,
+      priceMin,
+      priceMax
     } = req.query;
 
     const offset = (page - 1) * limit;
@@ -502,6 +504,17 @@ const getPublicProducts = async (req, res) => {
     if (req.query.seller) {
       whereClause += ` AND p.seller_id = ?`;
       queryParams.push(req.query.seller);
+    }
+
+    // Add price range filter
+    if (priceMin && !isNaN(priceMin)) {
+      whereClause += ` AND p.price >= ?`;
+      queryParams.push(parseFloat(priceMin));
+    }
+
+    if (priceMax && !isNaN(priceMax)) {
+      whereClause += ` AND p.price <= ?`;
+      queryParams.push(parseFloat(priceMax));
     }
 
     // Get total count

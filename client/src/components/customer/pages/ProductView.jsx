@@ -381,15 +381,56 @@ export const ProductView = () => {
 
   return (
     <div className="min-h-screen max-w-7xl mx-auto bg-gray-50">
-      {/* Breadcrumb */}
+      {/* Breadcrumb - Mobile */}
       <div className="bg-white border-b border-gray-200 lg:hidden">
         <div className="px-4 py-3">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 overflow-x-auto">
+            <Link to="/" className="hover:text-primary-600 whitespace-nowrap">
+              Home
+            </Link>
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            <Link
+              to={`/shop?category=${product?.category_slug || ''}`}
+              className="hover:text-primary-600 whitespace-nowrap"
+            >
+              {processedProduct.category}
+            </Link>
+            {processedProduct.subCategory && processedProduct.subCategory !== 'General' && (
+              <>
+                <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                <span className="text-gray-500 whitespace-nowrap">{processedProduct.subCategory}</span>
+              </>
+            )}
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-900 truncate">
+              {processedProduct.name}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Breadcrumb - Desktop */}
+      <div className="hidden lg:block bg-white border-b border-gray-200">
+        <div className="px-4 py-4 max-w-7xl mx-auto">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-primary-600">
+            <Link to="/" className="hover:text-primary-600 transition-colors">
               Home
             </Link>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 truncate">
+            <Link
+              to={`/shop?category=${product?.category_slug || ''}`}
+              className="hover:text-primary-600 transition-colors"
+            >
+              {processedProduct.category}
+            </Link>
+            {processedProduct.subCategory && processedProduct.subCategory !== 'General' && (
+              <>
+                <ChevronRight className="w-4 h-4" />
+                <span className="text-gray-500">{processedProduct.subCategory}</span>
+              </>
+            )}
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-gray-900 font-medium">
               {processedProduct.name}
             </span>
           </div>

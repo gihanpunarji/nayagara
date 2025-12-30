@@ -71,7 +71,7 @@ const createProduct = async (req, res) => {
       currencyCode: 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : null,
       stockQuantity: parseInt(stock),
-      productStatus: 'pending', // All products start as pending approval
+      productStatus: 'pending_approval', // All products start as pending approval
       isFeatured: 0,
       isPromoted: 0,
       locationCityId: locationCityId || null,
@@ -99,7 +99,7 @@ const createProduct = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Product created successfully",
+      message: "Product created successfully and submitted for admin approval. It will be visible on the website once approved.",
       data: {
         product: {
           ...createdProduct,
@@ -471,7 +471,7 @@ const getPublicProducts = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    let whereClause = ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
+    let whereClause = ` WHERE p.product_status = 'active'`;
     const queryParams = [];
 
     // Add search filter
@@ -655,9 +655,9 @@ const getPublicProductById = async (req, res) => {
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
-      WHERE 
-        p.product_id = ? 
-        AND (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)
+      WHERE
+        p.product_id = ?
+        AND p.product_status = 'active'
       GROUP BY p.product_id
     `;
 
@@ -937,11 +937,11 @@ const updateProductStatus = async (req, res) => {
       });
     }
 
-    const allowedStatuses = ['active', 'pending_approval', 'inactive'];
+    const allowedStatuses = ['active', 'pending_approval', 'suspended'];
     if (!allowedStatuses.includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid status"
+        message: "Invalid status. Allowed values: active, pending_approval, suspended"
       });
     }
 

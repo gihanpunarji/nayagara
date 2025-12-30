@@ -1,26 +1,26 @@
 const { getConnection } = require("../config/database");
 
 class Product {
-  static async create({ 
-    productTitle, 
-    productSlug, 
-    productDescription, 
-    categoryId, 
+  static async create({
+    productTitle,
+    productSlug,
+    productDescription,
+    categoryId,
     subcategoryId = null,
-    sellerId, 
-    price, 
+    sellerId,
+    price,
     cost,
-    currencyCode = 'LKR', 
-    weightKg, 
-    stockQuantity, 
-    productStatus = 'pending', 
-    isFeatured = 0, 
-    isPromoted = 0, 
-    locationCityId, 
-    metaTitle, 
-    metaDescription, 
+    currencyCode = 'LKR',
+    weightKg,
+    stockQuantity,
+    productStatus = 'pending_approval',
+    isFeatured = 0,
+    isPromoted = 0,
+    locationCityId,
+    metaTitle,
+    metaDescription,
     productAttributes,
-    expiresAt 
+    expiresAt
   }) {
     const connection = getConnection();
     

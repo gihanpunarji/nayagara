@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ArrowLeft, Upload, X, GripVertical, Eye, Plus } from 'lucide-react';
+import { Save, ArrowLeft } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ImageUploader from './ImageUploader';
 import api from '../../../api/axios';
@@ -17,7 +17,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     category: '',
     subcategory: '',
     stock: '',
-    status: 'active',
     images: [],
     // Dynamic fields will be added based on category
     ...{}
@@ -121,7 +120,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         category: productData.category || '',
         subcategory: productData.subcategory || '',
         stock: productData.stock || '',
-        status: productData.status || 'active',
         images: productData.images || [],
         weightKg: productData.weightKg || '',
         locationCityId: productData.locationCityId || '',
@@ -129,7 +127,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         metaDescription: productData.metaDescription || ''
       });
       setDynamicFields(productData.dynamicFields || {});
-      
+
       // Load category data for editing
       if (productData.category) {
         loadSubCategories(productData.category);
@@ -361,14 +359,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'active' ? 'draft' : 'active' }))}
-          className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Eye className="w-4 h-4" />
-          <span>Preview</span>
-        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">

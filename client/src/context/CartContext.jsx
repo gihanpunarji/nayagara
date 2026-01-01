@@ -248,13 +248,11 @@ export const CartProvider = ({ children }) => {
   }, 0);
   const itemCount = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
 
-  // Calculate shipping directly from cart items (weight_kg × Rs. 200/kg)
-  const SHIPPING_RATE_PER_KG = 200;
-
+  // Calculate shipping from product shipping_cost field
   const calculatedShipping = cart.reduce((total, item) => {
-    const weight = parseFloat(item.weight_kg || 1.0);
+    const shippingCost = parseFloat(item.shipping_cost || 0);
     const quantity = parseInt(item.quantity || 0);
-    return total + (weight * quantity * SHIPPING_RATE_PER_KG);
+    return total + (shippingCost * quantity);
   }, 0);
 
   const total = subtotal + calculatedShipping;

@@ -487,10 +487,10 @@ const ReviewStep = memo(({
           {cartItems && cartItems.length > 0 ? cartItems.map((item) => (
 
             <div key={item.cart_id || `cart-${item.product_id}-${Math.random()}`} className="flex items-center space-x-4">
-              
+
               <img
                 src={
-                  item.images?.[0] ||'/placeholder-product.jpg'
+                  item.images?.[0]?.image_url || item.images?.[0] || item.image || '/placeholder-product.jpg'
                 }
                 alt={item.product_title || item.name || item.title || 'Product'}
                 className="w-16 h-16 object-cover rounded-lg"

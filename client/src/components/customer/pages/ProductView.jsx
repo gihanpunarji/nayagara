@@ -189,6 +189,7 @@ export const ProductView = () => {
         marketPrice: parseFloat(product.market_price) || 0,
         originalPrice: parseFloat(product.market_price) || 0,
         cost: parseFloat(product.cost) || 0,
+        shipping_cost: parseFloat(product.shipping_cost || 0),
         rating: 4.5, // Default rating - you can implement actual ratings later
         reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
         images:
@@ -315,10 +316,8 @@ export const ProductView = () => {
       const subtotal = itemToCheckout.price;
       const itemCount = 1;
 
-      // Calculate shipping based on weight (weight_kg × Rs. 200/kg)
-      const SHIPPING_RATE_PER_KG = 200;
-      const weight = parseFloat(product.weight_kg || 1.0);
-      const shipping = weight * SHIPPING_RATE_PER_KG;
+      // Use shipping_cost from product table
+      const shipping = parseFloat(processedProduct.shipping_cost || 0);
 
       const total = subtotal + shipping;
 

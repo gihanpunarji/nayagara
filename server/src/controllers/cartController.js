@@ -23,36 +23,14 @@ const getCart = async (req, res) => {
       stockCount: item.stock_quantity || 0,
       inStock: (item.stock_quantity !== undefined && item.stock_quantity > 0),
       currency: item.currency_code || 'LKR',
-      weight_kg: parseFloat(item.weight_kg || 1.0)
+      weight_kg: parseFloat(item.weight_kg || 1.0),
+      shipping_cost: parseFloat(item.shipping_cost || 0)
     }));
 
     const subtotal = formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // Calculate shipping based on weight
-    let shipping = 0;
-    try {
-      const { getConnection } = require('../config/database');
-      const pool = getConnection();
-      const connection = await pool.getConnection();
-
-      try {
-        // Get shipping rate from amount_per_kilo column
-        const [shippingSettings] = await connection.execute(
-          "SELECT amount_per_kilo FROM shipping_settings LIMIT 1"
-        );
-
-        const ratePerKg = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
-        const totalWeight = formattedItems.reduce((sum, item) => sum + (item.weight_kg * item.quantity), 0);
-        shipping = totalWeight * ratePerKg;
-
-        console.log(`Cart shipping: weight=${totalWeight}kg, rate=${ratePerKg}, total=${shipping}`);
-      } finally {
-        connection.release();
-      }
-    } catch (shippingError) {
-      console.error('Error calculating shipping in cart:', shippingError);
-      shipping = subtotal > 50000 ? 0 : 1000; // Fallback
-    }
+    // Calculate shipping based on individual product shipping_cost from products table
+    const shipping = formattedItems.reduce((sum, item) => sum + (item.shipping_cost * item.quantity), 0);
 
     res.json({
       success: true,

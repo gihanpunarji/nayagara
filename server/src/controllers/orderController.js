@@ -135,10 +135,14 @@ const updateOrderPaymentStatus = async (req, res) => {
           // Get order items with product cost information
           const orderItems = await Order.getOrderItems(order.order_id);
 
-          // Add product cost information to order items using Product model
-          for (let item of orderItems) {
-            item.product_cost = await Product.getCostById(item.product_id);
-          }
+          // OPTIMIZED: Fetch all product costs in a single query instead of N queries
+          const productIds = orderItems.map(item => item.product_id);
+          const costsMap = await Product.getCostsByIds(productIds);
+
+          // Add product cost information to order items
+          orderItems.forEach(item => {
+            item.product_cost = costsMap.get(item.product_id) || 0;
+          });
 
           // Process referral commissions with the new system
           await processReferralCommissions(order.order_id, order.customer_id, orderItems);

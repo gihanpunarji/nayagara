@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../api/axios';
 import { useAuth } from './AuthContext';
 
@@ -240,22 +240,35 @@ export const CartProvider = ({ children }) => {
     }
   }, [isAuthenticated, user, loadCartFromAPI, loadCartFromLocalStorage]);
 
-  // Calculate totals
-  const subtotal = cart.reduce((sum, item) => {
-    const price = parseFloat(item.price || 0);
-    const quantity = parseInt(item.quantity || 0);
-    return sum + (price * quantity);
-  }, 0);
-  const itemCount = cart.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0);
+  // OPTIMIZED: Calculate totals with useMemo to prevent recalculation on every render
+  const subtotal = useMemo(() =>
+    cart.reduce((sum, item) => {
+      const price = parseFloat(item.price || 0);
+      const quantity = parseInt(item.quantity || 0);
+      return sum + (price * quantity);
+    }, 0),
+    [cart]
+  );
+
+  const itemCount = useMemo(() =>
+    cart.reduce((sum, item) => sum + parseInt(item.quantity || 0), 0),
+    [cart]
+  );
 
   // Calculate shipping from product shipping_cost field
-  const calculatedShipping = cart.reduce((total, item) => {
-    const shippingCost = parseFloat(item.shipping_cost || 0);
-    const quantity = parseInt(item.quantity || 0);
-    return total + (shippingCost * quantity);
-  }, 0);
+  const calculatedShipping = useMemo(() =>
+    cart.reduce((total, item) => {
+      const shippingCost = parseFloat(item.shipping_cost || 0);
+      const quantity = parseInt(item.quantity || 0);
+      return total + (shippingCost * quantity);
+    }, 0),
+    [cart]
+  );
 
-  const total = subtotal + calculatedShipping;
+  const total = useMemo(() =>
+    subtotal + calculatedShipping,
+    [subtotal, calculatedShipping]
+  );
 
   // Check if item is in cart
   const isInCart = useCallback((productId) => {

@@ -76,6 +76,23 @@ class Product {
     return rows[0];
   }
 
+  // Fetch multiple products by IDs in a single query
+  static async findByIds(productIds) {
+    if (!productIds || productIds.length === 0) {
+      return [];
+    }
+
+    const connection = getConnection();
+    const placeholders = productIds.map(() => '?').join(',');
+    const [rows] = await connection.execute(
+      `SELECT * FROM products WHERE product_id IN (${placeholders})`,
+      productIds
+    );
+
+    // Return as a Map for easy lookup by product_id
+    return new Map(rows.map(product => [product.product_id, product]));
+  }
+
   static async findBySellerId(sellerId, limit = 50, offset = 0) {
     const connection = getConnection();
     const [rows] = await connection.execute(
@@ -261,6 +278,28 @@ class Product {
     } catch (error) {
       console.error('Error fetching product cost:', error);
       return 0;
+    }
+  }
+
+  // Fetch costs for multiple products in a single query
+  static async getCostsByIds(productIds) {
+    if (!productIds || productIds.length === 0) {
+      return new Map();
+    }
+
+    const connection = getConnection();
+    try {
+      const placeholders = productIds.map(() => '?').join(',');
+      const [rows] = await connection.execute(
+        `SELECT product_id, cost FROM products WHERE product_id IN (${placeholders})`,
+        productIds
+      );
+
+      // Return as a Map for easy lookup
+      return new Map(rows.map(row => [row.product_id, parseFloat(row.cost || 0)]));
+    } catch (error) {
+      console.error('Error fetching product costs:', error);
+      return new Map();
     }
   }
 

@@ -180,20 +180,37 @@ const mergeCart = async (req, res) => {
       });
     }
 
-    // Simple: just add each guest item to user's cart
+    // OPTIMIZED: Fetch all products in a single query
+    const productIds = guestItems
+      .map(item => item.product_id || item.id)
+      .filter(id => id);
+
+    if (productIds.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No items to merge'
+      });
+    }
+
+    // Single query instead of N queries
+    const productsMap = await Product.findByIds(productIds);
+
+    // Filter valid items and add to cart
     for (const item of guestItems) {
       const productId = item.product_id || item.id;
       const quantity = item.quantity || 1;
-      
-      if (productId && quantity > 0) {
+
+      if (!productId || quantity <= 0) continue;
+
+      const product = productsMap.get(productId);
+
+      // Validate product exists, user doesn't own it, and stock is sufficient
+      if (product && product.seller_id !== userId && product.stock_quantity >= quantity) {
         try {
-          // Check if product exists and is valid
-          const product = await Product.findById(productId);
-          if (product && product.seller_id !== userId && product.stock_quantity >= quantity) {
-            await Cart.addItem(userId, productId, quantity);
-          }
+          await Cart.addItem(userId, productId, quantity);
         } catch (error) {
           // Skip invalid items, continue with others
+          console.error(`Failed to add item ${productId} to cart:`, error);
         }
       }
     }
@@ -203,6 +220,7 @@ const mergeCart = async (req, res) => {
       message: 'Guest cart merged successfully'
     });
   } catch (error) {
+    console.error('Cart merge error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to merge cart'

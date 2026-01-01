@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Plus,
@@ -23,6 +23,7 @@ import api from '../../../api/axios';
 const ProductList = () => {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [sortBy, setSortBy] = useState('newest');
@@ -36,10 +37,10 @@ const ProductList = () => {
     try {
       setLoading(true);
       setError('');
-      
-      // Build query parameters
+
+      // Build query parameters (using debounced search)
       const params = new URLSearchParams();
-      if (searchQuery.trim()) params.append('search', searchQuery.trim());
+      if (debouncedSearch.trim()) params.append('search', debouncedSearch.trim());
       if (selectedFilter !== 'all') params.append('status', selectedFilter);
       if (selectedCategory) params.append('category', selectedCategory);
       if (sortBy !== 'newest') params.append('sort', sortBy);
@@ -90,17 +91,26 @@ const ProductList = () => {
     }
   };
 
-  // Calculate status filters based on actual data
-  const getStatusFilters = () => [
-    { key: 'all', label: 'All Products', count: products.length },
-    { key: 'active', label: 'Active', count: products.filter(p => p.status === 'active').length },
-    { key: 'pending_approval', label: 'Pending Approval', count: products.filter(p => p.status === 'pending_approval').length },
-    { key: 'suspended', label: 'Suspended', count: products.filter(p => p.status === 'suspended').length },
-    { key: 'inactive', label: 'Inactive', count: products.filter(p => p.status === 'inactive').length },
-    { key: 'out_of_stock', label: 'Out of Stock', count: products.filter(p => p.stock === 0).length }
-  ];
+  // OPTIMIZED: Calculate status filters with useMemo - single iteration instead of 6
+  const statusFilters = useMemo(() => {
+    // Count all statuses in a single iteration
+    const counts = products.reduce((acc, product) => {
+      acc[product.status] = (acc[product.status] || 0) + 1;
+      if (product.stock === 0) {
+        acc.out_of_stock = (acc.out_of_stock || 0) + 1;
+      }
+      return acc;
+    }, {});
 
-  const statusFilters = getStatusFilters();
+    return [
+      { key: 'all', label: 'All Products', count: products.length },
+      { key: 'active', label: 'Active', count: counts.active || 0 },
+      { key: 'pending_approval', label: 'Pending Approval', count: counts.pending_approval || 0 },
+      { key: 'suspended', label: 'Suspended', count: counts.suspended || 0 },
+      { key: 'inactive', label: 'Inactive', count: counts.inactive || 0 },
+      { key: 'out_of_stock', label: 'Out of Stock', count: counts.out_of_stock || 0 }
+    ];
+  }, [products]);
 
   const sortOptions = [
     { key: 'newest', label: 'Newest First' },
@@ -116,10 +126,19 @@ const ProductList = () => {
     loadCategories();
   }, []);
 
-  // Reload products when filters change
+  // OPTIMIZED: Debounce search input to prevent API call on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300); // Wait 300ms after user stops typing
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Reload products when filters change (using debounced search)
   useEffect(() => {
     loadProducts();
-  }, [searchQuery, selectedFilter, selectedCategory, sortBy]);
+  }, [debouncedSearch, selectedFilter, selectedCategory, sortBy]);
 
   const getStatusColor = (status, stock) => {
     if (stock === 0) return 'text-red-600 bg-red-100';

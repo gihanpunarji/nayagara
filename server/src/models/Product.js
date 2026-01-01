@@ -21,7 +21,8 @@ class Product {
     metaTitle,
     metaDescription,
     productAttributes,
-    expiresAt
+    expiresAt,
+    shippingCost
   }) {
     const connection = getConnection();
 
@@ -32,13 +33,13 @@ class Product {
           product_title, product_slug, product_description, category_id, subcategory_id, seller_id,
           price, market_price, cost, weight_kg, stock_quantity, product_status,
           is_featured, is_promoted, location_city_id, meta_title, meta_description,
-          product_attributes, created_at, updated_at, expires_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          product_attributes, created_at, updated_at, expires_at, shipping_cost
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         [
           productTitle, productSlug, productDescription, categoryId, subcategoryId, sellerId,
           price, market_price, cost, weightKg, stockQuantity, productStatus,
           isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-          productAttributes, new Date(), new Date(), expiresAt
+          productAttributes, new Date(), new Date(), expiresAt, shippingCost
         ]
       );
       return result;
@@ -51,13 +52,13 @@ class Product {
             product_title, product_slug, product_description, category_id, seller_id,
             price, market_price, cost, weight_kg, stock_quantity, product_status,
             is_featured, is_promoted, location_city_id, meta_title, meta_description,
-            product_attributes, created_at, updated_at, expires_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            product_attributes, created_at, updated_at, expires_at, shipping_cost
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             productTitle, productSlug, productDescription, categoryId, sellerId,
             price, market_price, cost, weightKg, stockQuantity, productStatus,
             isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-            productAttributes, new Date(), new Date(), expiresAt
+            productAttributes, new Date(), new Date(), expiresAt, shippingCost
           ]
         );
         return result;
@@ -111,7 +112,8 @@ class Product {
     metaTitle,
     metaDescription,
     productAttributes,
-    expiresAt
+    expiresAt,
+    shippingCost
   }) {
     const connection = getConnection();
     const [result] = await connection.execute(
@@ -119,13 +121,13 @@ class Product {
         product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
         price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
         is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
-        product_attributes = ?, updated_at = ?, expires_at = ?
+        product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
        WHERE product_id = ?`,
       [
         productTitle, productSlug, productDescription, categoryId,
         price, market_price, cost, weightKg, stockQuantity, productStatus,
         isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-        productAttributes, new Date(), expiresAt, productId
+        productAttributes, new Date(), expiresAt, shippingCost, productId
       ]
     );
     return result.affectedRows;

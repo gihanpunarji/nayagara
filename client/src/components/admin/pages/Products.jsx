@@ -20,6 +20,7 @@ import {
   Trash2
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
+import ProductDetailView from './ProductDetailView';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -34,6 +35,7 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [categories, setCategories] = useState(['all']);
+  const [viewingProduct, setViewingProduct] = useState(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -266,7 +268,7 @@ const Products = () => {
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center space-x-2">
-          <button title="View Details" className="text-gray-600 hover:text-green-600"><Eye className="w-4 h-4" /></button>
+          <button title="View Details" onClick={() => setViewingProduct(product)} className="text-gray-600 hover:text-green-600"><Eye className="w-4 h-4" /></button>
           <div className="relative group">
             <button className="text-gray-600 hover:text-green-600"><MoreVertical className="w-4 h-4" /></button>
             <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10 py-1 text-left">
@@ -477,6 +479,13 @@ const Products = () => {
           )}
         </div>
       </div>
+      {viewingProduct && (
+        <ProductDetailView 
+          productId={viewingProduct.product_id} 
+          initialData={viewingProduct} 
+          onClose={() => setViewingProduct(null)} 
+        />
+      )}
     </AdminLayout>
   );
 };

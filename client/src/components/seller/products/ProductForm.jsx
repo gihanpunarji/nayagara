@@ -17,6 +17,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     category: '',
     subcategory: '',
     stock: '',
+    shippingCost: '',
     images: [],
     // Dynamic fields will be added based on category
     ...{}
@@ -122,6 +123,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         stock: productData.stock || '',
         images: productData.images || [],
         weightKg: productData.weightKg || '',
+        shippingCost: productData.shippingCost || '',
         locationCityId: productData.locationCityId || '',
         metaTitle: productData.metaTitle || '',
         metaDescription: productData.metaDescription || ''
@@ -198,6 +200,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       if (!isEdit && !formData.subcategory) newErrors.subcategory = 'Subcategory is required';
       if (!formData.stock) newErrors.stock = 'Stock quantity is required';
       if (!isEdit && formData.images.length === 0) newErrors.images = 'At least one image is required';
+      
+      // Validate numbers
+      if (formData.weightKg && isNaN(parseFloat(formData.weightKg))) newErrors.weightKg = 'Weight must be a valid number';
+      if (formData.shippingCost && isNaN(parseFloat(formData.shippingCost))) newErrors.shippingCost = 'Shipping cost must be a valid number';
 
       // Dynamic fields are now optional - sellers can include details in description instead
       // No validation for dynamic fields
@@ -221,6 +227,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       
       // Add optional fields
       if (formData.weightKg) formDataToSubmit.append('weightKg', formData.weightKg);
+      if (formData.shippingCost) formDataToSubmit.append('shippingCost', formData.shippingCost);
       if (formData.locationCityId) formDataToSubmit.append('locationCityId', formData.locationCityId);
       if (formData.metaTitle) formDataToSubmit.append('metaTitle', formData.metaTitle);
       if (formData.metaDescription) formDataToSubmit.append('metaDescription', formData.metaDescription);
@@ -486,19 +493,40 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             {/* Weight */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
-                Product Weight <span className="text-red-500">*</span>
+                Product Weight (kg) <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
+                type="number"
                 value={formData.weightKg}
                 onChange={(e) => setFormData(prev => ({ ...prev, weightKg: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.stock ? 'border-red-500' : 'border-gray-300'
+                  errors.weightKg ? 'border-red-500' : 'border-gray-300'
                 }`}
                 placeholder="0.0"
                 min="0"
+                step="0.001"
               />
-              {errors.stock && <p className="text-red-500 text-sm">{errors.stock}</p>}
+              {errors.weightKg && <p className="text-red-500 text-sm">{errors.weightKg}</p>}
+            </div>
+
+            {/* Shipping Cost */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Shipping Cost (Rs.) <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="number"
+                value={formData.shippingCost}
+                required
+                onChange={(e) => setFormData(prev => ({ ...prev, shippingCost: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
+                  errors.shippingCost ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              {errors.shippingCost && <p className="text-red-500 text-sm">{errors.shippingCost}</p>}
             </div>
 
           </div>

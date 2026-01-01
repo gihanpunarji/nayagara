@@ -186,9 +186,6 @@ const ProductList = () => {
           >
             <Edit className="w-4 h-4" />
           </Link>
-          <button className="p-2 bg-white bg-opacity-90 text-gray-600 rounded-lg hover:bg-opacity-100 hover:text-primary-600 transition-all">
-            <Eye className="w-4 h-4" />
-          </button>
         </div>
       </div>
 

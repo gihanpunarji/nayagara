@@ -36,6 +36,7 @@ const EditProduct = () => {
             stock: product.stock_quantity.toString(),
             status: product.product_status,
             weightKg: product.weight_kg,
+            shippingCost: product.shipping_cost ? product.shipping_cost.toString() : '',
             locationCityId: product.location_city_id,
             metaTitle: product.meta_title,
             metaDescription: product.meta_description,

@@ -20,7 +20,8 @@ const createProduct = async (req, res) => {
       locationCityId,
       metaTitle,
       metaDescription,
-      expiresAt
+      expiresAt,
+      shippingCost
     } = req.body;
 
     // Validate required fields
@@ -78,7 +79,8 @@ const createProduct = async (req, res) => {
       metaTitle: metaTitle || title,
       metaDescription: metaDescription || description.substring(0, 160),
       productAttributes: productAttributes,
-      expiresAt: expirationDate
+      expiresAt: expirationDate,
+      shippingCost: shippingCost ? parseFloat(shippingCost) : 0
     });
 
     const productId = productResult.insertId;
@@ -334,7 +336,8 @@ const updateProduct = async (req, res) => {
       locationCityId,
       metaTitle,
       metaDescription,
-      expiresAt
+      expiresAt,
+      shippingCost
     } = req.body;
 
     // Validate required fields
@@ -405,7 +408,8 @@ const updateProduct = async (req, res) => {
       metaTitle: metaTitle || title,
       metaDescription: metaDescription || description.substring(0, 160),
       productAttributes: productAttributes,
-      expiresAt: expirationDate
+      expiresAt: expirationDate,
+      shippingCost: shippingCost ? parseFloat(shippingCost) : 0
     });
 
     if (affectedRows === 0) {

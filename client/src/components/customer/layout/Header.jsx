@@ -178,20 +178,7 @@ const Header = ({
             </span>
             
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link
-              to="/seller/register"
-              className="hover:text-primary-200 transition-colors font-medium"
-            >
-              Sell on Nayagara
-            </Link>
-            <Link
-              to="/help"
-              className="hidden sm:block hover:text-primary-200 transition-colors"
-            >
-              Help
-            </Link>
-          </div>
+          
         </div>
       </div>
 

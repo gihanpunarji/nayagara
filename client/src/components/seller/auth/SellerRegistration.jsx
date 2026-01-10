@@ -328,9 +328,7 @@ function SellerRegistration() {
               className="w-10 h-10 object-contain"
             />
           </div>
-          <h1 className="text-3xl font-heading font-bold text-gray-900 mb-2">
-            Sell on Nayagara
-          </h1>
+          
           <p className="text-lg text-gray-600">
             Register as a seller and start your journey!
           </p>

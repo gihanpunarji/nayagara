@@ -196,17 +196,7 @@ function SellerLogin() {
             </p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600 mb-2">
-              Want to sell on Nayagara?
-            </p>
-            <Link
-              to="/seller/register"
-              className="text-sm text-secondary-600 hover:text-secondary-700 font-bold"
-            >
-              Start Selling →
-            </Link>
-          </div>
+          
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500">

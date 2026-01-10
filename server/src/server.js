@@ -27,8 +27,10 @@ app.use(
       "http://localhost:5173",
       "https://nayagara.lk",
       "https://www.nayagara.lk",
+      "https://sellers.nayagara.lk",
     ],
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    credentials: true,
   })
 );
 

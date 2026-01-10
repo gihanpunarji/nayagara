@@ -88,6 +88,7 @@ import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx
 import AdminAxiosInterceptor from "./api/AdminAxiosInterceptor.jsx";
 import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
 import OrderSuccess from "./components/customer/pages/OrderSuccess.jsx";
+import SubdomainRouter from "./components/shared/routing/SubdomainRouter.jsx";
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
@@ -269,7 +270,8 @@ createRoot(document.getElementById("root")).render(
                 <AxiosInterceptorManager>
                   <CartProvider>
                     <SellerRedirect>
-                      <Routes>
+                      <SubdomainRouter>
+                        <Routes>
                         {/* Customer Routes */}
                         <Route path="/" element={<Home />} />
                         <Route
@@ -576,6 +578,7 @@ createRoot(document.getElementById("root")).render(
                         />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
+                      </SubdomainRouter>
                     </SellerRedirect>
                   </CartProvider>
                 </AxiosInterceptorManager>

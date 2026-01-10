@@ -6,10 +6,10 @@ import {
   Grid,
   List,
   MapPin,
-
 } from 'lucide-react';
 
 import { publicApi } from '../../../api/axios';
+import AdvancedFilters from '../layout/AdvancedFilters';
 
 const SearchPage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,36 +18,57 @@ const SearchPage = () => {
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [viewMode, setViewMode] = useState('grid');
   const [sortBy, setSortBy] = useState('relevance');
-  
+  const [showFilters, setShowFilters] = useState(false);
+
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [total, setTotal] = useState(0);
   const [pagination, setPagination] = useState({ page: 1, limit: 12 });
 
-  const [filters, setFilters] = useState({
-    category: 'all',
-    priceRange: { min: '', max: '' },
-    location: 'all',
-    condition: 'all',
-    rating: 0
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [categories, setCategories] = useState([]);
+
+  // Applied filters from AdvancedFilters
+  const [appliedFilters, setAppliedFilters] = useState({
+    priceMin: '',
+    priceMax: ''
   });
 
   // Fetch products
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      const params = {
-        page: pagination.page,
-        limit: pagination.limit,
-        search: searchQuery,
-        category: filters.category === 'all' ? undefined : filters.category,
-        sort: sortBy === 'relevance' ? 'newest' : sortBy, 
-        // Backend supports: newest, oldest, price_high, price_low, best_selling, most_viewed, featured
-        // Relevance isn't explicit, usually newest or match score. Mapping relevance to newest for now.
-      };
+      const params = new URLSearchParams();
+      params.append('page', pagination.page.toString());
+      params.append('limit', pagination.limit.toString());
 
-      const response = await publicApi.get('/products/public', { params });
-      
+      if (searchQuery) params.append('search', searchQuery);
+      if (selectedCategory && selectedCategory !== 'all') params.append('category', selectedCategory);
+
+      // Add all applied filters from AdvancedFilters
+      Object.keys(appliedFilters).forEach(key => {
+        if (appliedFilters[key] && appliedFilters[key] !== '' && appliedFilters[key] !== 'All' && appliedFilters[key] !== 'Any') {
+          params.append(key, appliedFilters[key]);
+        }
+      });
+
+      // Add sort parameter
+      switch (sortBy) {
+        case 'price_low':
+          params.append('sort', 'price_low');
+          break;
+        case 'price_high':
+          params.append('sort', 'price_high');
+          break;
+        case 'newest':
+        case 'relevance':
+        default:
+          params.append('sort', 'newest');
+          break;
+      }
+
+      const response = await publicApi.get(`/products/public?${params.toString()}`);
+
       if (response.data.success) {
         setProducts(response.data.data);
         setTotal(response.data.pagination.total);
@@ -64,9 +85,24 @@ const SearchPage = () => {
     setSearchQuery(searchParams.get('search') || '');
   }, [searchParams]);
 
+  // Fetch categories on component mount
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await publicApi.get('/categories-with-subcategories');
+        const categoriesData = res.data.data || [];
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+
   useEffect(() => {
     fetchProducts();
-  }, [searchQuery, filters.category, sortBy, pagination.page]); // Depend on filters
+  }, [searchQuery, selectedCategory, appliedFilters, sortBy, pagination.page]);
 
   // Update URL when search query is submitted
   const handleSearchSubmit = (e) => {
@@ -74,10 +110,27 @@ const SearchPage = () => {
     setSearchParams({ search: searchQuery });
   };
 
-  const handleApplyFilters = () => {
+  const handleApplyFilters = (filters) => {
+    console.log('Filters applied:', filters);
+
+    // Store price filters
+    const newFilters = {
+      priceMin: filters.priceMin || '',
+      priceMax: filters.priceMax || ''
+    };
+
+    console.log('New filters:', newFilters);
+    setAppliedFilters(newFilters);
+
+    // If category changed in filter, update it
+    if (filters.category && filters.category !== 'All Categories') {
+      const categorySlug = filters.category.toLowerCase().replace(/\s+/g, '-');
+      console.log('Category changed to:', categorySlug);
+      setSelectedCategory(categorySlug);
+    }
+
+    // Reset pagination when filters change
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchProducts();
-    setShowFilters(false);
   };
 
   const calculateDiscount = (price, marketPrice) => {
@@ -221,26 +274,34 @@ const SearchPage = () => {
      );
   };
 
+  // Format categories for AdvancedFilters
+  const mainCategories = categories.map(cat => ({
+    name: cat.category_name,
+    slug: cat.category_slug || cat.category_name.toLowerCase().replace(/\s+/g, '-')
+  }));
+
+  const capitalizeFirstLetter = (string) => {
+    if (!string) return '';
+    return string
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Mobile Header reused or just content */}
-      {/* Since SearchPage seems to be a page inside MobileLayout or DesktopLayout, we just render content.
-          However, usually pages include headers. The existing SearchPage had its own header structure? 
-          No, the context suggests it's a page component.
-      */}
-      
+      {/* Advanced Filters Modal */}
+      <AdvancedFilters
+        isOpen={showFilters}
+        onClose={() => setShowFilters(false)}
+        onFiltersApply={handleApplyFilters}
+        selectedCategory={selectedCategory === 'all' ? 'All Categories' : capitalizeFirstLetter(selectedCategory)}
+        mainCategories={mainCategories}
+      />
+
       {/* Search Header (Mobile) */}
       <div className="bg-white sticky top-0 z-30 px-4 py-3 shadow-sm md:hidden">
-        <form onSubmit={handleSearchSubmit} className="relative">
-           <input
-              type="text"
-              placeholder="Search products..."
-              className="w-full h-10 pl-10 pr-4 bg-gray-100 border-none rounded-lg focus:ring-2 focus:ring-primary-500"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-           />
-           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        </form>
+       
         
         {/* Filter Bar */}
         <div className="flex items-center justify-between mt-3 overflow-x-auto">

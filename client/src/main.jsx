@@ -53,7 +53,7 @@ const AppRoutes = () => {
             The subdomain "<span className="font-semibold">{subdomain}</span>" does not exist.
           </p>
           <a
-            href="http://localhost:5173"
+            href={`${window.location.protocol}//nayagara.lk`}
             className="text-blue-600 hover:text-blue-800 underline"
           >
             Go to main site

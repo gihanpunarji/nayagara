@@ -259,7 +259,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       });
 
       if (response.data.success) {
-        console.log(`Product ${isEdit ? 'updated' : 'created'} successfully:`, response.data.data);
         // Navigate back to products list
         navigate('/seller/products');
       } else {

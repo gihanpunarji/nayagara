@@ -97,7 +97,6 @@ function SellerRegistration() {
         );
         if (res.data.success) {
           setAvailableCities(res.data.data);
-          console.log(res.data.data);
         }
       } catch (error) {
         console.error("Failed to fetch cities:", error);
@@ -183,7 +182,6 @@ function SellerRegistration() {
   };
 
   const handleAddressContinue = async (e) => {
-    console.log(cityId);
 
     e.preventDefault();
     try {

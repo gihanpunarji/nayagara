@@ -980,7 +980,6 @@ const Checkout = () => {
     
     if (!isAddressValid(currentBilling)) {
       alert('Please fill in all required address fields');
-      console.log('Current billing address:', currentBilling);
       return;
     }
 
@@ -1087,11 +1086,9 @@ const Checkout = () => {
       }
 
       // Debug: Log payment data being sent
-      console.log('Sending payment data:', paymentData);
       
       // Get payment data from backend
       const response = await api.post('/payment/payhere/create', paymentData);
-      console.log('Payment response:', response.data);
       
       if (response.data.success) {
         const paymentInfo = response.data.data;
@@ -1136,13 +1133,11 @@ const Checkout = () => {
               total_amount: orderAmount
             };
 
-            console.log('Saving order to database:', orderData);
             
             // Create order in database
             const orderResponse = await api.post('/orders/create', orderData);
             
             if (orderResponse.data.success) {
-              console.log('Order saved successfully:', orderResponse.data.data);
               
               // Update payment status
               await api.put('/orders/payment-status', {
@@ -1151,7 +1146,6 @@ const Checkout = () => {
                 payment_id: paymentOrderId
               });
 
-              console.log('Payment status updated successfully');
               
               setProcessingPayment(false);
               navigate('/order-success', { 

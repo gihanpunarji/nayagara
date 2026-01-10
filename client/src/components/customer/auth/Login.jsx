@@ -28,22 +28,17 @@ function CustomerLogin() {
 
     try {
       const result = await loginCustomer(emailOrMobile, password);
-      console.log('Login result received:', result); // Debug log
 
       if (result && result.success) {
-        console.log('Login successful, navigating...'); // Debug log
         // Navigate to the page they were trying to visit, or home
         navigate(from, { replace: true });
       } else {
-        console.log('Login failed with error:', result?.error); // Debug log
         // Handle specific error for seller accounts trying to login as customer
         if (result?.error?.includes("not registered as a customer")) {
           const errorMsg = "This email is registered as a seller account. Please use seller login instead.";
-          console.log('Setting error:', errorMsg); // Debug log
           setError(errorMsg);
         } else {
           const errorMsg = result?.error || "Login failed. Please try again.";
-          console.log('Setting error:', errorMsg); // Debug log
           setError(errorMsg);
         }
       }

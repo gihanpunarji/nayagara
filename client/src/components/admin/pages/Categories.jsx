@@ -219,7 +219,6 @@ const Categories = () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     } else {
-      console.log(`${action} category:`, categoryId);
     }
   };
 
@@ -229,7 +228,6 @@ const Categories = () => {
   };
 
   const handleBulkAction = (action) => {
-    console.log(`${action} categories:`, selectedCategories);
     // Handle bulk actions here
   };
 

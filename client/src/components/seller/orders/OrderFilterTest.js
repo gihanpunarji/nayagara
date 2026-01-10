@@ -23,7 +23,6 @@ const statusFilters = [
 
 // Test filtering functionality
 const testFiltering = () => {
-  console.log('🧪 Testing Order Filter Functionality\n');
   
   // Update counts
   statusFilters.forEach(filter => {
@@ -34,12 +33,9 @@ const testFiltering = () => {
     }
   });
 
-  console.log('📊 Status Filter Counts:');
   statusFilters.forEach(filter => {
-    console.log(`${filter.label}: ${filter.count} orders`);
   });
 
-  console.log('\n🔍 Testing Filter Results:');
   
   // Test each filter
   statusFilters.forEach(filter => {
@@ -50,14 +46,11 @@ const testFiltering = () => {
       filtered = testOrderData.filter(order => order.status === filter.key);
     }
     
-    console.log(`\n${filter.label} (${filter.key}): ${filtered.length} orders`);
     filtered.forEach(order => {
-      console.log(`  - ${order.id}: ${order.status} - ${order.customer.name}`);
     });
   });
 
   // Test search functionality
-  console.log('\n🔍 Testing Search Functionality:');
   
   const searchTests = ['john', 'mac', 'ORD-003'];
   
@@ -68,13 +61,10 @@ const testFiltering = () => {
       order.product.title.toLowerCase().includes(query.toLowerCase())
     );
     
-    console.log(`\nSearch "${query}": ${searchResults.length} results`);
     searchResults.forEach(order => {
-      console.log(`  - ${order.id}: ${order.customer.name} - ${order.product.title}`);
     });
   });
 
-  console.log('\n✅ Filter testing completed!');
 };
 
 if (typeof module !== 'undefined' && module.exports) {

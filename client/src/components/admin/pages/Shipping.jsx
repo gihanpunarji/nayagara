@@ -153,7 +153,6 @@ const Shipping = () => {
   };
 
   const handleMethodAction = (action, methodId) => {
-    console.log(`${action} shipping method:`, methodId);
   };
 
   const ShippingMethodCard = ({ method }) => (

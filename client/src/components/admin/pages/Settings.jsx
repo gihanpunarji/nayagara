@@ -50,7 +50,6 @@ const Settings = () => {
   };
 
   const handleSave = () => {
-    console.log('Saving settings:', settings);
   };
 
   const tabs = [

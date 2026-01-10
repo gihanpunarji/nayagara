@@ -316,7 +316,6 @@ const ShopPage = () => {
 
   // Handle filters from AdvancedFilters component
   const handleFiltersApply = (filters) => {
-    console.log('Filters applied:', filters);
 
     // Store price filters
     const newFilters = {
@@ -324,13 +323,11 @@ const ShopPage = () => {
       priceMax: filters.priceMax || ''
     };
 
-    console.log('New filters:', newFilters);
     setAppliedFilters(newFilters);
 
     // If category changed in filter, update it
     if (filters.category && filters.category !== 'All Categories') {
       const categorySlug = filters.category.toLowerCase().replace(/\s+/g, '-');
-      console.log('Category changed to:', categorySlug);
       setSelectedCategory(categorySlug);
     }
 

@@ -264,12 +264,10 @@ const PromotionsDiscounts = () => {
   };
 
   const handlePromotionAction = (action, promotionId) => {
-    console.log(`${action} promotion:`, promotionId);
     // Handle promotion actions here
   };
 
   const handleBulkAction = (action) => {
-    console.log(`${action} promotions:`, selectedPromotions);
     // Handle bulk actions here
   };
 

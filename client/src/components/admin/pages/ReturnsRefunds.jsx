@@ -213,7 +213,6 @@ const ReturnsRefunds = () => {
   };
 
   const handleRequestAction = (action, requestId) => {
-    console.log(`${action} request:`, requestId);
   };
 
   const RequestRow = ({ request }) => (

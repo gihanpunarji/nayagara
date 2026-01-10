@@ -169,11 +169,9 @@ const BannerSlider = () => {
   };
 
   const handleBannerAction = (action, bannerId) => {
-    console.log(`${action} banner:`, bannerId);
   };
 
   const handleReorder = (bannerId, direction) => {
-    console.log(`Reorder banner ${bannerId} ${direction}`);
   };
 
   const BannerCard = ({ banner }) => (

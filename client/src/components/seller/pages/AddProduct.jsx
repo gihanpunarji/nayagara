@@ -8,7 +8,6 @@ import { Link } from 'react-router-dom';
 const AddProduct = () => {
   const { user } = useAuth();
 
-  console.log("user", user.status);
   
   return (
     <SellerLayout>

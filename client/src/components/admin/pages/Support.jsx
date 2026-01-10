@@ -208,7 +208,6 @@ const Support = () => {
   };
 
   const handleTicketAction = (action, ticketId) => {
-    console.log(`${action} ticket:`, ticketId);
   };
 
   const TicketRow = ({ ticket }) => (

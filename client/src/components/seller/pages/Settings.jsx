@@ -504,7 +504,6 @@ const Settings = () => {
 
       if (response.data.success) {
         setProfileData(response.data.user);
-        console.log('Profile updated successfully');
       } else {
         setError(response.data.message || 'Failed to update profile');
       }
@@ -534,7 +533,6 @@ const Settings = () => {
             branchName: response.data.bankDetails.branch_name || ''
           });
         }
-        console.log('Bank details updated successfully');
       } else {
         setError(response.data.message || 'Failed to update bank details');
       }
@@ -578,7 +576,6 @@ const Settings = () => {
 
       if (response.data.success) {
         setProfileData(response.data.user);
-        console.log('Profile picture updated successfully');
       } else {
         setError(response.data.message || 'Failed to upload profile picture');
       }

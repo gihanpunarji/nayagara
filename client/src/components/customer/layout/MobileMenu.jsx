@@ -77,7 +77,6 @@ const MobileMenu = ({
   ];
 
   const handleFiltersApply = (filters) => {
-    console.log('Applied filters:', filters);
     setShowAdvancedFilters(false);
   };
 

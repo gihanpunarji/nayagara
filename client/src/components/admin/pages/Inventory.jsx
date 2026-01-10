@@ -106,7 +106,6 @@ const Inventory = () => {
   }, [pagination.page, searchQuery, selectedFilter, selectedCategory]);
 
   const handleStockAction = (action, itemId) => {
-    console.log(`${action} stock for item:`, itemId);
     // Would implement stock adjustments API here
     alert("Stock adjustment not yet implemented in backend.");
   };

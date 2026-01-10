@@ -353,7 +353,6 @@ function RegistrationForm() {
     }
 
     // Form is valid, submit data
-    console.log('Form data:', formData);
   };
 
   return (

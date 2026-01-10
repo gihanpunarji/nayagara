@@ -22,7 +22,6 @@ const SellerRedirect = ({ children }) => {
 
       // If seller is trying to access non-seller routes (except auth routes), redirect to dashboard
       if (!isSellerRoute && !isAuthRoute) {
-        console.log('Seller detected, redirecting to dashboard from:', location.pathname);
         // Preserve query parameters during redirect
         navigate(`/seller/dashboard${location.search}`, { replace: true });
       }

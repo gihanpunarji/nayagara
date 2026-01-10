@@ -1,15 +1,23 @@
 
 export const getSubdomain = () => {
+    const hostname = window.location.hostname;
 
-    if (window.location.hostname == 'localhost' || window.location.hostname == '127.0.0.1') {
+    // Handle plain localhost with query parameter
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
         const params = new URLSearchParams(window.location.search);
         return params.get('subdomain');
     }
-    const hostname = window.location.hostname;
-    const subdomain = hostname.split('.');
 
-    if (subdomain.length >= 3) {
-        return subdomain[0];
+    const parts = hostname.split('.');
+
+    // Handle localhost subdomains (e.g., sellers.localhost)
+    if (hostname.endsWith('.localhost')) {
+        return parts[0]; // Return 'sellers' from 'sellers.localhost'
+    }
+
+    // Handle production domains (e.g., sellers.nayagara.lk)
+    if (parts.length >= 3) {
+        return parts[0];
     }
 
     return null;

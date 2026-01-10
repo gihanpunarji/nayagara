@@ -107,7 +107,6 @@ const App = () => {
   // Redirect sellers to their dashboard if they access the home page
   useEffect(() => {
     if (!loading && isSeller) {
-      console.log('Seller detected on home page, redirecting to dashboard');
       navigate('/seller/dashboard', { replace: true });
     }
   }, [isSeller, loading, navigate]);

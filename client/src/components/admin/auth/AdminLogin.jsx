@@ -214,7 +214,6 @@ const AdminLogin = () => {
     if (type === "phone" && canResendPhone) {
       setPhoneOtpTimer(300);
       setCanResendPhone(false);
-      console.log("Resending phone OTP");
       try {
         await api.post("/auth/admin/send-sms", { email: loginData.email });
       } catch (e) {

@@ -72,8 +72,6 @@ const SubCategoryModal = ({ isOpen, onClose, category, onSuccess }) => {
         onSuccess();
       }
     } catch (err) {
-      console.log('Delete error:', err);
-      console.log('Error response:', err.response);
 
       // Check if error is due to products existing
       const status = err.response?.status;

@@ -42,7 +42,6 @@ const Messages = () => {
       try {
         setLoading(true);
         const response = await api.get('/chat/conversations');
-        console.log("Fetched conversations:", response.data);
         if (response.data.success) {
           setConversations(response.data.conversations);
           if (response.data.conversations.length > 0) {

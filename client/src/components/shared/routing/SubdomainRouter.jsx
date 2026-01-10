@@ -7,22 +7,21 @@ const SubdomainRouter = ({ children }) => {
   const isSellerSub = isSellerSubDomain();
   const isCustomerSub = isCustomerSubDomain();
 
+  // Preserve query parameters during redirects
+  const queryString = location.search;
+
   // On seller subdomain
   if (isSellerSub) {
-    // Allow seller routes
     if (location.pathname.startsWith("/seller")) {
       return children;
     }
 
-    // Redirect non-seller routes to seller dashboard
-    return <Navigate to="/seller/dashboard" replace />;
+    return <Navigate to={`/seller/dashboard${queryString}`} replace />;
   }
 
-  // On customer subdomain (main domain)
   if (isCustomerSub) {
-    // Block seller routes on customer subdomain
     if (location.pathname.startsWith("/seller")) {
-      return <Navigate to="/" replace />;
+      return <Navigate to={`/${queryString}`} replace />;
     }
 
     // Allow all other routes

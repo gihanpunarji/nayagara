@@ -148,8 +148,6 @@ const App = () => {
 
   const quickLinks = [
 
-    { name: "New Arrivals", href: "#" },
-    { name: "Best Sellers", href: "#" },
    { name: "Nayagara Water", href: "/nayagara_water" },
   ];
 

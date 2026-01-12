@@ -352,13 +352,13 @@ function SellerMobileVerify() {
         {/* Footer */}
         <div className="mt-8 text-center text-sm text-gray-500">
           By verifying your mobile number, you agree to our{" "}
-          <button className="text-secondary-600 hover:underline">
+          <Link to="/terms-conditions" className="text-primary-600 hover:underline">
             Terms of Service
-          </button>{" "}
+          </Link>{" "}
           and{" "}
-          <button className="text-secondary-600 hover:underline">
+          <Link to="/privacy-policy" className="text-primary-600 hover:underline">
             Privacy Policy
-          </button>
+          </Link>
         </div>
       </div>
     </div>

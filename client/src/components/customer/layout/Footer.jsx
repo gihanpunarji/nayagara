@@ -51,10 +51,7 @@ const Footer = () => {
             <h4 className="font-heading font-bold text-lg mb-4 text-gray-800">Customer Service</h4>
             <div className="space-y-3">
               <a href="/help-center" className="block text-gray-600 hover:text-primary-600 transition-colors">Help Center</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">How to Buy</a>
               <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">How to Sell</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Payment Methods</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Shipping Info</a>
               <a href="/refund-policy" className="block text-gray-600 hover:text-primary-600 transition-colors">Refund Policy</a>
             </div>
           </div>
@@ -63,12 +60,9 @@ const Footer = () => {
           <div>
             <h4 className="font-heading font-bold text-lg mb-4 text-gray-800">About Nayagara</h4>
             <div className="space-y-3">
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">About Us</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Careers</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Press & Media</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Success Stories</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Seller Center</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">Affiliate Program</a>
+              <a href="/nayagara-water" className="block text-gray-600 hover:text-primary-600 transition-colors">About Us</a>
+              <a href="/nayagara-water" className="block text-gray-600 hover:text-primary-600 transition-colors">Contact Admin</a>
+              
             </div>
           </div>
           

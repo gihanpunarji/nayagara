@@ -141,12 +141,7 @@ const OurBusiness = () => {
               We offer comprehensive support, advanced tools, and marketing opportunities to help you succeed.
             </p>
             <div className="grid grid-cols-1 gap-4">
-              <a
-                href="/seller/register"
-                className="bg-primary-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-primary-700 transition-colors"
-              >
-                Start Selling Today
-              </a>
+              
               <a
                 href="/contact"
                 className="bg-white text-primary-600 py-3 px-6 rounded-lg font-medium border border-primary-600 hover:bg-primary-50 transition-colors"

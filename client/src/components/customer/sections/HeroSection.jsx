@@ -12,22 +12,23 @@ const HeroSection = () => {
       image: "banner.avif",
       cta: "Start Shopping",
       badge: "Top Rated",
-      color: "from-primary-600 to-primary-800"
+      color: "from-primary-600 to-primary-800",
+      imgClass: "brightness-50"
     },
     {
-      title: "MULTI-SELLER STORE",
-      subtitle: "Thousands of Sellers",
-      description: "Connect with verified sellers across the nation",
-      image: "/multiseller.png",
+      title: "PREMIUM MARKETPLACE",
+      subtitle: "Discover Unique Items",
+      description: "Explore curated collections from top-rated sellers",
+      image: "/marketplace_banner_dark.png",
       cta: "Explore Stores",
-      badge: "Variety",
+      badge: "Exclusive",
       color: "from-secondary-600 to-secondary-800"
     },
     {
       title: "HUGE DISCOUNTS",
       subtitle: "Unbeatable Prices",
       description: "Get the best value for your money every day",
-      image: "/delivery.png",
+      image: "/discounts_banner_dark.png",
       cta: "View Offers",
       badge: "Best Deals",
       color: "from-primary-500 to-secondary-600"
@@ -50,9 +51,9 @@ const HeroSection = () => {
           <img
             src={heroBanners[currentSlide].image}
             alt={heroBanners[currentSlide].title}
-            className="absolute inset-0 w-full h-full object-cover object-center transition-all duration-1000"
+            className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-1000 ${heroBanners[currentSlide].imgClass || ''}`}
           />
-          
+
           <div className="absolute inset-0 z-2 flex items-center p-3 md:p-5 xl:p-8">
             <div className="text-white max-w-lg">
               <div className={`inline-block px-2 py-0.5 md:px-3 md:py-1 bg-gradient-to-r ${heroBanners[currentSlide].color} rounded-full text-xs md:text-sm font-bold mb-2 md:mb-3 xl:mb-4`}>
@@ -74,13 +75,13 @@ const HeroSection = () => {
           </div>
 
           {/* Navigation */}
-          <button 
+          <button
             onClick={() => setCurrentSlide((prev) => prev === 0 ? heroBanners.length - 1 : prev - 1)}
             className="absolute left-4 top-1/2 transform -translate-y-1/2 z-3 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all"
           >
             <ChevronLeft className="w-6 h-6 text-white" />
           </button>
-          <button 
+          <button
             onClick={() => setCurrentSlide((prev) => (prev + 1) % heroBanners.length)}
             className="absolute right-4 top-1/2 transform -translate-y-1/2 z-3 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white/30 transition-all"
           >

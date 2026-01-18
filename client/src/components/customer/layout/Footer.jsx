@@ -25,7 +25,7 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-gray-600 mb-6 max-w-md">
-              Sri Lanka's most trusted online marketplace connecting millions of buyers and sellers across the island. 
+              Sri Lanka's most trusted online platform connecting millions of buyers across the island. 
               From electronics to vehicles, find everything you need at the best prices.
             </p>
             <div className="flex space-x-4">
@@ -51,7 +51,6 @@ const Footer = () => {
             <h4 className="font-heading font-bold text-lg mb-4 text-gray-800">Customer Service</h4>
             <div className="space-y-3">
               <a href="/help-center" className="block text-gray-600 hover:text-primary-600 transition-colors">Help Center</a>
-              <a href="#" className="block text-gray-600 hover:text-primary-600 transition-colors">How to Sell</a>
               <a href="/refund-policy" className="block text-gray-600 hover:text-primary-600 transition-colors">Refund Policy</a>
             </div>
           </div>

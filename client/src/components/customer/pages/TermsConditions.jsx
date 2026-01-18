@@ -37,7 +37,6 @@ const TermsConditions = () => {
         'Browse and purchase products for personal use',
         'Create an account with accurate information',
         'Leave honest reviews and feedback',
-        'Contact sellers for legitimate inquiries',
         'Share products on social media'
       ]
     },
@@ -98,7 +97,6 @@ const TermsConditions = () => {
             <p>
               These Terms and Conditions ("Terms") govern your access to and use of the Nayagara.lk
               website and mobile applications (collectively, the "Platform"), as well as the purchase
-              and sale of products through our marketplace.
             </p>
             <p>
               By accessing or using our Platform, you acknowledge that you have read, understood, and
@@ -131,10 +129,7 @@ const TermsConditions = () => {
                     <span className="text-primary-500 mr-2 mt-1">•</span>
                     <span>By creating an account, you represent that all information you provide is accurate and current</span>
                   </li>
-                  <li className="flex items-start">
-                    <span className="text-primary-500 mr-2 mt-1">•</span>
-                    <span>If you are using the Platform on behalf of a business, you have the authority to bind that entity to these Terms</span>
-                  </li>
+                  
                 </ul>
               </div>
             </div>
@@ -325,10 +320,6 @@ const TermsConditions = () => {
                   </div>
                   <div className="flex items-center text-sm text-gray-700">
                     <span className="text-green-500 mr-2">✓</span>
-                    <span>Mobile Wallets (eZ Cash, mCash)</span>
-                  </div>
-                  <div className="flex items-center text-sm text-gray-700">
-                    <span className="text-green-500 mr-2">✓</span>
                     <span>Cash on Delivery (COD)</span>
                   </div>
                 </div>
@@ -345,7 +336,7 @@ const TermsConditions = () => {
                 </p>
                 <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                   <p className="text-sm text-purple-900">
-                    <strong>Security:</strong> We use trusted third-party payment processors (PayHere, Stripe)
+                    <strong>Security:</strong> We use trusted third-party payment processors (PayHere, \)
                     to handle your payment information securely. We do not store or have access to your
                     full payment card details. All transactions are encrypted and PCI-DSS compliant.
                   </p>

@@ -45,7 +45,6 @@ const PrivacyPolicy = () => {
       icon: Lock,
       items: [
         'Credit/debit card details (processed securely by payment providers)',
-        'Bank account information (for sellers)',
         'Payment transaction history',
         'Billing preferences'
       ]
@@ -477,7 +476,7 @@ const PrivacyPolicy = () => {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-white">
               <div className="flex items-center">
                 <span className="mr-2">📧</span>
-                <span>privacy@nayagara.lk</span>
+                <span>support@nayagara.lk</span>
               </div>
               <div className="flex items-center">
                 <span className="mr-2">📞</span>

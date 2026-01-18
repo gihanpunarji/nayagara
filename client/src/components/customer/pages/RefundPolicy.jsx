@@ -266,11 +266,7 @@ const RefundPolicy = () => {
               <strong>Customer-Initiated Returns:</strong> You will be responsible for paying the
               shipping costs for returning your item, unless the return is due to our error.
             </p>
-            <p>
-              <strong>Seller Error or Defective Products:</strong> If the return is due to our mistake
-              (e.g., wrong item shipped, defective product), we will provide you with a prepaid shipping
-              label at no cost to you.
-            </p>
+           
             <div className="bg-white rounded-lg p-4 border border-purple-200 mt-4">
               <p className="text-sm text-gray-600">
                 <strong>Tip:</strong> We recommend using a trackable shipping service or purchasing

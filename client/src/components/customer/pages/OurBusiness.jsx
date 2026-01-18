@@ -53,7 +53,7 @@ const OurBusiness = () => {
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-4">Our Business</h1>
             <p className="text-lg text-white/90 leading-relaxed">
-              Powering Sri Lanka's digital economy through innovative marketplace solutions
+              Powering Sri Lanka's digital economy through innovative solutions
             </p>
           </div>
         </div>

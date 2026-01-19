@@ -8,7 +8,7 @@ import {
   Clock,
 } from "lucide-react";
 import api from "../../../api/axios";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 
 function SellerMobileVerify() {
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -196,39 +196,16 @@ function SellerMobileVerify() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Mobile Number
                 </label>
-                <div className="flex">
-                    {/* Country Code Dropdown */}
-                    <div className="relative">
-                      <select
-                        disabled
-                        className="h-full px-3 py-3 border border-gray-300 border-r-0 rounded-l-lg bg-gray-100 cursor-not-allowed focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 appearance-none pr-8"
-                      >
-                        <option value="+94">🇱🇰 +94</option>
-                      </select>
-                      {/* Custom dropdown arrow */}
-                      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                        <svg
-                          className="w-4 h-4 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          
-                        </svg>
-                      </div>
-                    </div>
+                <div className="flex">                    
                     <input
                       type="tel"
-                      placeholder="77 123 4567"
+                      placeholder="0771234567"
                       value={phoneNumber}
                       onChange={(e) => setPhoneNumber(e.target.value)}
                       required
-                      className="flex-1 px-4 py-3 border border-gray-300 border-l-0 rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                      className="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg rounded-r-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Enter your mobile number without the country code
-                  </p>
               </div>
 
               {error && (
@@ -339,14 +316,6 @@ function SellerMobileVerify() {
               </div>
             </div>
           )}
-
-          {/* Help Text */}
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600 mb-2">Having trouble?</p>
-            <button className="text-sm text-secondary-600 hover:text-secondary-700 font-bold">
-              Contact Support →
-            </button>
-          </div>
         </div>
 
         {/* Footer */}

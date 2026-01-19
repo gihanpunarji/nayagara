@@ -3,6 +3,7 @@ const cors = require("cors");
 require("dotenv").config();
 const { connectDB } = require("./config/database");
 const cloudinaryServeMiddleware = require("./middleware/cloudinaryServe");
+const User = require("./models/User");
 const authRoutes = require("./routes/authRoutes");
 const sellerRoutes = require("./routes/sellerRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -75,6 +76,24 @@ const startServer = async () => {
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
+
+    // Schedule cleanup of expired reset tokens every hour
+    setInterval(async () => {
+      try {
+        await User.cleanupExpiredTokens();
+      } catch (error) {
+        console.error("Failed to cleanup expired tokens:", error);
+      }
+    }, 60 * 60 * 1000); // Run every hour
+
+    // Run cleanup immediately on startup
+    setTimeout(async () => {
+      try {
+        await User.cleanupExpiredTokens();
+      } catch (error) {
+        console.error("Failed to cleanup expired tokens on startup:", error);
+      }
+    }, 5000); // Wait 5 seconds after startup
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);

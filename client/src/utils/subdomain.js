@@ -36,25 +36,35 @@ export const isCustomerSubDomain = () => {
 export const getBaseDomain = () => {
     const hostname = window.location.hostname;
 
-    if (hostname == 'localhost' || hostname == '127.0.0.1') {
+    // Handle plain localhost or IP
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
         return hostname;
+    }
+
+    // Handle subdomains of localhost (e.g., sellers.localhost)
+    if (hostname.endsWith('.localhost')) {
+        return 'localhost';
     }
 
     const parts = hostname.split('.');
 
-    // Return last two parts (domain.tld)
+    // Return last two parts (domain.tld) for production domains
     return parts.slice(-2).join('.');
 }
 
 export const buildSubdomainUrl = (subdomain, path = '/') => {
     const protocol = window.location.protocol;
     const baseDomain = getBaseDomain();
+    const port = window.location.port;
+
+    // For localhost development, include port
+    const portString = port ? `:${port}` : '';
 
     if (!subdomain) {
-        return `${protocol}//${baseDomain}${path}`;
+        return `${protocol}//${baseDomain}${portString}${path}`;
     }
 
-    return `${protocol}//${subdomain}.${baseDomain}${path}`;
+    return `${protocol}//${subdomain}.${baseDomain}${portString}${path}`;
 };
 
 export const redirectSellerSubdomain = (path = '/seller/dashboard') => {

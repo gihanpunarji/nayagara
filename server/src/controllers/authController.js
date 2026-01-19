@@ -361,7 +361,7 @@ const forgotPassword = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpires = Date.now() + 15 * 60 * 1000; // 15 minutes;
+    const resetTokenExpires = Date.now() + 5 * 60 * 1000; 
 
     const updateResult = await User.updateToken(
       resetToken,
@@ -374,8 +374,17 @@ const forgotPassword = async (req, res) => {
         message: "Failed to update token",
       });
     }
-    const resetLink = `${process.env.FRONT_END_API
-      }/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}`;
+    // Build the correct frontend URL based on user type
+    let frontendUrl;
+    if (user.user_type === 'seller') {
+      // For sellers, use the sellers subdomain
+      frontendUrl = process.env.SELLERS_FRONTEND_URL || 'https://sellers.nayagara.lk';
+    } else {
+      // For customers, use the main domain
+      frontendUrl = process.env.CUSTOMER_FRONTEND_URL || process.env.FRONT_END_API || 'https://nayagara.lk';
+    }
+
+    const resetLink = `${frontendUrl}/reset-password?token=${resetToken}&email=${encodeURIComponent(email)}&role=${user.user_type}`;
     console.log("Password reset link:", resetLink);
 
     const transporter = nodeMailer.createTransport({
@@ -863,7 +872,7 @@ const resetPassword = async (req, res) => {
 
     const user = rows[0];
 
-    if (user.reset_token_expire < Date.now()) {
+    if (user.reset_token_expires < Date.now()) {
       return res
         .status(400)
         .json({ success: false, message: "Token has expired" });

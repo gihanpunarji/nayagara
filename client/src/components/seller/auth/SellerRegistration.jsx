@@ -3,6 +3,7 @@ import { Check, User, Home, Phone, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import api from "../../../api/axios";
+import { buildSubdomainUrl } from "../../../utils/subdomain";
 
 function SellerRegistration() {
   const [step, setStep] = useState(1);

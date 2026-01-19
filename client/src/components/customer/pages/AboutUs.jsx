@@ -77,11 +77,6 @@ const AboutUs = () => {
               active users across 25+ cities in Sri Lanka. Our platform hosts more than 1 million
               product listings spanning everything from electronics and vehicles to fashion and services.
             </p>
-            <p>
-              What sets us apart is our commitment to building trust. Every seller goes through a
-              verification process, and we offer comprehensive buyer protection to ensure safe
-              transactions for everyone.
-            </p>
           </div>
         </div>
 

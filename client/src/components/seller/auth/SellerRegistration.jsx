@@ -130,6 +130,11 @@ function SellerRegistration() {
       setLoading(true);
       setError("");
       const res = await api.post("/auth/send-otp", { mobile, email });
+      
+      // Only proceed to step 4 if OTP was sent successfully
+      if (res.data.success) {
+        setStep(4);
+      }
     } catch (error) {
       setError(error.response?.data?.message);
       console.error(
@@ -139,8 +144,6 @@ function SellerRegistration() {
     } finally {
       setLoading(false);
     }
-
-    setStep(4);
   };
 
   const handleOtpVerify = async (e) => {
@@ -596,19 +599,9 @@ function SellerRegistration() {
                         disabled
                         className="h-full px-3 py-3 border border-gray-300 border-r-0 rounded-l-lg bg-gray-100 cursor-not-allowed focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 appearance-none pr-8"
                       >
-                        <option value="+94">🇱🇰 +94</option>
+                        <option value="+94">🇱🇰</option>
                       </select>
-                      {/* Custom dropdown arrow */}
-                      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-                        <svg
-                          className="w-4 h-4 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          
-                        </svg>
-                      </div>
+                      
                     </div>
                     <input
                       type="tel"

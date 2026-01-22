@@ -49,7 +49,6 @@ const validateSellerInputs = ({
     return "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character";
   if (!nic) return "NIC number is required";
   if (!address1) return "Address line 1 is required";
-  if (!address2) return "Address line 2 is required";
   if (!city) return "City is required";
   // if (!district) return "District is required";
   // if (!province) return "Province is required";

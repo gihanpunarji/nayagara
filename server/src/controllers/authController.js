@@ -49,11 +49,11 @@ const register = async (req, res, role = "customer") => {
       });
     }
 
-    const existingUser2 = await User.findByMobile(mobile);
-    if (existingUser2) {
+    const existingUserWithMobile = await User.findByMobile(mobile);
+    if (existingUserWithMobile) {
       return res.status(400).json({
         success: false,
-        message: "User already exists with this mobile",
+        message: "Mobile number already registerd",
       });
     }
 
@@ -78,7 +78,7 @@ const register = async (req, res, role = "customer") => {
     if (refCode) {
       try {
         // Get the referrer by referral code
-        const referrer = await getUserByReferralCode(refCode);
+        const referrer = getUserByReferralCode(refCode);
 
         if (!referrer) {
           console.warn(`Invalid referral code provided during registration: ${refCode}`);
@@ -158,7 +158,7 @@ const sellerRegister = async (req, res, role = "seller") => {
     if (existingUser) {
       return res.status(400).json({
         success: false,
-        message: "Seller with the same email or NIC already exists",
+        message: "Account already exists with email or nic",
       });
     }
 
@@ -361,7 +361,7 @@ const forgotPassword = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
-    const resetTokenExpires = Date.now() + 5 * 60 * 1000; 
+    const resetTokenExpires = Date.now() + 5 * 60 * 1000;
 
     const updateResult = await User.updateToken(
       resetToken,

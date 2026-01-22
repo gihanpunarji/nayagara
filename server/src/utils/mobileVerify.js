@@ -38,21 +38,17 @@ const mobile = async (req, res) => {
 
     // Convert to international format for SMS gateway (947XXXXXXXX)
     const newMobile = formatMobileForSMS(mobile);
-    
+
     const exsistingSeller = await User.findByMobile(newMobile);
-    if(exsistingSeller) {
+    if (exsistingSeller) {
       return res.status(400).json({
         success: false,
-        message: "Seller with the same mobile number already exists",
+        message: "Mobile number already registerd",
       });
     }
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
-
-    // Update the database with the verification code BEFORE sending SMS
     await User.updateSellerMobile({ newMobile, email, verificationCode });
-
-    // Send SMS (fire and forget - don't wait for it)
     fetch("https://app.text.lk/api/v3/sms/send", {
       method: "POST",
       headers: {
@@ -138,8 +134,8 @@ const verifyOtp = async (req, res) => {
         message: "Invalid verification code",
       });
     }
-    
-    await User.verifyOtp({mobile: newMobile, email, verificationCode});
+
+    await User.verifyOtp({ mobile: newMobile, email, verificationCode });
 
     res.status(200).json({
       success: true,

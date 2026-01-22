@@ -1,3 +1,4 @@
+const { release } = require("os");
 const { getConnection } = require("../config/database");
 const bcrypt = require("bcrypt");
 
@@ -157,8 +158,8 @@ class User {
           null,
           role,
           "active",
-          0,
-          0,
+          1,
+          1,
           null,
           new Date(),
           new Date(),

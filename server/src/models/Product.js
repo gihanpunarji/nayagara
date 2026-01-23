@@ -117,6 +117,7 @@ class Product {
     productSlug,
     productDescription,
     categoryId,
+    subcategoryId,
     price,
     market_price,
     cost,
@@ -133,21 +134,45 @@ class Product {
     shippingCost
   }) {
     const connection = getConnection();
-    const [result] = await connection.execute(
-      `UPDATE products SET
-        product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
-        price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
-        is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
-        product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
-       WHERE product_id = ?`,
-      [
-        productTitle, productSlug, productDescription, categoryId,
-        price, market_price, cost, weightKg, stockQuantity, productStatus,
-        isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-        productAttributes, new Date(), expiresAt, shippingCost, productId
-      ]
-    );
-    return result.affectedRows;
+
+    // Try to update with subcategory_id
+    try {
+      const [result] = await connection.execute(
+        `UPDATE products SET
+          product_title = ?, product_slug = ?, product_description = ?, category_id = ?, subcategory_id = ?,
+          price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+          is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+          product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+         WHERE product_id = ?`,
+        [
+          productTitle, productSlug, productDescription, categoryId, subcategoryId,
+          price, market_price, cost, weightKg, stockQuantity, productStatus,
+          isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+          productAttributes, new Date(), expiresAt, shippingCost, productId
+        ]
+      );
+      return result.affectedRows;
+    } catch (error) {
+      // Fallback for schemas without subcategory_id
+      if (error.code === 'ER_BAD_FIELD_ERROR') {
+        const [result] = await connection.execute(
+          `UPDATE products SET
+              product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
+              price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+              is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+              product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+             WHERE product_id = ?`,
+          [
+            productTitle, productSlug, productDescription, categoryId,
+            price, market_price, cost, weightKg, stockQuantity, productStatus,
+            isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+            productAttributes, new Date(), expiresAt, shippingCost, productId
+          ]
+        );
+        return result.affectedRows;
+      }
+      throw error;
+    }
   }
 
   static async delete(productId) {

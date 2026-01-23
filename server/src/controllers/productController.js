@@ -337,7 +337,11 @@ const updateProduct = async (req, res) => {
       metaTitle,
       metaDescription,
       expiresAt,
-      shippingCost
+      shippingCost,
+      category,
+      subcategory,
+      productStatus,
+      deletedImageIds
     } = req.body;
 
     // Validate required fields
@@ -388,20 +392,42 @@ const updateProduct = async (req, res) => {
     // Calculate expires at
     const expirationDate = expiresAt ? new Date(expiresAt) : existingProduct.expires_at;
 
+    // Handle deleted images FIRST (before updating product just in case)
+    if (deletedImageIds) {
+      try {
+        const idsToDelete = typeof deletedImageIds === 'string' ? JSON.parse(deletedImageIds) : deletedImageIds;
+        if (Array.isArray(idsToDelete) && idsToDelete.length > 0) {
+          await ProductImage.deleteMultipleByIds(idsToDelete);
+        }
+      } catch (e) {
+        console.error("Error parsing/deleting images:", e);
+      }
+    }
+
+    // Determine new status
+    // User requirement: Any update requires re-approval.
+    // If seller explicitly sets it to 'inactive', we allow that immediately.
+    // If seller sets it to 'active' (or keeps it 'active'), it must go to 'pending_approval'.
+    let finalStatus = 'pending_approval';
+    if (productStatus === 'inactive') {
+      finalStatus = 'inactive';
+    }
+
     // Update product
     const affectedRows = await Product.update({
       productId: parseInt(productId),
       productTitle: title,
       productSlug: productSlug,
       productDescription: description,
-      categoryId: existingProduct.category_id, // Keep original category
+      categoryId: category || existingProduct.category_id,
+      subcategoryId: subcategory || existingProduct.subcategory_id,
       price: parseFloat(price),
       market_price: parseFloat(market_price),
       cost: parseFloat(cost),
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
       stockQuantity: parseInt(stock),
-      productStatus: existingProduct.product_status, // Keep original status
+      productStatus: finalStatus, // Enforce re-approval or inactive
       isFeatured: existingProduct.is_featured,
       isPromoted: existingProduct.is_promoted,
       locationCityId: locationCityId || existingProduct.location_city_id,

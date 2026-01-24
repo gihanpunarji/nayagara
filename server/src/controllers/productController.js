@@ -604,7 +604,7 @@ const getPublicProducts = async (req, res) => {
              u.last_name as seller_last_name,
              c2.city_name as location_city_name,
              d.district_name as location_district_name,
-             GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+             GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
@@ -725,7 +725,7 @@ const getPublicProductById = async (req, res) => {
         s.store_name,
         c2.city_name as location_city_name,
         d.district_name as location_district_name,
-        GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+        GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM 
         products p
         LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id

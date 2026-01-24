@@ -4,7 +4,7 @@ import { Phone, MapPin, Globe, Facebook, Youtube, Linkedin, Twitter } from 'luci
 const Footer = () => {
   return (
     <footer className="bg-white border-t border-gray-200 pt-16 pb-8">
-      <div className="max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="w-full md:max-w-[85%] mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 mb-12">
           {/* Company Info */}
@@ -25,8 +25,8 @@ const Footer = () => {
               </div>
             </div>
             <p className="text-gray-600 mb-6 max-w-md">
-              Sri Lanka's most trusted online platform connecting millions of buyers across the island. 
-              From electronics to vehicles, find everything you need at the best prices.
+              Experience the best of online shopping in Sri Lanka with Nayagara. 
+              We bring you a vast selection of products, ensuring quality and convenience for every customer.
             </p>
             <div className="flex space-x-4">
               <a target='_blank' href="https://www.facebook.com/share/17UstB7pQY/" className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 transition-colors" aria-label="Facebook">

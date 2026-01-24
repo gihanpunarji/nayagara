@@ -414,7 +414,7 @@ const updateProduct = async (req, res) => {
     }
 
     // Update product
-    const affectedRows = await Product.update({
+    const affectedRows = await Product.updateRobust({
       productId: parseInt(productId),
       productTitle: title,
       productSlug: productSlug,
@@ -475,7 +475,9 @@ const updateProduct = async (req, res) => {
     console.error("Update product error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error",
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };

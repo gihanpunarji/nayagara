@@ -21,7 +21,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     images: [],
     // Dynamic fields will be added based on category
     ...{},
-    productStatus: 'active'
+    productStatus: 'active',
+    weightKg: ''
   });
 
   const [deletedImageIds, setDeletedImageIds] = useState([]);
@@ -138,7 +139,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         locationCityId: productData.locationCityId || productData.location_city_id || '',
         metaTitle: productData.metaTitle || productData.meta_title || '',
         metaDescription: productData.metaDescription || productData.meta_description || '',
-        productStatus: productData.product_status === 'inactive' ? 'inactive' : 'active'
+        productStatus: (productData.productStatus === 'inactive' || productData.product_status === 'inactive') ? 'inactive' : 'active'
       });
       setDynamicFields(productData.dynamicFields || productData.product_attributes || {});
 
@@ -203,8 +204,18 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     // ImageUploader generates string IDs for new files.
     // So we check if id is NOT a string or if it doesn't look like our temp ID.
     // Better: We mapped backend images to have 'id' = 'image_id'.
-    if (imageRemoved.id && typeof imageRemoved.id === 'number') {
-      setDeletedImageIds(prev => [...prev, imageRemoved.id]);
+    if (imageRemoved.id) {
+      // Check if it's NOT a temp ID (temp IDs usually start with timestamp and have underscores, or are just strings)
+      // Backend IDs are integers. But sometimes might be strings "123".
+      // Temp IDs in ImageUploader: `${Date.now()}_...`
+
+      const idStr = String(imageRemoved.id);
+      const isTempId = idStr.includes('_') && idStr.length > 15; // Simple heuristic
+
+      if (!isTempId) {
+        // It's likely a backend ID
+        setDeletedImageIds(prev => [...prev, imageRemoved.id]);
+      }
     }
   };
 
@@ -253,7 +264,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
 
       // Add optional fields
       if (formData.weightKg) formDataToSubmit.append('weightKg', formData.weightKg);
-      if (formData.shippingCost) formDataToSubmit.append('shippingCost', formData.shippingCost);
+      // Ensure shipping cost defaults to 0 if not provided
+      formDataToSubmit.append('shippingCost', formData.shippingCost || '0');
       if (formData.locationCityId) formDataToSubmit.append('locationCityId', formData.locationCityId);
       if (formData.metaTitle) formDataToSubmit.append('metaTitle', formData.metaTitle);
       if (formData.metaDescription) formDataToSubmit.append('metaDescription', formData.metaDescription);
@@ -457,6 +469,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.cost}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.cost ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -475,6 +488,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.price}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.price ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -493,6 +507,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.market_price}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, market_price: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.market_price ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -511,6 +526,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.stock}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.stock ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -528,6 +544,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.weightKg}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, weightKg: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.weightKg ? 'border-red-500' : 'border-gray-300'
                   }`}
@@ -541,12 +558,12 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             {/* Shipping Cost */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
-                Shipping Cost (Rs.) <span className="text-red-500">*</span>
+                Shipping Cost (Rs.)
               </label>
               <input
                 type="number"
                 value={formData.shippingCost}
-                required
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, shippingCost: e.target.value }))}
                 className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.shippingCost ? 'border-red-500' : 'border-gray-300'
                   }`}

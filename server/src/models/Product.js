@@ -390,7 +390,7 @@ class Product {
             'image_id', pi.image_id,
             'image_url', pi.image_url,
             'image_alt', pi.image_alt
-          )
+          ) ORDER BY pi.is_primary DESC, pi.image_id ASC
         ) as images_json
       FROM products p
       LEFT JOIN product_images pi ON p.product_id = pi.product_id
@@ -419,7 +419,7 @@ class Product {
             'image_id', pi.image_id,
             'image_url', pi.image_url,
             'image_alt', pi.image_alt
-          )
+          ) ORDER BY pi.is_primary DESC, pi.image_id ASC
         ) as images_json
       FROM products p
       LEFT JOIN product_images pi ON p.product_id = pi.product_id
@@ -521,21 +521,22 @@ class Product {
         } catch (err2) {
           console.warn("Product.updateRobust: Attempt 2 failed", err2.code);
 
-          // Attempt 3: Minimum Safe Update (No subcategory, No shipping cost, Safe Status)
-          const safeStatus = (productStatus === 'pending_approval') ? 'inactive' : productStatus; // Redefine just in case
+          // Attempt 3: Safe Update with Shipping Cost (No subcategory)
+          // We include shipping_cost here because it's a critical field user wants fixed.
+          const safeStatus = (productStatus === 'pending_approval') ? 'inactive' : productStatus; 
 
           const [result] = await connection.execute(
             `UPDATE products SET
                  product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
                  price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
                  is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
-                 product_attributes = ?, updated_at = ?, expires_at = ?
+                 product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
                 WHERE product_id = ?`,
             [
               productTitle, productSlug, productDescription, categoryId,
               price, market_price, cost, weightKg, stockQuantity, safeStatus,
               isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-              productAttributes, new Date(), expiresAt, productId
+              productAttributes, new Date(), expiresAt, shippingCost, productId
             ]
           );
           return result.affectedRows;

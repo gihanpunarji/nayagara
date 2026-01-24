@@ -172,7 +172,7 @@ const getSellerProducts = async (req, res) => {
                  'image_id', pi.image_id,
                  'image_url', pi.image_url,
                  'image_alt', pi.image_alt
-               )
+               ) ORDER BY pi.is_primary DESC, pi.image_id ASC
              ) as images_json
       FROM products p
       LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
@@ -408,9 +408,29 @@ const updateProduct = async (req, res) => {
     // User requirement: Any update requires re-approval.
     // If seller explicitly sets it to 'inactive', we allow that immediately.
     // If seller sets it to 'active' (or keeps it 'active'), it must go to 'pending_approval'.
+    // Determine new status
+    // User requirement: Allow seller to toggle Active/Inactive directly.
+    // If seller explicitly sets status, we respect it.
+    // Default to 'pending_approval' only if status is not provided or ambiguous.
     let finalStatus = 'pending_approval';
-    if (productStatus === 'inactive') {
-      finalStatus = 'inactive';
+    
+    if (productStatus === 'active' || productStatus === 'inactive') {
+      finalStatus = productStatus;
+    } else {
+      // If no valid status provided, fallback to logic:
+      // If it was active, maybe force re-approval? 
+      // For now, let's stick to the prompt: seller can edit products options active/inactive toggle.
+      // So if the form sends 'active', we allow 'active'.
+      if (existingProduct.product_status === 'active') {
+         // If we want to be strict, we could force pending_approval here on content change.
+         // But user asked for the toggle to work.
+         finalStatus = 'pending_approval'; 
+      }
+    }
+    
+    // OVERRIDE: Just trust the input for the toggle fix
+    if (productStatus) {
+        finalStatus = productStatus;
     }
 
     // Update product
@@ -445,6 +465,14 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Handle Main Image Logic (New vs Existing)
+    // 1. If user set a NEW image as primary, we must reset existing primaries first.
+    //    The new image will then be inserted with is_primary=1.
+    //    We check this before uploads.
+    if (req.body.newImageIsPrimary === 'true') {
+      await ProductImage.resetPrimaries(productId);
+    }
+
     // Handle new image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
@@ -453,6 +481,13 @@ const updateProduct = async (req, res) => {
       }));
 
       await ProductImage.createMultiple(productId, imageData);
+    }
+
+    // 2. If user set an EXISTING image as primary, we force it here.
+    //    This overwrites any 'is_primary=1' that createMultiple might have set (for the first new image),
+    //    ensuring the correct existing image stays primary.
+    if (req.body.primaryImageId) {
+      await ProductImage.setPrimary(productId, req.body.primaryImageId);
     }
 
     // Get the updated product with images

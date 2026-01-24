@@ -293,6 +293,21 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         formDataToSubmit.append('deletedImageIds', JSON.stringify(deletedImageIds));
       }
 
+      // Add sorted existing image IDs (to persist main image selection/order)
+      // Logic:
+      // 1. If the first image is an EXISTING image, we send its ID as 'primaryImageId'.
+      // 2. If the first image is a NEW image, we send 'newImageIsPrimary' flag so backend resets existing primaries.
+      if (formData.images.length > 0) {
+        const mainImage = formData.images[0];
+        const isExisting = mainImage.id && !mainImage.file && !String(mainImage.id).includes('_') && !String(mainImage.id).includes('image-');
+        
+        if (isExisting) {
+          formDataToSubmit.append('primaryImageId', mainImage.id);
+        } else if (mainImage.file) {
+           formDataToSubmit.append('newImageIsPrimary', 'true');
+        }
+      }
+
       // Add status (for sellers to disable products)
       formDataToSubmit.append('productStatus', formData.productStatus);
 

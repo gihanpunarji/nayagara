@@ -164,6 +164,15 @@ class ProductImage {
     return rows[0].count;
   }
 
+  static async resetPrimaries(productId) {
+    const connection = getConnection();
+    const [result] = await connection.execute(
+      "UPDATE product_images SET is_primary = 0 WHERE product_id = ?",
+      [productId]
+    );
+    return result.affectedRows;
+  }
+
   // Helper method to generate image URL
   static generateImageUrl(filename) {
     return `/uploads/products/${filename}`;

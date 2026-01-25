@@ -22,7 +22,7 @@ import ChatView from "../components/customer/pages/ChatView.jsx";
 import NayagaraWaterHome from "../components/customer/pages/Nayagara_water_home.jsx";
 import HelpCenter from "../components/customer/pages/HelpCenter.jsx";
 import RefundPolicy from "../components/customer/pages/RefundPolicy.jsx";
-import PrivacyPolicy from "../components/customer/pages/PrivacyPolicy.jsx";
+import SystemPrivacy from "../components/customer/pages/SystemPrivacy.jsx";
 import TermsConditions from "../components/customer/pages/TermsConditions.jsx";
 import PostAd from "../components/customer/pages/PostAd.jsx";
 import OrderSuccess from "../components/customer/pages/OrderSuccess.jsx";
@@ -232,7 +232,7 @@ const CustomerRoutes = () => {
         path="/privacy-policy"
         element={
           <PageWrapper>
-            <PrivacyPolicy />
+            <SystemPrivacy />
           </PageWrapper>
         }
       />

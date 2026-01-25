@@ -498,8 +498,6 @@ class Product {
       if (error.code === 'ER_BAD_FIELD_ERROR' || error.code === 'WARN_DATA_TRUNCATED' || error.code === 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD' || true) {
 
         try {
-          // Define safe status
-          const safeStatus = (productStatus === 'pending_approval') ? 'inactive' : productStatus;
 
           // Attempt 2: Try without subcategory_id but WITH shipping_cost (and with safe status)
           const [result] = await connection.execute(
@@ -511,7 +509,7 @@ class Product {
                 WHERE product_id = ?`,
             [
               productTitle, productSlug, productDescription, categoryId,
-              price, market_price, cost, weightKg, stockQuantity, safeStatus,
+              price, market_price, cost, weightKg, stockQuantity, productStatus,
               isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
               productAttributes, new Date(), expiresAt, shippingCost, productId
             ]
@@ -523,8 +521,7 @@ class Product {
 
           // Attempt 3: Safe Update with Shipping Cost (No subcategory)
           // We include shipping_cost here because it's a critical field user wants fixed.
-          const safeStatus = (productStatus === 'pending_approval') ? 'inactive' : productStatus; 
-
+          
           const [result] = await connection.execute(
             `UPDATE products SET
                  product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
@@ -534,7 +531,7 @@ class Product {
                 WHERE product_id = ?`,
             [
               productTitle, productSlug, productDescription, categoryId,
-              price, market_price, cost, weightKg, stockQuantity, safeStatus,
+              price, market_price, cost, weightKg, stockQuantity, productStatus,
               isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
               productAttributes, new Date(), expiresAt, shippingCost, productId
             ]

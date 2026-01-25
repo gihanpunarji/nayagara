@@ -1,7 +1,7 @@
 import React from 'react';
 import { Shield, Lock, Eye, Database, Share2, Cookie, Bell, FileText } from 'lucide-react';
 
-const PrivacyPolicy = () => {
+const SystemPrivacy = () => {
   const privacyFeatures = [
     {
       icon: Lock,
@@ -497,4 +497,4 @@ const PrivacyPolicy = () => {
   );
 };
 
-export default PrivacyPolicy;
+export default SystemPrivacy;

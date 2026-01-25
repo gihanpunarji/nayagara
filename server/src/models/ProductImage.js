@@ -10,7 +10,7 @@ class ProductImage {
     return result;
   }
 
-  static async createMultiple(productId, images) {
+  static async createMultiple(productId, images, setFirstAsPrimary = true) {
     const connection = getConnection();
 
     // Prepare bulk insert
@@ -18,7 +18,7 @@ class ProductImage {
       productId,
       image.imageUrl,
       image.imageAlt || '',
-      index === 0 ? 1 : 0 // First image is primary
+      (setFirstAsPrimary && index === 0) ? 1 : 0 // First image is primary ONLY if requested
     ]);
 
     if (values.length === 0) return { insertId: null, affectedRows: 0 };

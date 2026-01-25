@@ -58,7 +58,7 @@ const HeroSection = () => {
             alt={`${heroBanners[currentSlide].title} - ${heroBanners[currentSlide].subtitle}: ${heroBanners[currentSlide].description}`}
             className={`absolute inset-0 w-full h-full min-w-full min-h-full object-center transition-all duration-1000 ${heroBanners[currentSlide].imgClass || 'object-cover'}`}
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
 
           <div className="absolute inset-0 z-2 flex items-center p-3 md:p-5 xl:p-8">

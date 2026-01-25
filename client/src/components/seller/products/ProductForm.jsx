@@ -21,7 +21,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     images: [],
     // Dynamic fields will be added based on category
     ...{},
-    productStatus: 'active',
     weightKg: ''
   });
 
@@ -138,8 +137,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         shippingCost: productData.shippingCost || productData.shipping_cost || '',
         locationCityId: productData.locationCityId || productData.location_city_id || '',
         metaTitle: productData.metaTitle || productData.meta_title || '',
-        metaDescription: productData.metaDescription || productData.meta_description || '',
-        productStatus: (productData.productStatus === 'inactive' || productData.product_status === 'inactive') ? 'inactive' : 'active'
+        metaDescription: productData.metaDescription || productData.meta_description || ''
       });
       setDynamicFields(productData.dynamicFields || productData.product_attributes || {});
 
@@ -308,8 +306,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         }
       }
 
-      // Add status (for sellers to disable products)
-      formDataToSubmit.append('productStatus', formData.productStatus);
+
 
       // Support category updates: Always send category and subcategory
       formDataToSubmit.append('category', formData.category);
@@ -592,29 +589,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
           </div>
         </div>
 
-        {/* Product Status */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Product Status</h2>
-          <div className="flex items-center space-x-4">
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                className="sr-only peer"
-                checked={formData.productStatus === 'active'}
-                onChange={(e) => setFormData(prev => ({ ...prev, productStatus: e.target.checked ? 'active' : 'inactive' }))}
-              />
-              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
-              <span className="ml-3 text-sm font-medium text-gray-900">
-                {formData.productStatus === 'active' ? 'Active (Visible)' : 'Inactive (Hidden)'}
-              </span>
-            </label>
-            <p className="text-sm text-gray-500">
-              {formData.productStatus === 'active'
-                ? 'Product is visible to customers (subject to approval).'
-                : 'Product is hidden from customers.'}
-            </p>
-          </div>
-        </div>
+
 
         {/* Category Selection */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">

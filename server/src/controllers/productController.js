@@ -368,6 +368,107 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // --- CHANGE DETECTION LOGIC ---
+    let hasContentChanged = false;
+
+    // Helper to compare values safely
+    const hasChanged = (val1, val2) => {
+      // Handle null/undefined vs empty string
+      const v1 = val1 === null || val1 === undefined ? '' : String(val1).trim();
+      const v2 = val2 === null || val2 === undefined ? '' : String(val2).trim();
+      return v1 !== v2;
+    };
+
+    // 1. Direct Field Comparison
+    if (
+      hasChanged(title, existingProduct.product_title) ||
+      hasChanged(description, existingProduct.product_description) ||
+      parseFloat(price) !== parseFloat(existingProduct.price) ||
+      parseFloat(market_price) !== parseFloat(existingProduct.market_price) ||
+      parseFloat(cost) !== parseFloat(existingProduct.cost) ||
+      // category/subcategory might be strings or ints
+      (category && String(category) !== String(existingProduct.category_id)) ||
+      (subcategory && String(subcategory) !== String(existingProduct.subcategory_id)) ||
+      (weightKg && parseFloat(weightKg) !== parseFloat(existingProduct.weight_kg)) ||
+      (shippingCost && parseFloat(shippingCost) !== parseFloat(existingProduct.shipping_cost))
+    ) {
+      hasContentChanged = true;
+      console.log(`Product ${productId}: Content fields changed.`);
+    }
+
+    // 2. Image Changes
+    // Check for NEW images
+    if (req.files && req.files.length > 0) {
+      hasContentChanged = true;
+      console.log(`Product ${productId}: New images uploaded.`);
+    }
+
+    // Check for DELETED images
+    let idsToDelete = [];
+    if (deletedImageIds) {
+      try {
+        if (typeof deletedImageIds === 'string') {
+          // Try parsing JSON first
+          try {
+            const parsed = JSON.parse(deletedImageIds);
+            if (Array.isArray(parsed)) idsToDelete = parsed;
+            else idsToDelete = [String(deletedImageIds)];
+          } catch (e) {
+            // If not JSON, assume comma-separated or single ID
+            if (deletedImageIds.includes(',')) {
+              idsToDelete = deletedImageIds.split(',').map(id => id.trim());
+            } else {
+              idsToDelete = [deletedImageIds.trim()];
+            }
+          }
+        } else if (Array.isArray(deletedImageIds)) {
+          idsToDelete = deletedImageIds;
+        } else {
+          // Fallback
+          idsToDelete = [String(deletedImageIds)];
+        }
+        
+        // Filter out empty/invalid IDs
+        idsToDelete = idsToDelete.filter(id => id && String(id).trim() !== '' && !String(id).includes('image-'));
+
+        if (idsToDelete.length > 0) {
+          hasContentChanged = true;
+          console.log(`Product ${productId}: Images marked for deletion:`, idsToDelete);
+        }
+      } catch (e) {
+        console.error("Error parsing deletedImageIds:", e);
+      }
+    }
+
+    // --- STATUS ENFORCEMENT ---
+    let finalStatus = existingProduct.product_status;
+
+    if (hasContentChanged) {
+      // IF content changed -> Force 'pending_approval'
+      // UNLESS: The seller EXPLICITLY set it to 'inactive' to hide it.
+      // Prioritize safety: If they strictly want to hide it, let them.
+      if (productStatus === 'inactive') {
+        finalStatus = 'inactive';
+      } else {
+        finalStatus = 'pending_approval';
+      }
+    } else {
+      // IF NO content change -> Allow status toggle (Active <-> Inactive)
+      // BUT: If it was 'pending_approval', do NOT allow 'active' (admin hasn't approved yet)
+      if (productStatus) {
+        if (existingProduct.product_status === 'pending_approval' && productStatus === 'active') {
+          // Trying to activate unapproved product -> Keep pending
+          finalStatus = 'pending_approval';
+        } else {
+          // Allow normal toggle
+          finalStatus = productStatus;
+        }
+      }
+    }
+    
+    console.log(`Product ${productId}: Status Update - Old: ${existingProduct.product_status}, Requested: ${productStatus}, Final: ${finalStatus}`);
+
+
     // Generate new slug if title changed
     let productSlug = existingProduct.product_slug;
     if (title !== existingProduct.product_title) {
@@ -393,55 +494,8 @@ const updateProduct = async (req, res) => {
     const expirationDate = expiresAt ? new Date(expiresAt) : existingProduct.expires_at;
 
     // Handle deleted images FIRST
-    if (deletedImageIds) {
-      try {
-        console.log("Processing deletedImageIds:", deletedImageIds);
-        let idsToDelete = deletedImageIds;
-        if (typeof deletedImageIds === 'string') {
-          // Handle case where it's a JSON string
-          try {
-            idsToDelete = JSON.parse(deletedImageIds);
-          } catch (e) {
-            // Handle case where it might be a single string ID
-            // Check if it looks like an array string "[...]"
-            if (deletedImageIds.trim().startsWith('[')) {
-              console.error("Failed to parse array string:", e);
-              idsToDelete = [];
-            } else {
-              idsToDelete = [deletedImageIds];
-            }
-          }
-        }
-
-        // Ensure it's an array
-        if (!Array.isArray(idsToDelete)) {
-          idsToDelete = [idsToDelete];
-        }
-
-        if (idsToDelete.length > 0) {
-          console.log("Deleting images:", idsToDelete);
-          await ProductImage.deleteMultipleByIds(idsToDelete);
-        }
-      } catch (e) {
-        console.error("Error deleting images:", e);
-      }
-    }
-
-    // Determine new status
-    // Logic: If seller explicitly sends a status, we use it.
-    // This allows toggling Active <-> Inactive.
-    // However, if they change critical fields (price, description) on an Active product,
-    // business logic usually requires 'pending_approval'.
-    // BUT the user specifically asked for the toggle to work.
-
-    let finalStatus = existingProduct.product_status;
-
-    if (productStatus) {
-      // If explicit status provided, use it
-      finalStatus = productStatus;
-    } else {
-      // If not provided, but we are updating, default logic could go here.
-      // For now, keep existing status if not explicitly changed.
+    if (idsToDelete.length > 0) {
+       await ProductImage.deleteMultipleByIds(idsToDelete);
     }
 
     // Update product
@@ -489,7 +543,10 @@ const updateProduct = async (req, res) => {
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
-      await ProductImage.createMultiple(productId, imageData);
+      // Only set first as primary if user explicitly requested it (via newImageIsPrimary flag)
+      // For updates, this prevents overriding an existing primary image
+      const setFirstAsPrimary = req.body.newImageIsPrimary === 'true';
+      await ProductImage.createMultiple(productId, imageData, setFirstAsPrimary);
     }
 
     // 2. If user set an EXISTING image as primary, we force it here.
@@ -503,7 +560,9 @@ const updateProduct = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Product updated successfully",
+      message: hasContentChanged 
+        ? "Product updated and submitted for approval." 
+        : "Product status updated successfully.",
       data: {
         product: {
           ...updatedProduct,
@@ -1013,38 +1072,56 @@ const getAdminProducts = async (req, res) => {
 };
 
 // Update product status (Admin only)
+// Update product status (Isolated toggle for Sellers)
 const updateProductStatus = async (req, res) => {
   try {
     const { productId } = req.params;
+    const sellerId = req.user.user_id;
     const { status } = req.body;
 
-    if (!productId || !status) {
+    console.log(`[DEBUG] updateProductStatus: productId=${productId}, sellerId=${sellerId}, status=${status}`);
+
+    if (!['active', 'inactive'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Product ID and status are required"
+        message: "Invalid status. Only 'active' or 'inactive' allowed."
       });
     }
 
-    const allowedStatuses = ['active', 'pending_approval', 'suspended'];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status. Allowed values: active, pending_approval, suspended"
-      });
-    }
-
-    const affectedRows = await Product.updateStatus(productId, status);
-
-    if (affectedRows === 0) {
+    const product = await Product.findById(productId);
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
 
+    if (product.seller_id !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Product does not belong to you."
+      });
+    }
+
+    // Safety Logic
+    // If current status is pending_approval, suspended, or draft
+    // Prevent switching to 'active' (Unapproved activation attempt)
+    if (status === 'active') {
+      const restrictedStatuses = ['pending_approval', 'suspended', 'draft'];
+      if (restrictedStatuses.includes(product.product_status)) {
+        return res.status(403).json({
+          success: false,
+          message: `Cannot activate product from '${product.product_status}' status. Wait for admin approval.`
+        });
+      }
+    }
+
+    // If allowed, update status
+    await Product.updateStatus(productId, status);
+
     res.json({
       success: true,
-      message: `Product status updated to ${status}`
+      message: `Product ${status === 'active' ? 'activated' : 'deactivated'} successfully`
     });
 
   } catch (error) {

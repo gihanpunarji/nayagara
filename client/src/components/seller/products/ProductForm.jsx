@@ -693,33 +693,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         {/* Submit Buttons */}
         <div className="flex items-center justify-between pt-6">
           <div>
-            {isEdit && (
-              <button
-                type="button"
-                onClick={async () => {
-                  if (window.confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
-                    try {
-                      setIsSubmitting(true);
-                      const response = await api.delete(`/products/${productId}`);
-                      if (response.data.success) {
-                        navigate('/seller/products');
-                      } else {
-                        setErrors({ submit: response.data.message || 'Failed to delete product' });
-                      }
-                    } catch (error) {
-                      console.error('Error deleting product:', error);
-                      setErrors({ submit: error.response?.data?.message || 'Failed to delete product' });
-                    } finally {
-                      setIsSubmitting(false);
-                    }
-                  }
-                }}
-                className="flex items-center space-x-2 px-6 py-2 border border-red-200 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
-              >
-                <Trash2 className="w-4 h-4" />
-                <span>Delete Product</span>
-              </button>
-            )}
+
           </div>
           <div className="flex items-center space-x-4">
             <Link

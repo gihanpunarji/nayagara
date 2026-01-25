@@ -44,12 +44,12 @@ const ProductList = () => {
       if (selectedFilter !== 'all') params.append('status', selectedFilter);
       if (selectedCategory) params.append('category', selectedCategory);
       if (sortBy !== 'newest') params.append('sort', sortBy);
-      
+
       const queryString = params.toString();
       const url = `/products/seller${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await api.get(url);
-      
+
       if (response.data.success) {
         const productsData = response.data.data.map(product => ({
           id: product.product_id,
@@ -66,7 +66,7 @@ const ProductList = () => {
           orders: product.inquiry_count || 0,
           attributes: product.product_attributes
         }));
-        
+
         setProducts(productsData);
       } else {
         setError(response.data.message || 'Failed to load products');
@@ -140,6 +140,8 @@ const ProductList = () => {
     loadProducts();
   }, [debouncedSearch, selectedFilter, selectedCategory, sortBy]);
 
+
+
   const getStatusColor = (status, stock) => {
     if (stock === 0) return 'text-red-600 bg-red-100';
     switch (status) {
@@ -189,10 +191,10 @@ const ProductList = () => {
             {getStatusIcon(product.status, product.stock)}
             <span>
               {product.stock === 0 ? 'Out of Stock' :
-               product.status === 'active' ? 'Active' :
-               product.status === 'pending_approval' ? 'Pending Approval' : 
-               product.status === 'suspended' ? 'Suspended' :
-               product.status === 'inactive' ? 'Inactive' : product.status}
+                product.status === 'active' ? 'Active' :
+                  product.status === 'pending_approval' ? 'Pending Approval' :
+                    product.status === 'suspended' ? 'Suspended' :
+                      product.status === 'inactive' ? 'Inactive' : product.status}
             </span>
           </span>
         </div>
@@ -286,10 +288,10 @@ const ProductList = () => {
                 {getStatusIcon(product.status, product.stock)}
                 <span>
                   {product.stock === 0 ? 'Out of Stock' :
-                   product.status === 'active' ? 'Active' :
-                   product.status === 'pending_approval' ? 'Pending Approval' : 
-                   product.status === 'suspended' ? 'Suspended' :
-                   product.status === 'inactive' ? 'Inactive' : product.status}
+                    product.status === 'active' ? 'Active' :
+                      product.status === 'pending_approval' ? 'Pending Approval' :
+                        product.status === 'suspended' ? 'Suspended' :
+                          product.status === 'inactive' ? 'Inactive' : product.status}
                 </span>
               </span>
 
@@ -300,6 +302,7 @@ const ProductList = () => {
                 >
                   <Edit className="w-4 h-4" />
                 </Link>
+
                 <button className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-all">
                   <Eye className="w-4 h-4" />
                 </button>
@@ -342,18 +345,16 @@ const ProductList = () => {
             <button
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
-              className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                selectedFilter === filter.key
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               <span>{filter.label}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                selectedFilter === filter.key
-                  ? 'bg-white bg-opacity-20 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedFilter === filter.key
+                ? 'bg-white bg-opacity-20 text-white'
+                : 'bg-gray-200 text-gray-600'
+                }`}>
                 {filter.count}
               </span>
             </button>
@@ -409,21 +410,19 @@ const ProductList = () => {
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              } transition-colors`}
+              className={`p-2 ${viewMode === 'grid'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+                } transition-colors`}
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              } transition-colors`}
+              className={`p-2 ${viewMode === 'list'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+                } transition-colors`}
             >
               <ListIcon className="w-4 h-4" />
             </button>
@@ -479,8 +478,8 @@ const ProductList = () => {
                 Showing {products.length} products
                 {(searchQuery || selectedFilter !== 'all' || selectedCategory) && (
                   <span className="text-primary-600 font-medium">
-                    {' '}• {searchQuery && `"${searchQuery}"`} 
-                    {selectedFilter !== 'all' && ` • ${selectedFilter}`} 
+                    {' '}• {searchQuery && `"${searchQuery}"`}
+                    {selectedFilter !== 'all' && ` • ${selectedFilter}`}
                     {selectedCategory && ` • ${selectedCategory}`}
                   </span>
                 )}

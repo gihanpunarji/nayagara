@@ -6,7 +6,8 @@ const {
   updateProduct,
   getPublicProducts,
   filterProducts,
-  getPublicProductById
+  getPublicProductById,
+  deleteProduct
 } = require("../controllers/productController");
 const { authenticateToken } = require("../middleware/auth");
 const { productImageUpload } = require("../middleware/cloudinaryUpload");
@@ -42,6 +43,9 @@ router.get("/seller", authenticateToken, getSellerProducts);
 
 // Update product by ID
 router.put("/:productId", authenticateToken, ...productImageUpload.array('images', 10), updateProduct);
+
+// Delete product by ID
+router.delete("/:productId", authenticateToken, deleteProduct);
 
 // Get single product by ID (this should be last because it's a catch-all)
 router.get("/:productId", authenticateToken, getProductById);

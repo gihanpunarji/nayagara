@@ -392,45 +392,56 @@ const updateProduct = async (req, res) => {
     // Calculate expires at
     const expirationDate = expiresAt ? new Date(expiresAt) : existingProduct.expires_at;
 
-    // Handle deleted images FIRST (before updating product just in case)
+    // Handle deleted images FIRST
     if (deletedImageIds) {
       try {
-        const idsToDelete = typeof deletedImageIds === 'string' ? JSON.parse(deletedImageIds) : deletedImageIds;
-        if (Array.isArray(idsToDelete) && idsToDelete.length > 0) {
+        console.log("Processing deletedImageIds:", deletedImageIds);
+        let idsToDelete = deletedImageIds;
+        if (typeof deletedImageIds === 'string') {
+          // Handle case where it's a JSON string
+          try {
+            idsToDelete = JSON.parse(deletedImageIds);
+          } catch (e) {
+            // Handle case where it might be a single string ID
+            // Check if it looks like an array string "[...]"
+            if (deletedImageIds.trim().startsWith('[')) {
+              console.error("Failed to parse array string:", e);
+              idsToDelete = [];
+            } else {
+              idsToDelete = [deletedImageIds];
+            }
+          }
+        }
+
+        // Ensure it's an array
+        if (!Array.isArray(idsToDelete)) {
+          idsToDelete = [idsToDelete];
+        }
+
+        if (idsToDelete.length > 0) {
+          console.log("Deleting images:", idsToDelete);
           await ProductImage.deleteMultipleByIds(idsToDelete);
         }
       } catch (e) {
-        console.error("Error parsing/deleting images:", e);
+        console.error("Error deleting images:", e);
       }
     }
 
     // Determine new status
-    // User requirement: Any update requires re-approval.
-    // If seller explicitly sets it to 'inactive', we allow that immediately.
-    // If seller sets it to 'active' (or keeps it 'active'), it must go to 'pending_approval'.
-    // Determine new status
-    // User requirement: Allow seller to toggle Active/Inactive directly.
-    // If seller explicitly sets status, we respect it.
-    // Default to 'pending_approval' only if status is not provided or ambiguous.
-    let finalStatus = 'pending_approval';
-    
-    if (productStatus === 'active' || productStatus === 'inactive') {
+    // Logic: If seller explicitly sends a status, we use it.
+    // This allows toggling Active <-> Inactive.
+    // However, if they change critical fields (price, description) on an Active product,
+    // business logic usually requires 'pending_approval'.
+    // BUT the user specifically asked for the toggle to work.
+
+    let finalStatus = existingProduct.product_status;
+
+    if (productStatus) {
+      // If explicit status provided, use it
       finalStatus = productStatus;
     } else {
-      // If no valid status provided, fallback to logic:
-      // If it was active, maybe force re-approval? 
-      // For now, let's stick to the prompt: seller can edit products options active/inactive toggle.
-      // So if the form sends 'active', we allow 'active'.
-      if (existingProduct.product_status === 'active') {
-         // If we want to be strict, we could force pending_approval here on content change.
-         // But user asked for the toggle to work.
-         finalStatus = 'pending_approval'; 
-      }
-    }
-    
-    // OVERRIDE: Just trust the input for the toggle fix
-    if (productStatus) {
-        finalStatus = productStatus;
+      // If not provided, but we are updating, default logic could go here.
+      // For now, keep existing status if not explicitly changed.
     }
 
     // Update product
@@ -447,7 +458,7 @@ const updateProduct = async (req, res) => {
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
       stockQuantity: parseInt(stock),
-      productStatus: finalStatus, // Enforce re-approval or inactive
+      productStatus: finalStatus,
       isFeatured: existingProduct.is_featured,
       isPromoted: existingProduct.is_promoted,
       locationCityId: locationCityId || existingProduct.location_city_id,
@@ -467,8 +478,6 @@ const updateProduct = async (req, res) => {
 
     // Handle Main Image Logic (New vs Existing)
     // 1. If user set a NEW image as primary, we must reset existing primaries first.
-    //    The new image will then be inserted with is_primary=1.
-    //    We check this before uploads.
     if (req.body.newImageIsPrimary === 'true') {
       await ProductImage.resetPrimaries(productId);
     }
@@ -476,7 +485,7 @@ const updateProduct = async (req, res) => {
     // Handle new image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: file.path, // Now contains the full Cloudinary URL
+        imageUrl: file.path,
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
@@ -484,8 +493,6 @@ const updateProduct = async (req, res) => {
     }
 
     // 2. If user set an EXISTING image as primary, we force it here.
-    //    This overwrites any 'is_primary=1' that createMultiple might have set (for the first new image),
-    //    ensuring the correct existing image stays primary.
     if (req.body.primaryImageId) {
       await ProductImage.setPrimary(productId, req.body.primaryImageId);
     }
@@ -516,6 +523,7 @@ const updateProduct = async (req, res) => {
     });
   }
 };
+
 
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {

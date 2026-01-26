@@ -1,6 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import "./index.css";
 
 // console.log('Current VITE_API_URL:', import.meta.env.VITE_API_URL);
@@ -41,9 +41,14 @@ import { getSubdomain, isSellerSubDomain, isCustomerSubDomain } from "./utils/su
 
 // Determine which routes to render based on subdomain
 const AppRoutes = () => {
+  const location = useLocation(); // Force re-render on route change
   const subdomain = getSubdomain();
   const isSellerSub = isSellerSubDomain();
   const isCustomerSub = isCustomerSubDomain();
+
+  console.log('[AppRoutes] Subdomain:', subdomain);
+  console.log('[AppRoutes] isSellerSub:', isSellerSub);
+  console.log('[AppRoutes] Path:', location.pathname);
 
   // If there's a subdomain but it's not valid (not 'sellers' or 'www'), show error
   if (subdomain && !isSellerSub && !isCustomerSub) {

@@ -25,7 +25,10 @@ export const getSubdomain = () => {
 
 export const isSellerSubDomain = () => {
     const subdomain = getSubdomain();
-    return subdomain === 'sellers';
+    if (subdomain === 'sellers') return true;
+    
+    // Allow path-based detection for localhost/dev
+    return window.location.pathname.startsWith('/seller');
 }
 
 export const isCustomerSubDomain = () => {

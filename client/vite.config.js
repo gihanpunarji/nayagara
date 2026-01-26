@@ -16,6 +16,7 @@ export default defineConfig({
         changeOrigin: true,
         secure: false
       }
-    }
+    },
+    host: true // Listen on all local IPs to support subdomains like sellers.localhost
   }
 })

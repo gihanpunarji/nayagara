@@ -22,15 +22,32 @@ const storeRoutes = require("./routes/storeRoutes");
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+// Allowed origins list
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://nayagara.lk",
+  "https://www.nayagara.lk",
+  "https://sellers.nayagara.lk",
+  "http://sellers.localhost:5173",
+];
+
+// Dynamic CORS configuration to fix caching issues
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "https://nayagara.lk",
-      "https://www.nayagara.lk",
-      "https://sellers.nayagara.lk",
-      "http://sellers.localhost:5173",
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      if (allowedOrigins.indexOf(origin) !== -1) {
+        callback(null, true);
+      } else {
+        // Optional: Allow all during debugging if needed, but safer to block
+        // callback(new Error('Not allowed by CORS'));
+        // For production stability given recent issues, lets log and allow? 
+        // No, stick to whitelist but reflect it properly.
+        callback(null, false);
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
     credentials: true,
   })
@@ -38,9 +55,15 @@ app.use(
 
 app.use(express.json());
 
+// Force Vary: Origin to prevent Vercel/CDN from serving wrong cached CORS headers
+app.use((req, res, next) => {
+  res.header('Vary', 'Origin');
+  next();
+});
+
 // Debug Logger
 app.use((req, res, next) => {
-  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  console.log(`[REQUEST] ${req.method} ${req.url} | Origin: ${req.headers.origin}`);
   next();
 });
 

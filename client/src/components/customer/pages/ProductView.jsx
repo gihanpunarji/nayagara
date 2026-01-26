@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCart } from "../../../context/CartContext";
 import { useChat } from "../../../hooks/useChat";
 import ChatManager from "../../shared/chat/ChatManager";
+import ProductReviews from "../sections/ProductReviews";
 import { publicApi } from "../../../api/axios";
 import {
   ChevronLeft,
@@ -190,8 +191,8 @@ export const ProductView = () => {
         originalPrice: parseFloat(product.market_price) || 0,
         cost: parseFloat(product.cost) || 0,
         shipping_cost: parseFloat(product.shipping_cost || 0),
-        rating: 4.5, // Default rating - you can implement actual ratings later
-        reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
+        rating: parseFloat(product.average_rating) || 0,
+        reviewCount: parseInt(product.review_count) || 0,
         images:
           Array.isArray(product.images) && product.images.length > 0
             ? product.images
@@ -657,6 +658,7 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
+              {/* Seller Info Hidden as per request
               <div className="flex items-center space-x-4 mb-4">
                 {sellerImageUrl ? (
                   <img
@@ -677,12 +679,13 @@ export const ProductView = () => {
                   </div>
                 </div>
               </div>
+              */}
               <button
                 onClick={handleOpenChat}
                 className="w-full md:w-48 bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <MessageCircle className="w-5 h-5" />
-                <span>Chat with Seller</span>
+                <span>Chat</span>
               </button>
             </div>
           </details>
@@ -693,7 +696,7 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
-              {/* Reviews will go here */}
+              <ProductReviews productId={processedProduct.id} />
             </div>
           </details>
         </div>

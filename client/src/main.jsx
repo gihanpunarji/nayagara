@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import "./index.css";
 
-console.log('Current VITE_API_URL:', import.meta.env.VITE_API_URL);
+// console.log('Current VITE_API_URL:', import.meta.env.VITE_API_URL);
 
 // Context Providers
 import { AuthProvider } from "./context/AuthContext.jsx";

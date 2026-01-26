@@ -57,6 +57,18 @@ app.use("/api/admin/referrals", adminReferralRoutes);
 app.use("/api/admin", adminRoutes); // Use admin routes
 app.use("/api/referral", referralRoutes); // Use referral routes
 app.use("/api/store", storeRoutes);
+app.use("/api/reviews", require("./routes/reviewRoutes"));
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled Error:", err);
+  res.status(500).json({
+    success: false,
+    message: "Internal Server Error",
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  });
+});
 
 app.get("/", (req, res) => {
   res.json({ message: "Server is running successfully!" });

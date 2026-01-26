@@ -225,7 +225,7 @@ const MobileMenu = ({
                         My Orders
                       </span>
                     </Link>
-                    <Link
+                    {/* <Link
                       to="/account?tab=my-ads"
                       onClick={() => {
                         navigate('/account?tab=my-ads');
@@ -237,7 +237,7 @@ const MobileMenu = ({
                       <span className="font-medium text-gray-700 group-hover:text-primary-600">
                         My Ads
                       </span>
-                    </Link>
+                    </Link> */}
                     <Link
                       to="/account?tab=wallet"
                       onClick={() => {

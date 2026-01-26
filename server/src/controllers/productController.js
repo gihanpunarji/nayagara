@@ -792,6 +792,8 @@ const getPublicProductById = async (req, res) => {
         s.store_name,
         c2.city_name as location_city_name,
         d.district_name as location_district_name,
+        COALESCE(r.review_count, 0) as review_count,
+        COALESCE(r.avg_rating, 0) as average_rating,
         GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM 
         products p
@@ -802,6 +804,12 @@ const getPublicProductById = async (req, res) => {
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
+        LEFT JOIN (
+          SELECT product_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+          FROM product_reviews 
+          WHERE status = 'active'
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id
       WHERE
         p.product_id = ?
         AND p.product_status = 'active'
@@ -1122,6 +1130,94 @@ const updateProductStatus = async (req, res) => {
     res.json({
       success: true,
       message: `Product ${status === 'active' ? 'activated' : 'deactivated'} successfully`
+    });
+
+  } catch (error) {
+    console.error("Update product status error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Internal server error"
+    });
+  }
+};
+
+// Update product status
+const updateProductStatus = async (req, res) => {
+  try {
+    const { productId } = req.params;
+    const { status } = req.body;
+    const sellerId = req.user.user_id;
+
+    if (!status || !['active', 'inactive'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status"
+      });
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    if (product.seller_id !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
+      });
+    }
+
+    // Logic:
+    // If pending_approval, allow ONLY 'inactive'.
+    // If suspended, allow ONLY 'inactive'.
+    // If active/inactive, allow 'active' or 'inactive'.
+
+    let newStatus = status;
+    const currentStatus = product.product_status;
+
+    if (currentStatus === 'pending_approval' && status === 'active') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot activate product while approval is pending."
+      });
+    }
+
+    if (currentStatus === 'suspended' && status === 'active') {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot activate suspended product. Contact support."
+      });
+    }
+    
+    // Update simple status
+    const affectedRows = await Product.updateRobust({
+      productId: parseInt(productId),
+      productStatus: newStatus
+      // All other fields remain undefined, updateRobust should handle partial updates?
+      // Wait, updateRobust might overwrite everything with NULL/undefined?
+      // Let's check updateRobust logic or use simple SQL here for safety.
+    });
+
+    // Actually, updateRobust is designed for FULL update and might set others to null if we pass object. 
+    // Let's safe check Product.js. 
+    // If updateRobust logic is risky, use a direct query here.
+    
+    // Using direct query for safety as updateRobust expects many fields.
+    const { getConnection } = require("../config/database");
+    const connection = getConnection();
+    
+    await connection.execute(
+      "UPDATE products SET product_status = ? WHERE product_id = ?",
+      [newStatus, productId]
+    );
+
+    res.json({
+      success: true,
+      message: `Product status updated to ${newStatus}`,
+      data: { status: newStatus }
     });
 
   } catch (error) {

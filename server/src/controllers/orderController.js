@@ -70,7 +70,7 @@ const createOrder = async (req, res) => {
         seller_id: item.seller_id,
         product_title: item.product_title || item.name,
         product_description: item.description || item.shortDescription || '',
-        unit_price: item.cost || item.originalPrice || item.original_price,
+        unit_price: item.price, // Use actual selling price, not cost
         quantity: item.quantity,
         total_price: item.price * item.quantity,
         product_attributes_snapshot: JSON.stringify(product_attributes),

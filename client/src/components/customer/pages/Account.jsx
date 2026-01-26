@@ -11,6 +11,7 @@ import AccountSidebar from '../layout/AccountSidebar';
 import MobileMenu from '../layout/MobileMenu';
 import { useAuth } from '../../../context/AuthContext';
 import api from '../../../api/axios';
+import ReviewModal from '../sections/ReviewModal';
 
 const CustomerAccount = () => {
   const { logout, user, isAuthenticated, loading } = useAuth();
@@ -34,6 +35,12 @@ const CustomerAccount = () => {
   const [myAds, setMyAds] = useState([]);
   const [adsLoading, setAdsLoading] = useState(false);
   const [selectedAdStatus, setSelectedAdStatus] = useState('all');
+  
+  // Review Modal State
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewItem, setReviewItem] = useState(null);
+
+
   
   // Address management states
   const [provinces, setProvinces] = useState([]);
@@ -736,9 +743,34 @@ const CustomerAccount = () => {
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-semibold text-gray-900">
+                                    <p className="font-semibold text-gray-900">
                                     Rs. {parseFloat(item.total_price).toLocaleString()}
                                   </p>
+                                  {/* Review Button for Delivered Orders */}
+                                  {order.order_status === 'delivered' && (
+                                    <>
+                                      {!item.is_reviewed ? (
+                                        <button
+                                          onClick={() => {
+                                            setReviewItem({ ...item, order_id: order.order_id }); // Ensure order_id is passed
+                                            setShowReviewModal(true);
+                                          }}
+                                          className="mt-2 text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center justify-end space-x-1"
+                                        >
+                                          <Star className="w-4 h-4" />
+                                          <span>Write Review</span>
+                                        </button>
+                                      ) : (
+                                        <button
+                                          disabled
+                                          className="mt-2 text-sm text-gray-400 font-medium flex items-center justify-end space-x-1 cursor-not-allowed"
+                                        >
+                                          <Check className="w-4 h-4" />
+                                          <span>Review Added</span>
+                                        </button>
+                                      )}
+                                    </>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -753,6 +785,15 @@ const CustomerAccount = () => {
           ))}
         </div>
       )}
+
+      {/* Review Modal */}
+      <ReviewModal
+        isOpen={showReviewModal}
+        onClose={() => setShowReviewModal(false)}
+        orderItem={reviewItem}
+        onSuccess={fetchUserOrders}
+      />
+
     </div>
   );
 

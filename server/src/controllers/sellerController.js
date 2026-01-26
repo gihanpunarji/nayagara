@@ -7,38 +7,45 @@ const Bank = require("../models/Bank");
 const getSellerProfile = async (req, res) => {
   try {
     const userId = req.user.user_id;
+    console.log(`[DEBUG] getSellerProfile: Fetching for userId=${userId}`);
     
     const user = await User.findById(userId);
-    
-    
     if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+      return res.status(404).json({ success: false, message: "User not found" });
     }
 
-    // Check if user is a seller
     if (user.user_type !== 'seller') {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Not a seller account."
-      });
+      return res.status(403).json({ success: false, message: "Access denied. Not a seller account." });
     }
 
-    // Get store data
-    const store = await Store.findByUserId(userId);
+    let store = null;
+    try {
+      store = await Store.findByUserId(userId);
+    } catch (e) {
+      console.warn("[DEBUG] Error fetching Store:", e.message);
+    }
     
-    // Get complete business address data with location details
-    const businessAddress = await Address.getCompleteBusinessAddressByUserId(userId);
+    let businessAddress = null;
+    try {
+      businessAddress = await Address.getCompleteBusinessAddressByUserId(userId);
+    } catch (e) {
+      console.warn("[DEBUG] Error fetching BusinessAddress:", e.message);
+    }
     
-    // Get admin contact mobile
-    const adminMobile = await Admin.getAdminContactMobile();
+    let adminMobile = null;
+    try {
+      adminMobile = await Admin.getAdminContactMobile();
+    } catch (e) {
+      console.warn("[DEBUG] Error fetching AdminMobile:", e.message);
+    }
     
-    // Get bank details
-    const bankDetails = await Bank.findByUserId(userId);
+    let bankDetails = null;
+    try {
+      bankDetails = await Bank.findByUserId(userId);
+    } catch (e) {
+      console.warn("[DEBUG] Error fetching BankDetails:", e.message);
+    }
 
-    // Return seller profile data (excluding password)
     const { user_password, reset_token, reset_token_expires, ...sellerProfile } = user;
     
     res.json({

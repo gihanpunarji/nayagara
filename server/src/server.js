@@ -38,6 +38,12 @@ app.use(
 
 app.use(express.json());
 
+// Debug Logger
+app.use((req, res, next) => {
+  console.log(`[REQUEST] ${req.method} ${req.url}`);
+  next();
+});
+
 // Serve images from Cloudinary with fallback to local files
 app.use('/uploads', cloudinaryServeMiddleware);
 // Serve static files from uploads directory (fallback)

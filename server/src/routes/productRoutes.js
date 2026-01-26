@@ -15,6 +15,12 @@ const { productImageUpload } = require("../middleware/cloudinaryUpload");
 
 const router = express.Router();
 
+// Debug Logger for Product Routes
+router.use((req, res, next) => {
+  console.log(`[PRODUCT_ROUTER] ${req.method} ${req.originalUrl}`);
+  next();
+});
+
 // Public endpoints first (before catch-all routes)
 // Public products endpoint (no authentication required)
 router.get("/public", getPublicProducts);
@@ -46,7 +52,10 @@ router.get("/seller", authenticateToken, getSellerProducts);
 router.put("/:productId", authenticateToken, ...productImageUpload.array('images', 10), updateProduct);
 
 // Update product status
+// Update product status (PATCH, PUT, POST aliases for debugging)
 router.patch("/:productId/status", authenticateToken, updateProductStatus);
+router.put("/:productId/status", authenticateToken, updateProductStatus);
+router.post("/:productId/status", authenticateToken, updateProductStatus);
 
 // Delete product by ID
 router.delete("/:productId", authenticateToken, deleteProduct);

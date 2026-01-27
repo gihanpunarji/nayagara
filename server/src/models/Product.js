@@ -237,11 +237,28 @@ class Product {
 
   static async updateStatus(productId, status) {
     const connection = getConnection();
-    const [result] = await connection.execute(
-      "UPDATE products SET product_status = ?, updated_at = ? WHERE product_id = ?",
-      [status, new Date(), productId]
-    );
-    return result.affectedRows;
+    try {
+      // Attempt 1: Standard update with updated_at
+      const [result] = await connection.execute(
+        "UPDATE products SET product_status = ?, updated_at = ? WHERE product_id = ?",
+        [status, new Date(), productId]
+      );
+      return result.affectedRows;
+    } catch (error) {
+       console.warn("Product.updateStatus: Attempt 1 failed", error.code);
+       
+       // Attempt 2: Fallback without updated_at (if column missing)
+       try {
+         const [result] = await connection.execute(
+            "UPDATE products SET product_status = ? WHERE product_id = ?",
+            [status, productId]
+          );
+          return result.affectedRows;
+       } catch (err2) {
+          console.error("Product.updateStatus: All attempts failed", err2);
+          throw err2; // Throw original or new error to be caught by controller
+       }
+    }
   }
 
   static async incrementViewCount(productId) {

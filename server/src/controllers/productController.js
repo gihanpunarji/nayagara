@@ -1136,9 +1136,10 @@ const updateProductStatus = async (req, res) => {
 
   } catch (error) {
     console.error("Update product status error:", error);
+    // DEBUG: Exposing specific error message to client for production debugging
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: `Internal server error: ${error.message}` 
     });
   }
 };

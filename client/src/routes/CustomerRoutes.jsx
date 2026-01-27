@@ -260,6 +260,17 @@ const CustomerRoutes = () => {
       <Route path="/error/network" element={<NetworkError />} />
       <Route path="/error/access-denied" element={<AccessDenied />} />
       <Route path="*" element={<NotFound />} />
+<<<<<<< HEAD
+=======
+      <Route
+        path="/contact-admin"
+        element={
+          <PageWrapper>
+            <AdminPortfolio />
+          </PageWrapper>
+        }
+      />
+>>>>>>> main
     </Routes>
   );
 };

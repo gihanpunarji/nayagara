@@ -360,7 +360,7 @@ const MobileMenu = ({
           ) : (
             <div className="mt-2 text-center">
               <p className="text-xs text-gray-500">
-                Join 10,000+ sellers nationwide
+                
               </p>
             </div>
           )}

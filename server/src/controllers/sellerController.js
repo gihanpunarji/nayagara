@@ -7,7 +7,7 @@ const Bank = require("../models/Bank");
 const getSellerProfile = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    console.log(`[DEBUG] getSellerProfile: Fetching for userId=${userId}`);
+    // console.log(`[DEBUG] getSellerProfile: Fetching for userId=${userId}`);
     
     const user = await User.findById(userId);
     if (!user) {
@@ -93,11 +93,11 @@ const updateSellerProfile = async (req, res) => {
       "UPDATE users SET first_name = ?, last_name = ?, user_mobile = ?, nic = ?, updated_at = ? WHERE user_id = ?",
       [firstName, lastName, mobile, nic, new Date(), userId]
     );
-      console.log("Updating store 1:", storeName, storeDescription);
+      // console.log("Updating store 1:", storeName, storeDescription);
 
     // Update or create store data if provided
     if (storeName || storeDescription) {
-      console.log("Updating store 2:", storeName, storeDescription);
+      // console.log("Updating store 2:", storeName, storeDescription);
       await Store.createOrUpdate({
         userId,
         storeName: storeName || '',

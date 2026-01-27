@@ -23,7 +23,7 @@ class Admin {
   }
 
   static async checkCode(code, email) {
-    console.log(code + " " + email);
+    // console.log(code + " " + email);
     
     const connection = getConnection();
     const [rows] = await connection.execute(

@@ -16,7 +16,7 @@ class Store {
       "INSERT INTO store (user_id, store_name, store_description) VALUES (?, ?, ?)",
       [userId, storeName, storeDescription]
     );
-    console.log(result);
+    // console.log(result);
 
     return result.insertId;
   }
@@ -31,7 +31,7 @@ class Store {
   }
 
   static async createOrUpdate({ userId, storeName, storeDescription }) {
-    console.log(userId, storeName, storeDescription);
+    // console.log(userId, storeName, storeDescription);
     const existingStore = await this.findByUserId(userId);
 
     if (existingStore) {

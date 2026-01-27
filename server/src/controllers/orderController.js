@@ -62,7 +62,7 @@ const createOrder = async (req, res) => {
         variant: item.variant || null
       };
 
-      console.log("item ", item);
+      // console.log("item ", item);
 
       return await Order.createOrderItem({
         order_id,
@@ -491,7 +491,7 @@ const calculateShipping = async (req, res) => {
       }
 
       const amountPerKilo = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
-      console.log('Shipping rate per kilo:', amountPerKilo);
+      // console.log('Shipping rate per kilo:', amountPerKilo);
       let totalWeight = 0;
 
       // Calculate total weight from all cart items

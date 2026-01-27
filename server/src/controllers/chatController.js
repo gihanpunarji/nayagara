@@ -68,7 +68,7 @@ const startConversation = async (req, res) => {
 
 // Get all conversations for a user
 const getConversations = async (req, res) => {
-  console.log("getConversations called");
+  // console.log("getConversations called");
   try {
     const userId = req.user.user_id;
     const userRole = req.user.user_type; // 'customer' or 'seller'

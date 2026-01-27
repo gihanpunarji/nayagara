@@ -55,8 +55,13 @@ const Footer = () => {
             <ul className="space-y-3">
               <FooterLink href="/help-center" text="Help Center" />
               <FooterLink href="/refund-policy" text="Refund Policy" />
+<<<<<<< HEAD
               <FooterLink href="/track-order" text="Track Your Order" />
               <FooterLink href="/shipping-info" text="Shipping Info" />
+=======
+              {/* <FooterLink href="/track-order" text="Track Your Order" /> */}
+              {/* <FooterLink href="/shipping-info" text="Shipping Info" /> */}
+>>>>>>> main
             </ul>
           </div>
           

@@ -5,11 +5,7 @@ import api from "../../../api/axios";
 import { redirectSellerSubdomain } from "../../../utils/subdomain";
 
 function ResetPassword() {
-<<<<<<< HEAD
-  console.log("ResetPassword component mounted");
-=======
   // console.log("ResetPassword component mounted");
->>>>>>> main
 
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -24,11 +20,7 @@ function ResetPassword() {
   const urlToken = searchParams.get("token");
   const userRole = searchParams.get("role");
 
-<<<<<<< HEAD
-  console.log("Reset password page loaded");
-=======
   // console.log("Reset password page loaded");
->>>>>>> main
   console.log("URL token:", urlToken);
   console.log("User role from URL:", userRole);
   console.log("Full URL search params:", window.location.search);
@@ -54,15 +46,9 @@ function ResetPassword() {
     setSuccess("");
       
     try {
-<<<<<<< HEAD
-      console.log("Attempting password reset with role:", userRole);
-      const res = await api.post("/auth/reset-password", { urlToken, password });
-      console.log("Reset response:", res.data);
-=======
       // console.log("Attempting password reset with role:", userRole);
       const res = await api.post("/auth/reset-password", { urlToken, password });
       // console.log("Reset response:", res.data);
->>>>>>> main
 
       if (res.data.success) {
         console.log("Password reset successful, setting up redirect...");

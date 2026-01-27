@@ -37,11 +37,7 @@ const ProtectedRoute = ({ children, requiredRole = null, promptOnRedirect = fals
   // Check role-based access
   // Check role-based access
   if (requiredRole && userRole !== requiredRole) {
-<<<<<<< HEAD
-    console.log('[ProtectedRoute] Role mismatch. Required:', requiredRole, 'Current:', userRole);
-=======
     // console.log('[ProtectedRoute] Role mismatch. Required:', requiredRole, 'Current:', userRole);
->>>>>>> main
     
     // If trying to access seller routes but logged in as customer, show Access Denied or logout
     if (requiredRole === 'seller') {

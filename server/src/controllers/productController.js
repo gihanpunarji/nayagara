@@ -1104,7 +1104,8 @@ const updateProductStatus = async (req, res) => {
       });
     }
 
-    if (product.seller_id !== sellerId) {
+    // Check ownership only if not admin
+    if (req.user.role !== 'admin' && product.seller_id !== sellerId) {
       return res.status(403).json({
         success: false,
         message: "Access denied. Product does not belong to you."

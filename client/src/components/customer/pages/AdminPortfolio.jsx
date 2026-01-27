@@ -50,8 +50,8 @@ const AdminPortfolio = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Profile Header Card */}
-        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-12 border border-blue-100">
-          <div className="relative h-64 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600">
+        <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-12 border border-green-100">
+          <div className="relative h-64 bg-gradient-to-r from-green-600 via-green-500 to-emerald-600">
             <div className="absolute inset-0 opacity-20 pattern-grid-lg"></div>
             <div className="absolute bottom-0 left-0 w-full h-24 bg-gradient-to-t from-white to-transparent"></div>
           </div>
@@ -75,7 +75,7 @@ const AdminPortfolio = () => {
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div>
                     <h1 className="text-4xl font-bold text-gray-900 mb-2">Gayan Thennakoon</h1>
-                    <p className="text-xl text-blue-600 font-medium flex items-center">
+                    <p className="text-xl text-green-600 font-medium flex items-center">
                       <Award className="w-5 h-5 mr-2" />
                       Founder & CEO at Nayagara.lk
                     </p>
@@ -98,7 +98,7 @@ const AdminPortfolio = () => {
             {/* Quick Stats/Badges */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-6 border-t border-gray-100">
               <div className="flex items-center space-x-3 text-gray-600">
-                <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
                   <MapPin className="w-5 h-5" />
                 </div>
                 <div>
@@ -134,7 +134,7 @@ const AdminPortfolio = () => {
             {/* About Card */}
             <div className="bg-white rounded-2xl shadow-lg p-8 border border-gray-100">
               <h3 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-                <span className="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center mr-3">
+                <span className="w-8 h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center mr-3">
                   <Globe className="w-5 h-5" />
                 </span>
                 Online Presence
@@ -178,22 +178,22 @@ const AdminPortfolio = () => {
             </div>
 
             {/* Availability Card */}
-            <div className="bg-gradient-to-br from-indigo-900 to-blue-900 rounded-2xl shadow-lg p-8 text-white">
+            <div className="bg-gradient-to-br from-green-900 to-emerald-900 rounded-2xl shadow-lg p-8 text-white">
               <h3 className="text-xl font-bold mb-6 flex items-center">
                 <Clock className="w-6 h-6 mr-3 text-yellow-400" />
                 Availability
               </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center border-b border-white/20 pb-3">
-                  <span className="text-blue-100">Weekdays</span>
+                  <span className="text-green-100">Weekdays</span>
                   <span className="font-semibold">9:00 AM - 6:00 PM</span>
                 </div>
                 <div className="flex justify-between items-center border-b border-white/20 pb-3">
-                  <span className="text-blue-100">Weekends</span>
+                  <span className="text-green-100">Weekends</span>
                   <span className="font-semibold">10:00 AM - 4:00 PM</span>
                 </div>
                 <div className="mt-6 p-4 bg-white/10 rounded-xl backdrop-blur-sm border border-white/20">
-                  <p className="text-sm text-blue-100 leading-relaxed">
+                  <p className="text-sm text-green-100 leading-relaxed">
                     "We are dedicated to providing the best service. Feel free to reach out via WhatsApp for urgent inquiries."
                   </p>
                 </div>
@@ -227,7 +227,7 @@ const AdminPortfolio = () => {
                         required
                         value={formData.name}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
                         placeholder="John Doe"
                       />
                     </div>
@@ -240,7 +240,7 @@ const AdminPortfolio = () => {
                         required
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                        className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
                         placeholder="john@example.com"
                       />
                     </div>
@@ -255,7 +255,7 @@ const AdminPortfolio = () => {
                       required
                       value={formData.subject}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white"
                       placeholder="How can we help?"
                     />
                   </div>
@@ -269,7 +269,7 @@ const AdminPortfolio = () => {
                       required
                       value={formData.message}
                       onChange={handleChange}
-                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white resize-none"
+                      className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all bg-gray-50 focus:bg-white resize-none"
                       placeholder="Write your message here..."
                     ></textarea>
                   </div>
@@ -277,7 +277,7 @@ const AdminPortfolio = () => {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-blue-500/30 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed group"
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl transition-all shadow-lg hover:shadow-green-500/30 flex items-center justify-center disabled:opacity-70 disabled:cursor-not-allowed group"
                   >
                     {submitting ? (
                       <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -304,16 +304,16 @@ const SocialButton = ({ href, icon, label, subLabel, color }) => (
     href={href}
     target="_blank"
     rel="noopener noreferrer"
-    className="flex items-center p-4 rounded-xl bg-gray-50 hover:bg-white border border-gray-100 hover:border-blue-100 transition-all duration-300 group hover:shadow-md"
+    className="flex items-center p-4 rounded-xl bg-gray-50 hover:bg-white border border-gray-100 hover:border-green-100 transition-all duration-300 group hover:shadow-md"
   >
     <div className={`w-12 h-12 rounded-full ${color} flex items-center justify-center text-white shadow-lg group-hover:scale-110 transition-transform`}>
       {icon}
     </div>
     <div className="ml-4">
-      <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{label}</h4>
+      <h4 className="font-bold text-gray-900 group-hover:text-green-600 transition-colors">{label}</h4>
       <p className="text-xs text-gray-500">{subLabel}</p>
     </div>
-    <div className="ml-auto text-gray-300 group-hover:text-blue-500 transition-colors">
+    <div className="ml-auto text-gray-300 group-hover:text-green-500 transition-colors">
       <ArrowRight className="w-5 h-5" />
     </div>
   </a>

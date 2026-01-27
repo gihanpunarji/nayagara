@@ -285,7 +285,7 @@ const Products = () => {
                   onClick={() => handleStatusUpdate(product.product_id, 'inactive')}
                   className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2"
                 >
-                  <Ban className="w-4 h-4" /><span>Deactivate</span>
+                  <Ban className="w-4 h-4" /><span>Inactive</span>
                 </button>
               )}
                {(product.product_status === 'inactive' || product.product_status === 'suspended') && (

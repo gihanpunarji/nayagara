@@ -46,9 +46,9 @@ const AppRoutes = () => {
   const isSellerSub = isSellerSubDomain();
   const isCustomerSub = isCustomerSubDomain();
 
-  console.log('[AppRoutes] Subdomain:', subdomain);
-  console.log('[AppRoutes] isSellerSub:', isSellerSub);
-  console.log('[AppRoutes] Path:', location.pathname);
+  // console.log('[AppRoutes] Subdomain:', subdomain);
+  // console.log('[AppRoutes] isSellerSub:', isSellerSub);
+  // console.log('[AppRoutes] Path:', location.pathname);
 
   // If there's a subdomain but it's not valid (not 'sellers' or 'www'), show error
   if (subdomain && !isSellerSub && !isCustomerSub) {

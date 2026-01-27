@@ -57,13 +57,13 @@ const MobileHeader = ({
 
             {/* Actions */}
             <div className="flex items-center space-x-2 md:space-x-3">
-              {/* Notifications */}
-              {user && (
+              {/* Notifications - Removed */}
+              {/* {user && (
                 <button className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors">
                   <Bell className="w-5 h-5 md:w-6 md:h-6" />
                   <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full"></span>
                 </button>
-              )}
+              )} */}
 
               {/* Menu Toggle */}
               <button

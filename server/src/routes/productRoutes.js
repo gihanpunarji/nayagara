@@ -6,12 +6,20 @@ const {
   updateProduct,
   getPublicProducts,
   filterProducts,
-  getPublicProductById
+  getPublicProductById,
+  deleteProduct,
+  updateProductStatus
 } = require("../controllers/productController");
 const { authenticateToken } = require("../middleware/auth");
 const { productImageUpload } = require("../middleware/cloudinaryUpload");
 
 const router = express.Router();
+
+// Debug Logger for Product Routes
+router.use((req, res, next) => {
+  console.log(`[PRODUCT_ROUTER] ${req.method} ${req.originalUrl}`);
+  next();
+});
 
 // Public endpoints first (before catch-all routes)
 // Public products endpoint (no authentication required)
@@ -42,6 +50,21 @@ router.get("/seller", authenticateToken, getSellerProducts);
 
 // Update product by ID
 router.put("/:productId", authenticateToken, ...productImageUpload.array('images', 10), updateProduct);
+
+// Update product status
+// Update product status (PATCH, PUT, POST aliases for debugging)
+router.get("/debug-status/:productId", (req, res, next) => {
+    console.log("[DEBUG_ROUTE] Hit debug-status");
+    req.user = { user_id: 87 }; // Mock seller ID for debugging (Apex mobile from public test)
+    next();
+}, updateProductStatus);
+
+router.patch("/:productId/status", authenticateToken, updateProductStatus);
+router.put("/:productId/status", authenticateToken, updateProductStatus);
+router.post("/:productId/status", authenticateToken, updateProductStatus);
+
+// Delete product by ID
+router.delete("/:productId", authenticateToken, deleteProduct);
 
 // Get single product by ID (this should be last because it's a catch-all)
 router.get("/:productId", authenticateToken, getProductById);

@@ -62,7 +62,7 @@ const createOrder = async (req, res) => {
         variant: item.variant || null
       };
 
-      console.log("item ", item);
+      // console.log("item ", item);
 
       return await Order.createOrderItem({
         order_id,
@@ -70,7 +70,7 @@ const createOrder = async (req, res) => {
         seller_id: item.seller_id,
         product_title: item.product_title || item.name,
         product_description: item.description || item.shortDescription || '',
-        unit_price: item.cost || item.originalPrice || item.original_price,
+        unit_price: item.price, // Use actual selling price, not cost
         quantity: item.quantity,
         total_price: item.price * item.quantity,
         product_attributes_snapshot: JSON.stringify(product_attributes),
@@ -135,10 +135,14 @@ const updateOrderPaymentStatus = async (req, res) => {
           // Get order items with product cost information
           const orderItems = await Order.getOrderItems(order.order_id);
 
-          // Add product cost information to order items using Product model
-          for (let item of orderItems) {
-            item.product_cost = await Product.getCostById(item.product_id);
-          }
+          // OPTIMIZED: Fetch all product costs in a single query instead of N queries
+          const productIds = orderItems.map(item => item.product_id);
+          const costsMap = await Product.getCostsByIds(productIds);
+
+          // Add product cost information to order items
+          orderItems.forEach(item => {
+            item.product_cost = costsMap.get(item.product_id) || 0;
+          });
 
           // Process referral commissions with the new system
           await processReferralCommissions(order.order_id, order.customer_id, orderItems);
@@ -487,7 +491,7 @@ const calculateShipping = async (req, res) => {
       }
 
       const amountPerKilo = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
-      console.log('Shipping rate per kilo:', amountPerKilo);
+      // console.log('Shipping rate per kilo:', amountPerKilo);
       let totalWeight = 0;
 
       // Calculate total weight from all cart items

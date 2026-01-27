@@ -174,7 +174,6 @@ const Analytics = () => {
   };
 
   const handleExport = () => {
-    console.log('Exporting analytics data...');
     // TODO: Implement export functionality
   };
 

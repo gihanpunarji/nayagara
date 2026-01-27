@@ -10,15 +10,15 @@ class ProductImage {
     return result;
   }
 
-  static async createMultiple(productId, images) {
+  static async createMultiple(productId, images, setFirstAsPrimary = true) {
     const connection = getConnection();
-    
+
     // Prepare bulk insert
     const values = images.map((image, index) => [
-      productId, 
-      image.imageUrl, 
-      image.imageAlt || '', 
-      index === 0 ? 1 : 0 // First image is primary
+      productId,
+      image.imageUrl,
+      image.imageAlt || '',
+      (setFirstAsPrimary && index === 0) ? 1 : 0 // First image is primary ONLY if requested
     ]);
 
     if (values.length === 0) return { insertId: null, affectedRows: 0 };
@@ -78,6 +78,18 @@ class ProductImage {
     return result.affectedRows;
   }
 
+  static async deleteMultipleByIds(imageIds) {
+    if (!imageIds || imageIds.length === 0) return 0;
+
+    const connection = getConnection();
+    const placeholders = imageIds.map(() => '?').join(',');
+    const [result] = await connection.execute(
+      `DELETE FROM product_images WHERE image_id IN (${placeholders})`,
+      imageIds
+    );
+    return result.affectedRows;
+  }
+
   static async deleteByProductId(productId) {
     const connection = getConnection();
     const [result] = await connection.execute(
@@ -89,23 +101,23 @@ class ProductImage {
 
   static async setPrimary(productId, imageId) {
     const connection = getConnection();
-    
+
     // Start transaction
     await connection.execute("START TRANSACTION");
-    
+
     try {
       // First, set all images for this product as non-primary
       await connection.execute(
         "UPDATE product_images SET is_primary = 0 WHERE product_id = ?",
         [productId]
       );
-      
+
       // Then set the specified image as primary
       await connection.execute(
         "UPDATE product_images SET is_primary = 1 WHERE image_id = ? AND product_id = ?",
         [imageId, productId]
       );
-      
+
       await connection.execute("COMMIT");
       return true;
     } catch (error) {
@@ -116,17 +128,17 @@ class ProductImage {
 
   static async reorderImages(productId, imageIds) {
     const connection = getConnection();
-    
+
     // Start transaction
     await connection.execute("START TRANSACTION");
-    
+
     try {
       // Reset all images to non-primary first
       await connection.execute(
         "UPDATE product_images SET is_primary = 0 WHERE product_id = ?",
         [productId]
       );
-      
+
       // Set the first image as primary
       if (imageIds.length > 0) {
         await connection.execute(
@@ -134,7 +146,7 @@ class ProductImage {
           [imageIds[0], productId]
         );
       }
-      
+
       await connection.execute("COMMIT");
       return true;
     } catch (error) {
@@ -150,6 +162,15 @@ class ProductImage {
       [productId]
     );
     return rows[0].count;
+  }
+
+  static async resetPrimaries(productId) {
+    const connection = getConnection();
+    const [result] = await connection.execute(
+      "UPDATE product_images SET is_primary = 0 WHERE product_id = ?",
+      [productId]
+    );
+    return result.affectedRows;
   }
 
   // Helper method to generate image URL

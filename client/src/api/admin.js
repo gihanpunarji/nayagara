@@ -86,3 +86,13 @@ export const updateUserStatus = async (userId, status) => {
         throw error.response?.data || { message: 'An unknown error occurred' };
     }
 };
+
+export const deleteProduct = async (productId) => {
+    try {
+        const response = await api.delete(`/admin/products/${productId}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error deleting product:', error.response?.data || error.message);
+        throw error.response?.data || { message: 'An unknown error occurred' };
+    }
+};

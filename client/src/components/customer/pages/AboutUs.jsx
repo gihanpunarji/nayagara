@@ -40,7 +40,7 @@ const AboutUs = () => {
           <div className="text-center">
             <h1 className="text-3xl font-bold mb-4">About Nayagara</h1>
             <p className="text-lg text-white/90 leading-relaxed">
-              Sri Lanka's most trusted online marketplace connecting buyers and sellers nationwide
+              Sri Lanka's most trusted online platform connecting buyers and sellers nationwide
             </p>
           </div>
         </div>
@@ -69,18 +69,13 @@ const AboutUs = () => {
           <div className="space-y-4 text-gray-700 leading-relaxed">
             <p>
               Founded in 2019, Nayagara began with a simple mission: to create Sri Lanka's most trusted
-              and user-friendly online marketplace. We recognized the need for a platform that could
+              and user-friendly online platform. We recognized the need for a platform that could
               connect buyers and sellers across the island with complete transparency and security.
             </p>
             <p>
               Starting with just a handful of sellers in Colombo, we've grown to serve over 500,000
               active users across 25+ cities in Sri Lanka. Our platform hosts more than 1 million
               product listings spanning everything from electronics and vehicles to fashion and services.
-            </p>
-            <p>
-              What sets us apart is our commitment to building trust. Every seller goes through a
-              verification process, and we offer comprehensive buyer protection to ensure safe
-              transactions for everyone.
             </p>
           </div>
         </div>

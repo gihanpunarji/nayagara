@@ -4,7 +4,7 @@ class ChatMessage {
   // Send a new message
   static async create({ conversationId, senderId, senderType, messageText, messageType = 'text', attachmentUrl = null }) {
     const connection = getConnection();
-    console.log('Creating message with:', { conversationId, senderId, senderType, messageText, messageType, attachmentUrl });
+    // console.log('Creating message with:', { conversationId, senderId, senderType, messageText, messageType, attachmentUrl });
     
     try {
       const [result] = await connection.execute(`

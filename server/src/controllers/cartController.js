@@ -23,36 +23,14 @@ const getCart = async (req, res) => {
       stockCount: item.stock_quantity || 0,
       inStock: (item.stock_quantity !== undefined && item.stock_quantity > 0),
       currency: item.currency_code || 'LKR',
-      weight_kg: parseFloat(item.weight_kg || 1.0)
+      weight_kg: parseFloat(item.weight_kg || 1.0),
+      shipping_cost: parseFloat(item.shipping_cost || 0)
     }));
 
     const subtotal = formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
-    // Calculate shipping based on weight
-    let shipping = 0;
-    try {
-      const { getConnection } = require('../config/database');
-      const pool = getConnection();
-      const connection = await pool.getConnection();
-
-      try {
-        // Get shipping rate from amount_per_kilo column
-        const [shippingSettings] = await connection.execute(
-          "SELECT amount_per_kilo FROM shipping_settings LIMIT 1"
-        );
-
-        const ratePerKg = parseFloat(shippingSettings[0]?.amount_per_kilo || 200);
-        const totalWeight = formattedItems.reduce((sum, item) => sum + (item.weight_kg * item.quantity), 0);
-        shipping = totalWeight * ratePerKg;
-
-        console.log(`Cart shipping: weight=${totalWeight}kg, rate=${ratePerKg}, total=${shipping}`);
-      } finally {
-        connection.release();
-      }
-    } catch (shippingError) {
-      console.error('Error calculating shipping in cart:', shippingError);
-      shipping = subtotal > 50000 ? 0 : 1000; // Fallback
-    }
+    // Calculate shipping based on individual product shipping_cost from products table
+    const shipping = formattedItems.reduce((sum, item) => sum + (item.shipping_cost * item.quantity), 0);
 
     res.json({
       success: true,
@@ -202,20 +180,37 @@ const mergeCart = async (req, res) => {
       });
     }
 
-    // Simple: just add each guest item to user's cart
+    // OPTIMIZED: Fetch all products in a single query
+    const productIds = guestItems
+      .map(item => item.product_id || item.id)
+      .filter(id => id);
+
+    if (productIds.length === 0) {
+      return res.json({
+        success: true,
+        message: 'No items to merge'
+      });
+    }
+
+    // Single query instead of N queries
+    const productsMap = await Product.findByIds(productIds);
+
+    // Filter valid items and add to cart
     for (const item of guestItems) {
       const productId = item.product_id || item.id;
       const quantity = item.quantity || 1;
-      
-      if (productId && quantity > 0) {
+
+      if (!productId || quantity <= 0) continue;
+
+      const product = productsMap.get(productId);
+
+      // Validate product exists, user doesn't own it, and stock is sufficient
+      if (product && product.seller_id !== userId && product.stock_quantity >= quantity) {
         try {
-          // Check if product exists and is valid
-          const product = await Product.findById(productId);
-          if (product && product.seller_id !== userId && product.stock_quantity >= quantity) {
-            await Cart.addItem(userId, productId, quantity);
-          }
+          await Cart.addItem(userId, productId, quantity);
         } catch (error) {
           // Skip invalid items, continue with others
+          console.error(`Failed to add item ${productId} to cart:`, error);
         }
       }
     }
@@ -225,6 +220,7 @@ const mergeCart = async (req, res) => {
       message: 'Guest cart merged successfully'
     });
   } catch (error) {
+    console.error('Cart merge error:', error);
     res.status(500).json({
       success: false,
       message: 'Failed to merge cart'

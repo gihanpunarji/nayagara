@@ -20,6 +20,7 @@ class Cart {
           p.cost,
           p.stock_quantity,
           p.seller_id,
+          p.shipping_cost,
           COALESCE(p.weight_kg, 1.0) as weight_kg,
           (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1) as image_url,
           u.first_name as seller_first_name,

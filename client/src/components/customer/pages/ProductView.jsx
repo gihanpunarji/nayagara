@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCart } from "../../../context/CartContext";
 import { useChat } from "../../../hooks/useChat";
 import ChatManager from "../../shared/chat/ChatManager";
+import ProductReviews from "../sections/ProductReviews";
 import { publicApi } from "../../../api/axios";
 import {
   ChevronLeft,
@@ -68,6 +69,41 @@ export const ProductView = () => {
     } catch (error) {
       console.error("Error adding to cart:", error);
       // You could add an error toast here
+    }
+  };
+
+  // Handle share product
+  const handleShare = async () => {
+    if (!product) return;
+
+    const shareData = {
+      title: product.product_title,
+      text: `Check out ${product.product_title} - Rs. ${parseFloat(product.price).toLocaleString()}`,
+      url: window.location.href
+    };
+
+    try {
+      // Check if Web Share API is supported (mobile devices)
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        // Fallback: Copy to clipboard
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Product link copied to clipboard!');
+      }
+    } catch (error) {
+      // User cancelled share or other error
+      if (error.name !== 'AbortError') {
+        console.error('Error sharing:', error);
+        // Fallback: try to copy to clipboard
+        try {
+          await navigator.clipboard.writeText(window.location.href);
+          alert('Product link copied to clipboard!');
+        } catch (clipboardError) {
+          console.error('Clipboard error:', clipboardError);
+          alert('Unable to share. Please copy the URL manually.');
+        }
+      }
     }
   };
 
@@ -151,11 +187,12 @@ export const ProductView = () => {
         shortDescription:
           product.product_description || "No description available",
         price: parseFloat(product.price) || 0,
-        originalPrice: parseFloat(product.cost) || 0,
+        marketPrice: parseFloat(product.market_price) || 0,
+        originalPrice: parseFloat(product.market_price) || 0,
         cost: parseFloat(product.cost) || 0,
-        discount: 0, // No discount calculation without original price
-        rating: 4.5, // Default rating - you can implement actual ratings later
-        reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
+        shipping_cost: parseFloat(product.shipping_cost || 0),
+        rating: parseFloat(product.average_rating) || 0,
+        reviewCount: parseInt(product.review_count) || 0,
         images:
           Array.isArray(product.images) && product.images.length > 0
             ? product.images
@@ -280,10 +317,8 @@ export const ProductView = () => {
       const subtotal = itemToCheckout.price;
       const itemCount = 1;
 
-      // Calculate shipping based on weight (weight_kg × Rs. 200/kg)
-      const SHIPPING_RATE_PER_KG = 200;
-      const weight = parseFloat(product.weight_kg || 1.0);
-      const shipping = weight * SHIPPING_RATE_PER_KG;
+      // Use shipping_cost from product table
+      const shipping = parseFloat(processedProduct.shipping_cost || 0);
 
       const total = subtotal + shipping;
 
@@ -347,15 +382,56 @@ export const ProductView = () => {
 
   return (
     <div className="min-h-screen max-w-7xl mx-auto bg-gray-50">
-      {/* Breadcrumb */}
+      {/* Breadcrumb - Mobile */}
       <div className="bg-white border-b border-gray-200 lg:hidden">
         <div className="px-4 py-3">
+          <div className="flex items-center space-x-2 text-sm text-gray-600 overflow-x-auto">
+            <Link to="/" className="hover:text-primary-600 whitespace-nowrap">
+              Home
+            </Link>
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            <Link
+              to={`/shop?category=${product?.category_slug || ''}`}
+              className="hover:text-primary-600 whitespace-nowrap"
+            >
+              {processedProduct.category}
+            </Link>
+            {processedProduct.subCategory && processedProduct.subCategory !== 'General' && (
+              <>
+                <ChevronRight className="w-4 h-4 flex-shrink-0" />
+                <span className="text-gray-500 whitespace-nowrap">{processedProduct.subCategory}</span>
+              </>
+            )}
+            <ChevronRight className="w-4 h-4 flex-shrink-0" />
+            <span className="text-gray-900 truncate">
+              {processedProduct.name}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Breadcrumb - Desktop */}
+      <div className="hidden lg:block bg-white border-b border-gray-200">
+        <div className="px-4 py-4 max-w-7xl mx-auto">
           <div className="flex items-center space-x-2 text-sm text-gray-600">
-            <Link to="/" className="hover:text-primary-600">
+            <Link to="/" className="hover:text-primary-600 transition-colors">
               Home
             </Link>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-gray-900 truncate">
+            <Link
+              to={`/shop?category=${product?.category_slug || ''}`}
+              className="hover:text-primary-600 transition-colors"
+            >
+              {processedProduct.category}
+            </Link>
+            {processedProduct.subCategory && processedProduct.subCategory !== 'General' && (
+              <>
+                <ChevronRight className="w-4 h-4" />
+                <span className="text-gray-500">{processedProduct.subCategory}</span>
+              </>
+            )}
+            <ChevronRight className="w-4 h-4" />
+            <span className="text-gray-900 font-medium">
               {processedProduct.name}
             </span>
           </div>
@@ -437,7 +513,7 @@ export const ProductView = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   {processedProduct.name}
                 </h1>
-                <p className="text-gray-600 leading-relaxed">
+                <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
                   {processedProduct.shortDescription}
                 </p>
               </div>
@@ -471,10 +547,20 @@ export const ProductView = () => {
               </div>
 
               {/* Price */}
-              <div className="flex items-center space-x-3">
-                <span className="text-3xl font-bold text-gray-900">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl font-bold text-primary-600">
                   Rs. {processedProduct.price.toLocaleString()}
-                </span>         
+                </span>
+                {processedProduct.marketPrice > 0 && processedProduct.marketPrice > processedProduct.price && (
+                  <>
+                    <span className="text-xl text-gray-400 line-through">
+                      Rs. {processedProduct.marketPrice.toLocaleString()}
+                    </span>
+                    <span className="bg-red-100 text-red-600 text-sm font-bold px-2 py-1 rounded">
+                      {Math.round(((processedProduct.marketPrice - processedProduct.price) / processedProduct.marketPrice) * 100)}% OFF
+                    </span>
+                  </>
+                )}
               </div>
 
               {/* Actions */}
@@ -507,7 +593,11 @@ export const ProductView = () => {
                   <Zap className="w-5 h-5" />
                   <span>Buy Now</span>
                 </button>
-                <button className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors">
+                <button
+                  onClick={handleShare}
+                  className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600 hover:bg-gray-200 transition-colors hover:scale-105 active:scale-95"
+                  title="Share this product"
+                >
                   <Share2 className="w-5 h-5" />
                 </button>
               </div>
@@ -568,6 +658,7 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
+              {/* Seller Info Hidden as per request
               <div className="flex items-center space-x-4 mb-4">
                 {sellerImageUrl ? (
                   <img
@@ -588,12 +679,13 @@ export const ProductView = () => {
                   </div>
                 </div>
               </div>
+              */}
               <button
                 onClick={handleOpenChat}
                 className="w-full md:w-48 bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <MessageCircle className="w-5 h-5" />
-                <span>Chat with Seller</span>
+                <span>Chat</span>
               </button>
             </div>
           </details>
@@ -604,7 +696,7 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
-              {/* Reviews will go here */}
+              <ProductReviews productId={processedProduct.id} />
             </div>
           </details>
         </div>

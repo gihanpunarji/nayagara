@@ -9,6 +9,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
+import { redirectCustomerSubdomain, buildSubdomainUrl } from "../../../utils/subdomain";
 
 function SellerLogin() {
   const [emailOrMobile, setEmailOrMobile] = useState("");
@@ -37,7 +38,7 @@ function SellerLogin() {
       } else {
         // Handle specific error messages
         if (res.error === "mnv") {
-          navigate("/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
+          navigate("/seller/verify-mobile", { state: { emailOrMobile, from: "seller-login" } });
           return;
         }
         
@@ -72,7 +73,7 @@ function SellerLogin() {
 
       <div className="w-full max-w-md relative">
         <button
-          onClick={() => navigate("/")}
+          onClick={() => redirectCustomerSubdomain()}
           className="mb-6 flex items-center space-x-2 text-gray-600 hover:text-primary-600 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -120,9 +121,6 @@ function SellerLogin() {
                   required
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Please follow this format for mobile eg: 94711234567
-                </p>
               </div>
             </div>
 
@@ -157,13 +155,12 @@ function SellerLogin() {
             </div>
 
             <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                state={{ from: "login" }}
+              <a
+                href={buildSubdomainUrl(null, '/forgot-password')}
                 className="text-sm text-primary-600 hover:text-primary-700 font-medium"
               >
                 Forgot Password?
-              </Link>
+              </a>
             </div>
 
             {error && (
@@ -199,28 +196,18 @@ function SellerLogin() {
             </p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600 mb-2">
-              Want to sell on Nayagara?
-            </p>
-            <Link
-              to="/seller/register"
-              className="text-sm text-secondary-600 hover:text-secondary-700 font-bold"
-            >
-              Start Selling →
-            </Link>
-          </div>
+          
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500">
           By signing in, you agree to our{" "}
-          <Link to="/terms" className="text-primary-600 hover:underline">
+          <a href={buildSubdomainUrl(null, '/terms-conditions')} className="text-primary-600 hover:underline">
             Terms of Service
-          </Link>{" "}
+          </a>{" "}
           and{" "}
-          <Link to="/privacy" className="text-primary-600 hover:underline">
+          <a href={buildSubdomainUrl(null, '/privacy-policy')} className="text-primary-600 hover:underline">
             Privacy Policy
-          </Link>
+          </a>
         </div>
       </div>
     </div>

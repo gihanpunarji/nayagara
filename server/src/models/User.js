@@ -1,3 +1,4 @@
+const { release } = require("os");
 const { getConnection } = require("../config/database");
 const bcrypt = require("bcrypt");
 
@@ -111,7 +112,7 @@ class User {
       const [
         rows,
       ] = await connection.execute(
-        "SELECT * FROM users WHERE user_mobile = ?",
+        "SELECT * FROM users WHERE user_mobile = ? AND mobile_verified = 1",
         [mobile]
       );
       return rows[0];
@@ -157,8 +158,8 @@ class User {
           null,
           role,
           "active",
-          0,
-          0,
+          1,
+          1,
           null,
           new Date(),
           new Date(),
@@ -244,6 +245,11 @@ class User {
   }
 
   static async updateSellerMobile({ newMobile, email, verificationCode }) {
+    // Validate parameters
+    if (!newMobile || !email || !verificationCode) {
+      throw new Error('newMobile, email, and verificationCode are required');
+    }
+
     const pool = getConnection();
     let connection;
     try {
@@ -254,7 +260,7 @@ class User {
         "UPDATE users SET user_mobile = ?, mobile_verification_code = ? WHERE user_email = ?",
         [newMobile, verificationCode, email]
       );
-      return result.mobile_verification_code;
+      return result;
     } finally {
       if (connection) connection.release();
     }
@@ -276,6 +282,27 @@ class User {
         [resetToken, resetTokenExpires, email]
       );
       return result;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  // Clean up expired reset tokens
+  static async cleanupExpiredTokens() {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const currentTime = Date.now();
+      const [result] = await connection.execute(
+        "UPDATE users SET reset_token = NULL, reset_token_expires = NULL WHERE reset_token_expires < ? AND reset_token IS NOT NULL",
+        [currentTime]
+      );
+      console.log(`Cleaned up ${result.affectedRows} expired reset tokens`);
+      return result;
+    } catch (error) {
+      console.error("Error cleaning up expired tokens:", error);
+      throw error;
     } finally {
       if (connection) connection.release();
     }

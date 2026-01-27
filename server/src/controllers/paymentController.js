@@ -3,7 +3,7 @@ const Order = require('../models/Order');
 
 const createPayHerePayment = async (req, res) => {
   try {
-    console.log('PayHere payment request received:', req.body);
+    // console.log('PayHere payment request received:', req.body);
     
     const {
       amount,
@@ -19,20 +19,20 @@ const createPayHerePayment = async (req, res) => {
       country = 'Sri Lanka'
     } = req.body;
 
-    console.log('Extracted payment data:', {
-      amount, currency, order_id, items, first_name, last_name, email, phone, address, city, country
-    });
+    // console.log('Extracted payment data:', {
+    //   amount, currency, order_id, items, first_name, last_name, email, phone, address, city, country
+    // });
 
     // Validate required fields
     if (!amount || !order_id || !first_name || !last_name || !email || !phone) {
-      console.log('Validation failed - missing fields:', {
-        amount: !!amount,
-        order_id: !!order_id,
-        first_name: !!first_name,
-        last_name: !!last_name,
-        email: !!email,
-        phone: !!phone
-      });
+      // console.log('Validation failed - missing fields:', {
+      //   amount: !!amount,
+      //   order_id: !!order_id,
+      //   first_name: !!first_name,
+      //   last_name: !!last_name,
+      //   email: !!email,
+      //   phone: !!phone
+      // });
       
       return res.status(400).json({
         success: false,
@@ -126,12 +126,12 @@ const handlePayHereNotify = async (req, res) => {
 
     if (local_md5sig === md5sig && merchant_id === process.env.PAYHERE_MERCHANT_ID) {
       // Valid notification from PayHere
-      console.log('PayHere Notification Received:', {
-        order_id,
-        payment_id,
-        status_code,
-        amount: payhere_amount
-      });
+      // console.log('PayHere Notification Received:', {
+      //   order_id,
+      //   payment_id,
+      //   status_code,
+      //   amount: payhere_amount
+      // });
 
       // Handle different status codes
       switch (status_code) {
@@ -179,7 +179,7 @@ const handlePayHereNotify = async (req, res) => {
 
       res.status(200).send('OK');
     } else {
-      console.log('Invalid PayHere notification received');
+      // console.log('Invalid PayHere notification received');
       res.status(400).send('Invalid notification');
     }
 

@@ -31,9 +31,9 @@ const ServicesSection = () => {
           <Star className="w-6 h-6 md:w-7 md:h-7 lg:w-8 lg:h-8" />
           <h3 className="text-base md:text-lg lg:text-xl font-heading font-bold">Quality Assured</h3>
         </div>
-        <p className="text-purple-100 text-xs md:text-sm lg:text-base mb-3 md:mb-4">Every seller is verified and products are quality checked.</p>
+        <p className="text-purple-100 text-xs md:text-sm lg:text-base mb-3 md:mb-4">Seller is verified and products are quality checked.</p>
         <button className="bg-white text-purple-600 px-3 py-1.5 md:px-4 md:py-2 rounded-lg text-xs md:text-sm font-medium hover:bg-purple-50 transition-colors">
-          Verify Seller
+          Learn More
         </button>
       </div>
     </div>

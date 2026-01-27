@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Bell, Menu, MapPin } from 'lucide-react';
+import { Search, Menu, MapPin } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const MobileHeader = ({
@@ -34,7 +34,7 @@ const MobileHeader = ({
               <MapPin className="w-3 h-3 md:w-4 md:h-4" />
               <span>Deliver to All Island</span>
             </div>
-
+            
           </div>
         </div>
 
@@ -57,13 +57,7 @@ const MobileHeader = ({
 
             {/* Actions */}
             <div className="flex items-center space-x-2 md:space-x-3">
-              {/* Notifications */}
-              {user && (
-                <button className="relative p-2 text-gray-600 hover:text-primary-600 transition-colors">
-                  <Bell className="w-5 h-5 md:w-6 md:h-6" />
-                  <span className="absolute -top-1 -right-1 w-3 h-3 bg-error rounded-full"></span>
-                </button>
-              )}
+
 
               {/* Menu Toggle */}
               <button

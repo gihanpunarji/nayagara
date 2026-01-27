@@ -128,12 +128,10 @@ const Customers = () => {
   };
 
   const handleCustomerAction = (action, customerId) => {
-    console.log(`${action} customer:`, customerId);
     // Handle customer actions here
   };
 
   const handleBulkAction = (action) => {
-    console.log(`${action} customers:`, selectedCustomers);
     // Handle bulk actions here
   };
 

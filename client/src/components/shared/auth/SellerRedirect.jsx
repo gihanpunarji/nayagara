@@ -15,18 +15,18 @@ const SellerRedirect = ({ children }) => {
     if (isSeller) {
       // Allow sellers to access only seller routes
       const isSellerRoute = location.pathname.startsWith('/seller/');
-      const isAuthRoute = location.pathname.includes('/login') || 
+      const isAuthRoute = location.pathname.includes('/login') ||
                          location.pathname.includes('/register') ||
                          location.pathname.includes('/forgot-password') ||
                          location.pathname.includes('/reset-password');
 
       // If seller is trying to access non-seller routes (except auth routes), redirect to dashboard
       if (!isSellerRoute && !isAuthRoute) {
-        console.log('Seller detected, redirecting to dashboard from:', location.pathname);
-        navigate('/seller/dashboard', { replace: true });
+        // Preserve query parameters during redirect
+        navigate(`/seller/dashboard${location.search}`, { replace: true });
       }
     }
-  }, [isSeller, loading, location.pathname, navigate]);
+  }, [isSeller, loading, location.pathname, location.search, navigate]);
 
   // Show loading state while checking authentication
   if (loading) {

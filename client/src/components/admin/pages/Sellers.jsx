@@ -173,7 +173,6 @@ const Sellers = () => {
   };
 
   const handleBulkAction = (action) => {
-    console.log(`${action} sellers:`, selectedSellers);
   };
 
   const SellerRow = ({ seller }) => (

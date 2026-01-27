@@ -289,7 +289,7 @@ function CustomerRegistration() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Referral Code
+                Promo Code
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -320,11 +320,11 @@ function CustomerRegistration() {
               </button>
               <div className="text-sm text-gray-600">
                 I agree to the{' '}
-                <Link to="/terms" className="text-primary-600 hover:underline font-medium">
+                <Link to="/terms-conditions" className="text-primary-600 hover:underline font-medium">
                   Terms of Service
                 </Link>
                 {' '}and{' '}
-                <Link to="/privacy" className="text-primary-600 hover:underline font-medium">
+                <Link to="/privacy-policy" className="text-primary-600 hover:underline font-medium">
                   Privacy Policy
                 </Link>
               </div>

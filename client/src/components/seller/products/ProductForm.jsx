@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ArrowLeft, Upload, X, GripVertical, Eye, Plus } from 'lucide-react';
+import { Save, ArrowLeft, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ImageUploader from './ImageUploader';
 import api from '../../../api/axios';
@@ -17,16 +17,19 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     category: '',
     subcategory: '',
     stock: '',
-    status: 'active',
+    shippingCost: '',
     images: [],
     // Dynamic fields will be added based on category
-    ...{}
+    ...{},
+    weightKg: ''
   });
+
+  const [deletedImageIds, setDeletedImageIds] = useState([]);
 
   const [dynamicFields, setDynamicFields] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   // Category data from database
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
@@ -47,7 +50,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     try {
       setLoading(prev => ({ ...prev, categories: true }));
       const response = await api.get('/categories');
-      
+
       if (response.data.success) {
         setCategories(response.data.data);
       } else {
@@ -65,7 +68,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     try {
       setLoading(prev => ({ ...prev, subCategories: true }));
       const response = await api.get(`/categories/${categoryId}/subcategories`);
-      
+
       if (response.data.success) {
         setSubCategories(response.data.data);
       } else {
@@ -85,10 +88,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
     try {
       setLoading(prev => ({ ...prev, fields: true }));
       const response = await api.get(`/subcategories/${subCategoryId}/fields`);
-      
+
       if (response.data.success) {
         setCategoryFields(response.data.data);
-        
+
         // Initialize dynamic fields
         const initialFields = {};
         response.data.data.forEach(field => {
@@ -112,30 +115,40 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
   // Update form data when editing
   useEffect(() => {
     if (isEdit && productData) {
+      // Map backend images to ImageUploader format
+      const formattedImages = (productData.images || []).map(img => ({
+        id: img.image_id || img.id, // Handle both formats
+        url: img.image_url || img.url,
+        name: img.image_alt || 'Product Image',
+        size: 0 // We don't have size from backend but it's optional for display
+      }));
+
       setFormData({
         title: productData.title || '',
         description: productData.description || '',
         price: productData.price || '',
         market_price: productData.market_price || '',
         cost: productData.cost || '',
-        category: productData.category || '',
-        subcategory: productData.subcategory || '',
+        category: productData.category || productData.category_id || '',
+        subcategory: productData.subcategory || productData.subcategory_id || '',
         stock: productData.stock || '',
-        status: productData.status || 'active',
-        images: productData.images || [],
-        weightKg: productData.weightKg || '',
-        locationCityId: productData.locationCityId || '',
-        metaTitle: productData.metaTitle || '',
-        metaDescription: productData.metaDescription || ''
+        images: formattedImages,
+        weightKg: productData.weightKg || productData.weight_kg || '',
+        shippingCost: productData.shippingCost || productData.shipping_cost || '',
+        locationCityId: productData.locationCityId || productData.location_city_id || '',
+        metaTitle: productData.metaTitle || productData.meta_title || '',
+        metaDescription: productData.metaDescription || productData.meta_description || ''
       });
-      setDynamicFields(productData.dynamicFields || {});
-      
+      setDynamicFields(productData.dynamicFields || productData.product_attributes || {});
+
       // Load category data for editing
-      if (productData.category) {
-        loadSubCategories(productData.category);
+      const categoryId = productData.category || productData.category_id;
+      if (categoryId) {
+        loadSubCategories(categoryId);
       }
-      if (productData.subcategory) {
-        loadCategoryFields(productData.subcategory);
+      const subcategoryId = productData.subcategory || productData.subcategory_id;
+      if (subcategoryId) {
+        loadCategoryFields(subcategoryId);
       }
     }
   }, [isEdit, productData]);
@@ -143,17 +156,17 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
   // Handle category change to show relevant fields
   const handleCategoryChange = (categoryId) => {
     const selectedCategory = categories.find(cat => cat.category_id == categoryId);
-    
+
     setFormData(prev => ({
       ...prev,
       category: categoryId,
       subcategory: ''
     }));
-    
+
     setSubCategories([]);
     setCategoryFields([]);
     setDynamicFields({});
-    
+
     if (categoryId) {
       loadSubCategories(categoryId);
     }
@@ -168,7 +181,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
 
     setCategoryFields([]);
     setDynamicFields({});
-    
+
     if (subCategoryId) {
       loadCategoryFields(subCategoryId);
     }
@@ -180,6 +193,28 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       ...prev,
       [fieldName]: value
     }));
+  };
+
+  const handleImageRemove = (imageRemoved) => {
+    // If image has an ID (number) from backend, mark it for deletion
+    // Helper: backend IDs are usually numbers, temporary IDs are strings starting with timestamp
+    // ProductForm lines 114 maps images to have 'id'.
+    // ImageUploader generates string IDs for new files.
+    // So we check if id is NOT a string or if it doesn't look like our temp ID.
+    // Better: We mapped backend images to have 'id' = 'image_id'.
+    if (imageRemoved.id) {
+      // Check if it's NOT a temp ID (temp IDs usually start with timestamp and have underscores, or are just strings)
+      // Backend IDs are integers. But sometimes might be strings "123".
+      // Temp IDs in ImageUploader: `${Date.now()}_...`
+
+      const idStr = String(imageRemoved.id);
+      const isTempId = idStr.includes('_') && idStr.length > 15; // Simple heuristic
+
+      if (!isTempId) {
+        // It's likely a backend ID
+        setDeletedImageIds(prev => [...prev, imageRemoved.id]);
+      }
+    }
   };
 
   // Handle form submission
@@ -201,6 +236,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       if (!formData.stock) newErrors.stock = 'Stock quantity is required';
       if (!isEdit && formData.images.length === 0) newErrors.images = 'At least one image is required';
 
+      // Validate numbers
+      if (formData.weightKg && isNaN(parseFloat(formData.weightKg))) newErrors.weightKg = 'Weight must be a valid number';
+      if (formData.shippingCost && isNaN(parseFloat(formData.shippingCost))) newErrors.shippingCost = 'Shipping cost must be a valid number';
+
       // Dynamic fields are now optional - sellers can include details in description instead
       // No validation for dynamic fields
 
@@ -212,7 +251,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
 
       // Prepare form data for submission
       const formDataToSubmit = new FormData();
-      
+
       // Add basic product data
       formDataToSubmit.append('title', formData.title);
       formDataToSubmit.append('description', formData.description);
@@ -220,22 +259,26 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       formDataToSubmit.append('market_price', formData.market_price);
       formDataToSubmit.append('stock', formData.stock);
       formDataToSubmit.append('cost', formData.cost);
-      
+
       // Add optional fields
       if (formData.weightKg) formDataToSubmit.append('weightKg', formData.weightKg);
+      // Ensure shipping cost defaults to 0 if not provided
+      formDataToSubmit.append('shippingCost', formData.shippingCost || '0');
       if (formData.locationCityId) formDataToSubmit.append('locationCityId', formData.locationCityId);
       if (formData.metaTitle) formDataToSubmit.append('metaTitle', formData.metaTitle);
       if (formData.metaDescription) formDataToSubmit.append('metaDescription', formData.metaDescription);
-      
+
+
       // Only add category/subcategory for create mode
-      if (!isEdit) {
-        formDataToSubmit.append('category', formData.category);
-        formDataToSubmit.append('subcategory', formData.subcategory);
-      }
-      
+      // if (!isEdit) {
+      //   formDataToSubmit.append('category', formData.category);
+      //   formDataToSubmit.append('subcategory', formData.subcategory);
+      // }
+      // NOTE: Now we allow updates, so we append them above always. Commented out to avoid duplicates.
+
       // Add dynamic fields
       formDataToSubmit.append('dynamicFields', JSON.stringify(dynamicFields));
-      
+
       // Add new images only
       formData.images.forEach((image, index) => {
         if (image.file) {
@@ -243,10 +286,36 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         }
       });
 
+      // Add deleted image IDs
+      if (deletedImageIds.length > 0) {
+        formDataToSubmit.append('deletedImageIds', JSON.stringify(deletedImageIds));
+      }
+
+      // Add sorted existing image IDs (to persist main image selection/order)
+      // Logic:
+      // 1. If the first image is an EXISTING image, we send its ID as 'primaryImageId'.
+      // 2. If the first image is a NEW image, we send 'newImageIsPrimary' flag so backend resets existing primaries.
+      if (formData.images.length > 0) {
+        const mainImage = formData.images[0];
+        const isExisting = mainImage.id && !mainImage.file && !String(mainImage.id).includes('_') && !String(mainImage.id).includes('image-');
+
+        if (isExisting) {
+          formDataToSubmit.append('primaryImageId', mainImage.id);
+        } else if (mainImage.file) {
+          formDataToSubmit.append('newImageIsPrimary', 'true');
+        }
+      }
+
+
+
+      // Support category updates: Always send category and subcategory
+      formDataToSubmit.append('category', formData.category);
+      formDataToSubmit.append('subcategory', formData.subcategory);
+
       // Submit to API
       const url = isEdit ? `/products/${productId}` : '/products';
       const method = isEdit ? 'put' : 'post';
-      
+
       const response = await api[method](url, formDataToSubmit, {
         headers: {
           'Content-Type': 'multipart/form-data',
@@ -254,7 +323,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       });
 
       if (response.data.success) {
-        console.log(`Product ${isEdit ? 'updated' : 'created'} successfully:`, response.data.data);
         // Navigate back to products list
         navigate('/seller/products');
       } else {
@@ -263,8 +331,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
 
     } catch (error) {
       console.error('Error submitting product:', error);
-      setErrors({ 
-        submit: error.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} product. Please try again.` 
+      setErrors({
+        submit: error.response?.data?.message || `Failed to ${isEdit ? 'update' : 'create'} product. Please try again.`
       });
     } finally {
       setIsSubmitting(false);
@@ -301,9 +369,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             value={dynamicFields[field.field_name] || ''}
             onChange={(e) => handleDynamicFieldChange(field.field_name, e.target.value)}
             disabled={isEdit}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
-            } ${isEdit ? 'bg-gray-100' : ''}`}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
+              } ${isEdit ? 'bg-gray-100' : ''}`}
           >
             <option value="">Select {field.field_label}</option>
             {field.field_options && field.field_options.map((option, index) => (
@@ -316,9 +383,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             value={dynamicFields[field.field_name] || ''}
             onChange={(e) => handleDynamicFieldChange(field.field_name, e.target.value)}
             disabled={isEdit}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
-            } ${isEdit ? 'bg-gray-100' : ''}`}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
+              } ${isEdit ? 'bg-gray-100' : ''}`}
             placeholder={`Enter ${field.field_label}`}
           />
         ) : (
@@ -327,9 +393,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             value={dynamicFields[field.field_name] || ''}
             onChange={(e) => handleDynamicFieldChange(field.field_name, e.target.value)}
             disabled={isEdit}
-            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-              errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
-            } ${isEdit ? 'bg-gray-100' : ''}`}
+            className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors[field.field_name] ? 'border-red-500' : 'border-gray-300'
+              } ${isEdit ? 'bg-gray-100' : ''}`}
             placeholder={`Enter ${field.field_label}`}
           />
         )}
@@ -361,14 +426,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             </p>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => setFormData(prev => ({ ...prev, status: prev.status === 'active' ? 'draft' : 'active' }))}
-          className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        >
-          <Eye className="w-4 h-4" />
-          <span>Preview</span>
-        </button>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-8">
@@ -393,9 +450,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.title ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.title ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Enter a descriptive title for your product"
               />
               {errors.title && <p className="text-red-500 text-sm">{errors.title}</p>}
@@ -410,9 +466,8 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
                 value={formData.description}
                 onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                 rows={4}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.description ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="Describe your product in detail"
               />
               {errors.description && <p className="text-red-500 text-sm">{errors.description}</p>}
@@ -426,10 +481,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.cost}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, cost: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.cost ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.cost ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -437,7 +492,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               {errors.cost && <p className="text-red-500 text-sm">{errors.cost}</p>}
             </div>
 
-             {/* Price */}
+            {/* Price */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
                 Selling Price (Rs.) <span className="text-red-500">*</span>
@@ -445,10 +500,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.price}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, price: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.price ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.price ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -464,10 +519,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.market_price}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, market_price: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.market_price ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.market_price ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
@@ -483,10 +538,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <input
                 type="number"
                 value={formData.stock}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, stock: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.stock ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.stock ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="0"
                 min="0"
               />
@@ -496,33 +551,50 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
             {/* Weight */}
             <div className="space-y-1">
               <label className="block text-sm font-medium text-gray-700">
-                Product Weight <span className="text-red-500">*</span>
+                Product Weight (kg) <span className="text-red-500">*</span>
               </label>
               <input
-                type="text"
+                type="number"
                 value={formData.weightKg}
+                onWheel={(e) => e.target.blur()}
                 onChange={(e) => setFormData(prev => ({ ...prev, weightKg: e.target.value }))}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.stock ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.weightKg ? 'border-red-500' : 'border-gray-300'
+                  }`}
                 placeholder="0.0"
                 min="0"
+                step="0.001"
               />
-              {errors.stock && <p className="text-red-500 text-sm">{errors.stock}</p>}
+              {errors.weightKg && <p className="text-red-500 text-sm">{errors.weightKg}</p>}
+            </div>
+
+            {/* Shipping Cost */}
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-gray-700">
+                Shipping Cost (Rs.)
+              </label>
+              <input
+                type="number"
+                value={formData.shippingCost}
+                onWheel={(e) => e.target.blur()}
+                onChange={(e) => setFormData(prev => ({ ...prev, shippingCost: e.target.value }))}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.shippingCost ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+              {errors.shippingCost && <p className="text-red-500 text-sm">{errors.shippingCost}</p>}
             </div>
 
           </div>
         </div>
 
+
+
         {/* Category Selection */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-semibold text-gray-900">Category</h2>
-            {isEdit && (
-              <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                Cannot be changed when editing
-              </span>
-            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -534,10 +606,9 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <select
                 value={formData.category}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                disabled={loading.categories || isEdit}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.category ? 'border-red-500' : 'border-gray-300'
-                } ${(loading.categories || isEdit) ? 'bg-gray-100' : ''}`}
+                disabled={loading.categories}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.category ? 'border-red-500' : 'border-gray-300'
+                  } ${(loading.categories) ? 'bg-gray-100' : ''}`}
               >
                 <option value="">
                   {loading.categories ? 'Loading categories...' : 'Select Category'}
@@ -559,10 +630,9 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
               <select
                 value={formData.subcategory}
                 onChange={(e) => handleSubcategoryChange(e.target.value)}
-                disabled={!formData.category || loading.subCategories || isEdit}
-                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${
-                  errors.subcategory ? 'border-red-500' : 'border-gray-300'
-                } ${(!formData.category || loading.subCategories || isEdit) ? 'bg-gray-100' : ''}`}
+                disabled={!formData.category || loading.subCategories}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 ${errors.subcategory ? 'border-red-500' : 'border-gray-300'
+                  } ${(!formData.category || loading.subCategories) ? 'bg-gray-100' : ''}`}
               >
                 <option value="">
                   {loading.subCategories ? 'Loading subcategories...' : 'Select Subcategory'}
@@ -578,37 +648,6 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
           </div>
         </div>
 
-        {/* Dynamic Fields */}
-        {formData.category && formData.subcategory && (
-          <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {subCategories.find(sub => sub.sub_category_id == formData.subcategory)?.sub_category_name || 'Category'} Details
-              </h2>
-              <div className="flex items-center space-x-2">
-                {isEdit && (
-                  <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                    Cannot be changed when editing
-                  </span>
-                )}
-                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded">
-                  All fields optional
-                </span>
-              </div>
-            </div>
-
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-700">
-                💡 <strong>Tip:</strong> These fields are optional. You can leave them empty and include all product details in the description instead.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {renderDynamicFields()}
-            </div>
-          </div>
-        )}
-
         {/* Images */}
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 mb-6">Product Images</h2>
@@ -617,6 +656,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
           <ImageUploader
             images={formData.images}
             onUpdate={handleImageUpdate}
+            onRemove={handleImageRemove}
             maxImages={10}
             error={errors.images}
           />
@@ -624,22 +664,28 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
           {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images}</p>}
         </div>
 
+
         {/* Submit Buttons */}
-        <div className="flex items-center justify-end space-x-4 pt-6">
-          <Link
-            to="/seller/products"
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-          >
-            Cancel
-          </Link>
-          <button
-            type="submit"
-            disabled={isSubmitting}
-            className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            <Save className="w-4 h-4" />
-            <span>{isSubmitting ? 'Saving...' : isEdit ? 'Update Product' : 'Add Product'}</span>
-          </button>
+        <div className="flex items-center justify-between pt-6">
+          <div>
+
+          </div>
+          <div className="flex items-center space-x-4">
+            <Link
+              to="/seller/products"
+              className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </Link>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-lg hover:from-primary-700 hover:to-primary-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Save className="w-4 h-4" />
+              <span>{isSubmitting ? 'Saving...' : isEdit ? 'Update Product' : 'Add Product'}</span>
+            </button>
+          </div>
         </div>
       </form>
     </div>

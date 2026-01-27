@@ -100,6 +100,31 @@ const uploadCategoryIcon = async (fileBuffer, originalname, categorySlug) => {
 };
 
 /**
+ * Generate review image filename
+ * @param {number} userId - User ID
+ * @param {string} originalname - Original filename
+ * @returns {string} - Generated filename
+ */
+const generateReviewFilename = (userId, originalname) => {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  const ext = path.extname(originalname);
+  return `review_${userId}_${timestamp}_${random}${ext}`;
+};
+
+/**
+ * Upload review image to Cloudinary
+ * @param {Buffer} fileBuffer - File buffer
+ * @param {string} originalname - Original filename
+ * @param {number} userId - User ID
+ * @returns {Promise<string>} - Cloudinary URL
+ */
+const uploadReviewImage = async (fileBuffer, originalname, userId) => {
+  const filename = generateReviewFilename(userId, originalname);
+  return await uploadToCloudinary(fileBuffer, originalname, 'reviews', filename);
+};
+
+/**
  * Delete file from Cloudinary
  * @param {string} filePath - File path (e.g., 'uploads/products/39_1759662952916_4ixh3s.jpeg')
  * @returns {Promise<void>}
@@ -120,6 +145,7 @@ module.exports = {
   uploadProfilePicture,
   uploadProductImage,
   uploadCategoryIcon,
+  uploadReviewImage,
   deleteFromCloudinary,
   generateProfileFilename,
   generateProductFilename

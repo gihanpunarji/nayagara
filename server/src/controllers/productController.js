@@ -20,7 +20,8 @@ const createProduct = async (req, res) => {
       locationCityId,
       metaTitle,
       metaDescription,
-      expiresAt
+      expiresAt,
+      shippingCost
     } = req.body;
 
     // Validate required fields
@@ -71,14 +72,15 @@ const createProduct = async (req, res) => {
       currencyCode: 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : null,
       stockQuantity: parseInt(stock),
-      productStatus: 'pending', // All products start as pending approval
+      productStatus: 'pending_approval', // All products start as pending approval
       isFeatured: 0,
       isPromoted: 0,
       locationCityId: locationCityId || null,
       metaTitle: metaTitle || title,
       metaDescription: metaDescription || description.substring(0, 160),
       productAttributes: productAttributes,
-      expiresAt: expirationDate
+      expiresAt: expirationDate,
+      shippingCost: shippingCost ? parseFloat(shippingCost) : 0
     });
 
     const productId = productResult.insertId;
@@ -99,7 +101,7 @@ const createProduct = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: "Product created successfully",
+      message: "Product created successfully and submitted for admin approval. It will be visible on the website once approved.",
       data: {
         product: {
           ...createdProduct,
@@ -170,7 +172,7 @@ const getSellerProducts = async (req, res) => {
                  'image_id', pi.image_id,
                  'image_url', pi.image_url,
                  'image_alt', pi.image_alt
-               )
+               ) ORDER BY pi.is_primary DESC, pi.image_id ASC
              ) as images_json
       FROM products p
       LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
@@ -334,7 +336,12 @@ const updateProduct = async (req, res) => {
       locationCityId,
       metaTitle,
       metaDescription,
-      expiresAt
+      expiresAt,
+      shippingCost,
+      category,
+      subcategory,
+      productStatus,
+      deletedImageIds
     } = req.body;
 
     // Validate required fields
@@ -361,6 +368,107 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // --- CHANGE DETECTION LOGIC ---
+    let hasContentChanged = false;
+
+    // Helper to compare values safely
+    const hasChanged = (val1, val2) => {
+      // Handle null/undefined vs empty string
+      const v1 = val1 === null || val1 === undefined ? '' : String(val1).trim();
+      const v2 = val2 === null || val2 === undefined ? '' : String(val2).trim();
+      return v1 !== v2;
+    };
+
+    // 1. Direct Field Comparison
+    if (
+      hasChanged(title, existingProduct.product_title) ||
+      hasChanged(description, existingProduct.product_description) ||
+      parseFloat(price) !== parseFloat(existingProduct.price) ||
+      parseFloat(market_price) !== parseFloat(existingProduct.market_price) ||
+      parseFloat(cost) !== parseFloat(existingProduct.cost) ||
+      // category/subcategory might be strings or ints
+      (category && String(category) !== String(existingProduct.category_id)) ||
+      (subcategory && String(subcategory) !== String(existingProduct.subcategory_id)) ||
+      (weightKg && parseFloat(weightKg) !== parseFloat(existingProduct.weight_kg)) ||
+      (shippingCost && parseFloat(shippingCost) !== parseFloat(existingProduct.shipping_cost))
+    ) {
+      hasContentChanged = true;
+      console.log(`Product ${productId}: Content fields changed.`);
+    }
+
+    // 2. Image Changes
+    // Check for NEW images
+    if (req.files && req.files.length > 0) {
+      hasContentChanged = true;
+      console.log(`Product ${productId}: New images uploaded.`);
+    }
+
+    // Check for DELETED images
+    let idsToDelete = [];
+    if (deletedImageIds) {
+      try {
+        if (typeof deletedImageIds === 'string') {
+          // Try parsing JSON first
+          try {
+            const parsed = JSON.parse(deletedImageIds);
+            if (Array.isArray(parsed)) idsToDelete = parsed;
+            else idsToDelete = [String(deletedImageIds)];
+          } catch (e) {
+            // If not JSON, assume comma-separated or single ID
+            if (deletedImageIds.includes(',')) {
+              idsToDelete = deletedImageIds.split(',').map(id => id.trim());
+            } else {
+              idsToDelete = [deletedImageIds.trim()];
+            }
+          }
+        } else if (Array.isArray(deletedImageIds)) {
+          idsToDelete = deletedImageIds;
+        } else {
+          // Fallback
+          idsToDelete = [String(deletedImageIds)];
+        }
+        
+        // Filter out empty/invalid IDs
+        idsToDelete = idsToDelete.filter(id => id && String(id).trim() !== '' && !String(id).includes('image-'));
+
+        if (idsToDelete.length > 0) {
+          hasContentChanged = true;
+          console.log(`Product ${productId}: Images marked for deletion:`, idsToDelete);
+        }
+      } catch (e) {
+        console.error("Error parsing deletedImageIds:", e);
+      }
+    }
+
+    // --- STATUS ENFORCEMENT ---
+    let finalStatus = existingProduct.product_status;
+
+    if (hasContentChanged) {
+      // IF content changed -> Force 'pending_approval'
+      // UNLESS: The seller EXPLICITLY set it to 'inactive' to hide it.
+      // Prioritize safety: If they strictly want to hide it, let them.
+      if (productStatus === 'inactive') {
+        finalStatus = 'inactive';
+      } else {
+        finalStatus = 'pending_approval';
+      }
+    } else {
+      // IF NO content change -> Allow status toggle (Active <-> Inactive)
+      // BUT: If it was 'pending_approval', do NOT allow 'active' (admin hasn't approved yet)
+      if (productStatus) {
+        if (existingProduct.product_status === 'pending_approval' && productStatus === 'active') {
+          // Trying to activate unapproved product -> Keep pending
+          finalStatus = 'pending_approval';
+        } else {
+          // Allow normal toggle
+          finalStatus = productStatus;
+        }
+      }
+    }
+    
+    console.log(`Product ${productId}: Status Update - Old: ${existingProduct.product_status}, Requested: ${productStatus}, Final: ${finalStatus}`);
+
+
     // Generate new slug if title changed
     let productSlug = existingProduct.product_slug;
     if (title !== existingProduct.product_title) {
@@ -385,27 +493,34 @@ const updateProduct = async (req, res) => {
     // Calculate expires at
     const expirationDate = expiresAt ? new Date(expiresAt) : existingProduct.expires_at;
 
+    // Handle deleted images FIRST
+    if (idsToDelete.length > 0) {
+       await ProductImage.deleteMultipleByIds(idsToDelete);
+    }
+
     // Update product
-    const affectedRows = await Product.update({
+    const affectedRows = await Product.updateRobust({
       productId: parseInt(productId),
       productTitle: title,
       productSlug: productSlug,
       productDescription: description,
-      categoryId: existingProduct.category_id, // Keep original category
+      categoryId: category || existingProduct.category_id,
+      subcategoryId: subcategory || existingProduct.subcategory_id,
       price: parseFloat(price),
       market_price: parseFloat(market_price),
       cost: parseFloat(cost),
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
       stockQuantity: parseInt(stock),
-      productStatus: existingProduct.product_status, // Keep original status
+      productStatus: finalStatus,
       isFeatured: existingProduct.is_featured,
       isPromoted: existingProduct.is_promoted,
       locationCityId: locationCityId || existingProduct.location_city_id,
       metaTitle: metaTitle || title,
       metaDescription: metaDescription || description.substring(0, 160),
       productAttributes: productAttributes,
-      expiresAt: expirationDate
+      expiresAt: expirationDate,
+      shippingCost: shippingCost ? parseFloat(shippingCost) : 0
     });
 
     if (affectedRows === 0) {
@@ -415,14 +530,28 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Handle Main Image Logic (New vs Existing)
+    // 1. If user set a NEW image as primary, we must reset existing primaries first.
+    if (req.body.newImageIsPrimary === 'true') {
+      await ProductImage.resetPrimaries(productId);
+    }
+
     // Handle new image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: file.path, // Now contains the full Cloudinary URL
+        imageUrl: file.path,
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
-      await ProductImage.createMultiple(productId, imageData);
+      // Only set first as primary if user explicitly requested it (via newImageIsPrimary flag)
+      // For updates, this prevents overriding an existing primary image
+      const setFirstAsPrimary = req.body.newImageIsPrimary === 'true';
+      await ProductImage.createMultiple(productId, imageData, setFirstAsPrimary);
+    }
+
+    // 2. If user set an EXISTING image as primary, we force it here.
+    if (req.body.primaryImageId) {
+      await ProductImage.setPrimary(productId, req.body.primaryImageId);
     }
 
     // Get the updated product with images
@@ -431,7 +560,9 @@ const updateProduct = async (req, res) => {
 
     res.json({
       success: true,
-      message: "Product updated successfully",
+      message: hasContentChanged 
+        ? "Product updated and submitted for approval." 
+        : "Product status updated successfully.",
       data: {
         product: {
           ...updatedProduct,
@@ -445,10 +576,13 @@ const updateProduct = async (req, res) => {
     console.error("Update product error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error",
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
+
 
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {
@@ -466,12 +600,14 @@ const getPublicProducts = async (req, res) => {
       category,
       subcategory,
       sort = 'newest',
-      featured = false
+      featured = false,
+      priceMin,
+      priceMax
     } = req.query;
 
     const offset = (page - 1) * limit;
 
-    let whereClause = ` WHERE (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)`;
+    let whereClause = ` WHERE p.product_status = 'active'`;
     const queryParams = [];
 
     // Add search filter
@@ -504,6 +640,17 @@ const getPublicProducts = async (req, res) => {
       queryParams.push(req.query.seller);
     }
 
+    // Add price range filter
+    if (priceMin && !isNaN(priceMin)) {
+      whereClause += ` AND p.price >= ?`;
+      queryParams.push(parseFloat(priceMin));
+    }
+
+    if (priceMax && !isNaN(priceMax)) {
+      whereClause += ` AND p.price <= ?`;
+      queryParams.push(parseFloat(priceMax));
+    }
+
     // Get total count
     const countQuery = `
       SELECT COUNT(DISTINCT p.product_id) as total
@@ -524,7 +671,7 @@ const getPublicProducts = async (req, res) => {
              u.last_name as seller_last_name,
              c2.city_name as location_city_name,
              d.district_name as location_district_name,
-             GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+             GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
@@ -645,19 +792,27 @@ const getPublicProductById = async (req, res) => {
         s.store_name,
         c2.city_name as location_city_name,
         d.district_name as location_district_name,
-        GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+        COALESCE(r.review_count, 0) as review_count,
+        COALESCE(r.avg_rating, 0) as average_rating,
+        GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM 
         products p
-        LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
-        LEFT JOIN categories c ON sc.categories_category_id = c.category_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
-      WHERE 
-        p.product_id = ? 
-        AND (p.product_status = 'active' OR p.product_status = '' OR p.product_status IS NULL)
+        LEFT JOIN (
+          SELECT product_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+          FROM product_reviews 
+          WHERE status = 'active'
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id
+      WHERE
+        p.product_id = ?
+        AND p.product_status = 'active'
       GROUP BY p.product_id
     `;
 
@@ -925,38 +1080,58 @@ const getAdminProducts = async (req, res) => {
 };
 
 // Update product status (Admin only)
+// Update product status (Isolated toggle for Sellers)
 const updateProductStatus = async (req, res) => {
   try {
     const { productId } = req.params;
+    const sellerId = req.user.user_id;
     const { status } = req.body;
 
-    if (!productId || !status) {
+    console.log(`[DEBUG] updateProductStatus: productId=${productId}, sellerId=${sellerId}, status=${status}`);
+
+    if (!['active', 'inactive'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Product ID and status are required"
+        message: "Invalid status. Only 'active' or 'inactive' allowed."
       });
     }
 
-    const allowedStatuses = ['active', 'pending_approval', 'inactive'];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status"
-      });
-    }
-
-    const affectedRows = await Product.updateStatus(productId, status);
-
-    if (affectedRows === 0) {
+    const product = await Product.findById(productId);
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
 
+    // Check ownership only if not admin
+    if (req.user.role !== 'admin' && product.seller_id !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Product does not belong to you."
+      });
+    }
+
+    // Safety Logic
+    // If current status is pending_approval, suspended, or draft
+    // Prevent switching to 'active' (Unapproved activation attempt)
+    // ADMIN OVERRIDE: Admins can activate from any status
+    if (status === 'active' && req.user.role !== 'admin') {
+      const restrictedStatuses = ['pending_approval', 'suspended', 'draft'];
+      if (restrictedStatuses.includes(product.product_status)) {
+        return res.status(403).json({
+          success: false,
+          message: `Cannot activate product from '${product.product_status}' status. Wait for admin approval.`
+        });
+      }
+    }
+
+    // If allowed, update status
+    await Product.updateStatus(productId, status);
+
     res.json({
       success: true,
-      message: `Product status updated to ${status}`
+      message: `Product ${status === 'active' ? 'activated' : 'deactivated'} successfully`
     });
 
   } catch (error) {
@@ -964,6 +1139,66 @@ const updateProductStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Internal server error"
+    });
+  }
+};
+
+
+// Delete product (Admin only)
+const deleteProduct = async (req, res) => {
+  try {
+    const { productId } = req.params;
+
+    if (!productId) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID is required"
+      });
+    }
+
+    // Check if product exists
+    const product = await Product.findById(productId);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found"
+      });
+    }
+
+    // Check product relations
+    const relations = await Product.checkProductRelations(productId);
+
+    if (!relations.canDelete) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete this product. It has ${relations.orderCount} order(s) associated with it. Products with orders cannot be deleted to maintain order history.`,
+        data: {
+          orderCount: relations.orderCount,
+          reviewCount: relations.reviewCount
+        }
+      });
+    }
+
+    // Delete the product
+    const affectedRows = await Product.delete(productId);
+
+    if (affectedRows === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Product not found or already deleted"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Product deleted successfully"
+    });
+
+  } catch (error) {
+    console.error("Delete product error:", error);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Internal server error"
     });
   }
 };
@@ -977,5 +1212,6 @@ module.exports = {
   filterProducts,
   getPublicProductById,
   getAdminProducts,
-  updateProductStatus
+  updateProductStatus,
+  deleteProduct
 }

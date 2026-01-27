@@ -28,22 +28,17 @@ function CustomerLogin() {
 
     try {
       const result = await loginCustomer(emailOrMobile, password);
-      console.log('Login result received:', result); // Debug log
 
       if (result && result.success) {
-        console.log('Login successful, navigating...'); // Debug log
         // Navigate to the page they were trying to visit, or home
         navigate(from, { replace: true });
       } else {
-        console.log('Login failed with error:', result?.error); // Debug log
         // Handle specific error for seller accounts trying to login as customer
         if (result?.error?.includes("not registered as a customer")) {
           const errorMsg = "This email is registered as a seller account. Please use seller login instead.";
-          console.log('Setting error:', errorMsg); // Debug log
           setError(errorMsg);
         } else {
           const errorMsg = result?.error || "Login failed. Please try again.";
-          console.log('Setting error:', errorMsg); // Debug log
           setError(errorMsg);
         }
       }
@@ -184,22 +179,14 @@ function CustomerLogin() {
             </p>
           </div>
 
-          <div className="mt-6 pt-6 border-t border-gray-200 text-center">
-            <p className="text-sm text-gray-600 mb-2">Want to sell on Nayagara?</p>
-            <Link
-              to="/seller/register"
-              className="text-sm text-secondary-600 hover:text-secondary-700 font-bold"
-            >
-              Start Selling →
-            </Link>
-          </div>
+         
         </div>
 
         <div className="mt-8 text-center text-sm text-gray-500">
           By signing in, you agree to our{' '}
-          <Link to="/terms" className="text-primary-600 hover:underline">Terms of Service</Link>
+          <Link to="/terms-conditions" className="text-primary-600 hover:underline">Terms of Service</Link>
           {' '}and{' '}
-          <Link to="/privacy" className="text-primary-600 hover:underline">Privacy Policy</Link>
+          <Link to="/privacy-policy" className="text-primary-600 hover:underline">Privacy Policy</Link>
         </div>
       </div>
     </div>

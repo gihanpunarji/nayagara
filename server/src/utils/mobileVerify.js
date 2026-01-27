@@ -21,10 +21,10 @@ const mobile = async (req, res) => {
   try {
     const { mobile, email } = req.body;
 
-    if (!mobile) {
+    if (!mobile || !email) {
       return res.status(400).json({
         success: false,
-        message: "Mobile number is required",
+        message: "Mobile number and email are required",
       });
     }
 
@@ -38,17 +38,17 @@ const mobile = async (req, res) => {
 
     // Convert to international format for SMS gateway (947XXXXXXXX)
     const newMobile = formatMobileForSMS(mobile);
-    
+
     const exsistingSeller = await User.findByMobile(newMobile);
-    if(exsistingSeller) {
+    if (exsistingSeller) {
       return res.status(400).json({
         success: false,
-        message: "Seller with the same mobile number already exists",
+        message: "Mobile number already registerd",
       });
     }
 
     const verificationCode = Math.floor(100000 + Math.random() * 900000);
-
+    await User.updateSellerMobile({ newMobile, email, verificationCode });
     fetch("https://app.text.lk/api/v3/sms/send", {
       method: "POST",
       headers: {
@@ -69,13 +69,11 @@ const mobile = async (req, res) => {
         return response.json();
       })
       .then((data) => {
+        console.log("SMS sent successfully:", data);
       })
       .catch((error) => {
         console.error("Error sending SMS:", error);
       });
-      
-
-    User.updateSellerMobile({ newMobile, email, verificationCode });
 
     res.status(200).json({
       success: true,
@@ -112,21 +110,32 @@ const verifyOtp = async (req, res) => {
     // Convert to international format for database lookup (947XXXXXXXX)
     const newMobile = formatMobileForSMS(mobile);
 
-    const seller = await User.findByMobile(newMobile);
-    if (!seller || seller.user_email !== email) {
+    // Find user by email (not by mobile, since mobile isn't verified yet)
+    const seller = await User.findByEmail(email);
+    if (!seller) {
       return res.status(400).json({
         success: false,
-        message: "Verification failed",
+        message: "User not found",
       });
     }
+
+    // Check if the mobile number matches
+    if (seller.user_mobile !== newMobile) {
+      return res.status(400).json({
+        success: false,
+        message: "Mobile number does not match",
+      });
+    }
+
+    // Verify the OTP code
     if (seller.mobile_verification_code != verificationCode) {
       return res.status(400).json({
         success: false,
         message: "Invalid verification code",
       });
     }
-    
-    await User.verifyOtp({mobile: newMobile, email, verificationCode});
+
+    await User.verifyOtp({ mobile: newMobile, email, verificationCode });
 
     res.status(200).json({
       success: true,

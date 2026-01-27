@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getAdminProducts, updateProductStatus } from '../../../api/admin';
+import { getAdminProducts, updateProductStatus, deleteProduct } from '../../../api/admin';
 import {
   Package,
   Search,
@@ -16,9 +16,11 @@ import {
   Calendar,
   Image as ImageIcon,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Trash2
 } from 'lucide-react';
 import AdminLayout from '../layout/AdminLayout';
+import ProductDetailView from './ProductDetailView';
 
 const Products = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +35,7 @@ const Products = () => {
   const [loading, setLoading] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [categories, setCategories] = useState(['all']);
+  const [viewingProduct, setViewingProduct] = useState(null);
   
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -138,12 +141,32 @@ const Products = () => {
       // Optimistic update locally or refetch
       // Optimistic:
       setProducts(prev => prev.map(p => p.product_id === productId ? { ...p, product_status: newStatus } : p));
-      
+
       // Also refetch to be safe/sync
-      // setRefreshTrigger(prev => prev + 1); 
+      // setRefreshTrigger(prev => prev + 1);
     } catch (error) {
       console.error('Failed to update product status', error);
       alert('Failed to update status');
+    }
+  };
+
+  const handleDeleteProduct = async (productId, productTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${productTitle}"?\n\nThis action cannot be undone. The product will only be deleted if it has no orders.`)) {
+      return;
+    }
+
+    try {
+      const response = await deleteProduct(productId);
+
+      if (response.success) {
+        // Remove from local state
+        setProducts(prev => prev.filter(p => p.product_id !== productId));
+        alert('Product deleted successfully');
+      }
+    } catch (error) {
+      console.error('Failed to delete product', error);
+      const errorMessage = error.message || 'Failed to delete product';
+      alert(errorMessage);
     }
   };
 
@@ -245,7 +268,7 @@ const Products = () => {
       </td>
       <td className="px-6 py-4 text-right">
         <div className="flex items-center space-x-2">
-          <button title="View Details" className="text-gray-600 hover:text-green-600"><Eye className="w-4 h-4" /></button>
+          <button title="View Details" onClick={() => setViewingProduct(product)} className="text-gray-600 hover:text-green-600"><Eye className="w-4 h-4" /></button>
           <div className="relative group">
             <button className="text-gray-600 hover:text-green-600"><MoreVertical className="w-4 h-4" /></button>
             <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10 py-1 text-left">
@@ -258,21 +281,27 @@ const Products = () => {
                 </button>
               )}
               {product.product_status === 'active' && (
-                <button 
+                <button
                   onClick={() => handleStatusUpdate(product.product_id, 'inactive')}
                   className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2"
                 >
-                  <Ban className="w-4 h-4" /><span>Suspend</span>
+                  <Ban className="w-4 h-4" /><span>Inactive</span>
                 </button>
               )}
                {(product.product_status === 'inactive' || product.product_status === 'suspended') && (
-                <button 
+                <button
                   onClick={() => handleStatusUpdate(product.product_id, 'active')}
                   className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
                 >
                   <RefreshCw className="w-4 h-4" /><span>Re-activate</span>
                 </button>
               )}
+              <button
+                onClick={() => handleDeleteProduct(product.product_id, product.product_title)}
+                className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2 border-t border-gray-100"
+              >
+                <Trash2 className="w-4 h-4" /><span>Delete Product</span>
+              </button>
             </div>
           </div>
         </div>
@@ -450,6 +479,13 @@ const Products = () => {
           )}
         </div>
       </div>
+      {viewingProduct && (
+        <ProductDetailView 
+          productId={viewingProduct.product_id} 
+          initialData={viewingProduct} 
+          onClose={() => setViewingProduct(null)} 
+        />
+      )}
     </AdminLayout>
   );
 };

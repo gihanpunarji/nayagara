@@ -30,6 +30,7 @@ const Header = ({
   const { user, isAuthenticated, logout } = useAuth();
   const { itemCount } = useCart();
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+
   const [activeFilters, setActiveFilters] = useState({});
   const [searchHistory, setSearchHistory] = useState([]);
 
@@ -178,20 +179,7 @@ const Header = ({
             </span>
             
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4">
-            <Link
-              to="/seller/register"
-              className="hover:text-primary-200 transition-colors font-medium"
-            >
-              Sell on Nayagara
-            </Link>
-            <Link
-              to="/help"
-              className="hidden sm:block hover:text-primary-200 transition-colors"
-            >
-              Help
-            </Link>
-          </div>
+          
         </div>
       </div>
 
@@ -268,21 +256,22 @@ const Header = ({
             {/* Right Actions */}
             <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Post Ad Button - Only show for authenticated users */}
-              <Link
+              {/* Post Ad Button - Hidden for Phase 2 */}
+              {/* <Link
                 to="/post-ad"
                 className="hidden sm:flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
               >
                 <Plus className="w-4 h-4" />
                 <span>Post Ad</span>
-              </Link>
+              </Link> */}
 
-              {/* Mobile Post Ad Button */}
-              <Link
+              {/* Mobile Post Ad Button - Hidden for Phase 2 */}
+              {/* <Link
                 to="/post-ad"
                 className="sm:hidden p-2 text-green-600 hover:text-green-700 transition-colors"
               >
                 <Plus className="w-5 h-5" />
-              </Link>
+              </Link> */}
 
               <Link
                 to="/cart"

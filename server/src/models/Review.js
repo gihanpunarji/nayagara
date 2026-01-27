@@ -2,7 +2,7 @@ const { getConnection } = require("../config/database");
 
 class Review {
   // Get all reviews with optional filtering
-  static async getAll(limit = 25, offset = 0, search = '', status = 'all', rating = 'all') {
+  static async getAll(limit = 25, offset = 0, search = '', status = 'all', rating = 'all', productId = null, userId = null) {
     const pool = getConnection();
     let connection;
     try {
@@ -21,6 +21,18 @@ class Review {
       if (rating && rating !== 'all') {
         whereClause += " AND pr.rating = ?";
         queryParams.push(parseInt(rating));
+      }
+
+      // Add product filter
+      if (productId) {
+        whereClause += " AND pr.product_id = ?";
+        queryParams.push(productId);
+      }
+
+      // Add user filter (for filtering by reviewer)
+      if (userId) {
+        whereClause += " AND pr.user_id = ?";
+        queryParams.push(userId);
       }
 
       // Add search filter
@@ -60,6 +72,7 @@ class Review {
           pr.is_verified_purchase as verified,
           pr.helpful_count as helpful,
           pr.not_helpful_count as notHelpful,
+          pr.order_id as orderId,
           CONCAT(u.first_name, ' ', u.last_name) as customerName,
           u.user_email as customerEmail,
           p.product_title as productName,
@@ -134,6 +147,71 @@ class Review {
         [reviewId]
       );
       return rows[0];
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+  // Create a new review
+  static async create({ userId, productId, orderId, rating, title, comment, isVerified = false }) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      const [result] = await connection.execute(
+        `INSERT INTO product_reviews (
+          user_id, product_id, order_id, rating, review_title, review_comment, is_verified_purchase, status, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, 'active', NOW())`,
+        [userId, productId, orderId, rating, title, comment, isVerified]
+      );
+      return result.insertId;
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  // Add images for a review
+  static async addImages(reviewId, imageUrls) {
+    if (!imageUrls || imageUrls.length === 0) return;
+    
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      
+      // Bulk insert
+      const placeholders = imageUrls.map(() => '(?, ?)').join(', ');
+      const values = [];
+      imageUrls.forEach(url => {
+        values.push(reviewId, url);
+      });
+
+      await connection.execute(
+        `INSERT INTO review_images (review_id, image_url) VALUES ${placeholders}`,
+        values
+      );
+    } finally {
+      if (connection) connection.release();
+    }
+  }
+
+  // Check if user has already reviewed a product for a specific order
+  static async hasReviewed(userId, productId, orderId) {
+    const pool = getConnection();
+    let connection;
+    try {
+      connection = await pool.getConnection();
+      // If orderId is provided, check specifically for that order
+      // Otherwise fallback to simple product check (backward compatibility)
+      let query = "SELECT review_id FROM product_reviews WHERE user_id = ? AND product_id = ?";
+      const params = [userId, productId];
+
+      if (orderId) {
+        query += " AND order_id = ?";
+        params.push(orderId);
+      }
+
+      const [rows] = await connection.execute(query, params);
+      return rows.length > 0;
     } finally {
       if (connection) connection.release();
     }

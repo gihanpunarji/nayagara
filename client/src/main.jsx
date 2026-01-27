@@ -1,59 +1,20 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import "./index.css";
 
-// Auth Context and Route Protection
+// console.log('Current VITE_API_URL:', import.meta.env.VITE_API_URL);
+
+// Context Providers
 import { AuthProvider } from "./context/AuthContext.jsx";
 import { CartProvider } from "./context/CartContext.jsx";
-import ProtectedRoute from "./components/shared/auth/ProtectedRoute.jsx";
-import AuthRoute from "./components/shared/auth/AuthRoute.jsx";
-import SellerRedirect from "./components/shared/auth/SellerRedirect.jsx";
+import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
+import AdminAxiosInterceptor from "./api/AdminAxiosInterceptor.jsx";
 import ErrorBoundary from "./components/shared/error/ErrorBoundary.jsx";
 
-// Customer Components
-import Home from "./components/customer/pages/Home.jsx";
-import CustomerLogin from "./components/customer/auth/Login.jsx";
-import CustomerRegister from "./components/customer/auth/Register.jsx";
-import ForgotPassword from "./components/customer/auth/ForgotPassword.jsx";
-import ResetPassword from "./components/customer/auth/ResetPassword.jsx";
-import ShoppingCart from "./components/customer/pages/ShoppingCart.jsx";
-import SearchPage from "./components/customer/pages/SearchPage.jsx";
-import CustomerAccount from "./components/customer/pages/Account.jsx";
-import Checkout from "./components/customer/pages/Checkout.jsx";
-import ShopPage from "./components/customer/pages/ShopPage.jsx";
-import AdvancedSearch from "./components/customer/pages/AdvancedSearch.jsx";
-import PageWrapper from "./components/customer/layout/PageWrapper.jsx";
-import { ProductView } from "./components/customer/pages/ProductView.jsx";
-import NewArrivals from "./components/customer/sections/NewArrivals.jsx";
-import AboutUs from "./components/customer/pages/AboutUs.jsx";
-import OurBusiness from "./components/customer/pages/OurBusiness.jsx";
-import BuyerProtection from "./components/customer/pages/BuyerProtection.jsx";
-import ChatView from "./components/customer/pages/ChatView.jsx";
-import NayagaraWaterHome from "./components/customer/pages/Nayagara_water_home.jsx";
-import HelpCenter from "./components/customer/pages/HelpCenter.jsx";
-import RefundPolicy from "./components/customer/pages/RefundPolicy.jsx";
-import PrivacyPolicy from "./components/customer/pages/PrivacyPolicy.jsx";
-import TermsConditions from "./components/customer/pages/TermsConditions.jsx";
-
-// Advertisement Components
-import PostAd from "./components/customer/pages/PostAd.jsx";
-import AdDetails from "./components/customer/pages/AdDetails.jsx";
-import AdListings from "./components/customer/pages/AdListings.jsx";
-
-// Seller Components
-import SellerLogin from "./components/seller/auth/SellerLogin.jsx";
-import SellerMobileVerify from "./components/seller/auth/SellerMobileVerify.jsx";
-import SellerProducts from "./components/seller/pages/Products.jsx";
-import SellerAddProduct from "./components/seller/pages/AddProduct.jsx";
-import SellerEditProduct from "./components/seller/pages/EditProduct.jsx";
-import SellerOrders from "./components/seller/pages/Orders.jsx";
-import SellerPayments from "./components/seller/pages/Payments.jsx";
-import SellerCustomers from "./components/seller/pages/Customers.jsx";
-import SellerAnalytics from "./components/seller/pages/Analytics.jsx";
-import SellerSettings from "./components/seller/pages/Settings.jsx";
-import SellerHelp from "./components/seller/pages/Help.jsx";
-import SellerMessages from "./components/seller/pages/Messages.jsx";
+// Route Components
+import CustomerRoutes from "./routes/CustomerRoutes.jsx";
+import SellerRoutes from "./routes/SellerRoutes.jsx";
 
 // Admin Components
 import AdminLogin from "./components/admin/auth/AdminLogin.jsx";
@@ -69,35 +30,63 @@ import AdminInventory from "./components/admin/pages/Inventory.jsx";
 import AdminPromotions from "./components/admin/pages/PromotionsDiscounts.jsx";
 import AdminPayments from "./components/admin/pages/Payments.jsx";
 import AdminShipping from "./components/admin/pages/Shipping.jsx";
-// import AdminSupport from "./components/admin/pages/Support.jsx";
-// import AdminSettings from "./components/admin/pages/Settings.jsx";
 import AdminNotifications from "./components/admin/pages/Notifications.jsx";
-// import AdminReturns from "./components/admin/pages/ReturnsRefunds.jsx";
 import AdminBanners from "./components/admin/pages/BannerSlider.jsx";
 import Referral from "./components/admin/pages/Referral.jsx";
 import SellerDetails from "./components/admin/pages/SellerDetails.jsx";
-
-// Shared Components
-import NotFound from "./components/shared/error/NotFound.jsx";
-import ServerError from "./components/shared/error/ServerError.jsx";
-import NetworkError from "./components/shared/error/NetworkError.jsx";
-import AccessDenied from "./components/shared/error/AccessDenied.jsx";
-import Dashboard from "./components/seller/pages/Dashboard.jsx";
-import SellerRegistration from "./components/seller/auth/SellerRegistration.jsx";
 import AdminProtectedRoute from "./components/admin/auth/AdminProtectedRoute.jsx";
-import AdminAxiosInterceptor from "./api/AdminAxiosInterceptor.jsx";
-import AxiosInterceptorManager from "./api/AxiosInterceptorManager.jsx";
-import OrderSuccess from "./components/customer/pages/OrderSuccess.jsx";
+
+// Subdomain Detection
+import { getSubdomain, isSellerSubDomain, isCustomerSubDomain } from "./utils/subdomain.js";
+
+// Determine which routes to render based on subdomain
+const AppRoutes = () => {
+  const location = useLocation(); // Force re-render on route change
+  const subdomain = getSubdomain();
+  const isSellerSub = isSellerSubDomain();
+  const isCustomerSub = isCustomerSubDomain();
+
+  // console.log('[AppRoutes] Subdomain:', subdomain);
+  // console.log('[AppRoutes] isSellerSub:', isSellerSub);
+  // console.log('[AppRoutes] Path:', location.pathname);
+
+  // If there's a subdomain but it's not valid (not 'sellers' or 'www'), show error
+  if (subdomain && !isSellerSub && !isCustomerSub) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold text-gray-800 mb-4">Invalid Subdomain</h1>
+          <p className="text-gray-600 mb-6">
+            The subdomain "<span className="font-semibold">{subdomain}</span>" does not exist.
+          </p>
+          <a
+            href={`${window.location.protocol}//nayagara.lk`}
+            className="text-blue-600 hover:text-blue-800 underline"
+          >
+            Go to main site
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <AuthProvider>
+      <AxiosInterceptorManager>
+        <CartProvider>
+          {isSellerSub ? <SellerRoutes /> : <CustomerRoutes />}
+        </CartProvider>
+      </AxiosInterceptorManager>
+    </AuthProvider>
+  );
+};
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
-          <Route path="/verify-mobile" element={<SellerMobileVerify />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-
-          {/* Admin Routes - WITHOUT AuthProvider */}
+          {/* Admin Routes - Separate from subdomain logic */}
           <Route
             path="/admin/*"
             element={
@@ -208,22 +197,6 @@ createRoot(document.getElementById("root")).render(
                       </AdminProtectedRoute>
                     }
                   />
-                  {/* <Route
-                    path="/support"
-                    element={
-                      <AdminProtectedRoute>
-                        <AdminSupport />
-                      </AdminProtectedRoute>
-                    }
-                  /> */}
-                  {/* <Route
-                    path="/settings"
-                    element={
-                      <AdminProtectedRoute>
-                        <AdminSettings />
-                      </AdminProtectedRoute>
-                    }
-                  /> */}
                   <Route
                     path="/notifications"
                     element={
@@ -232,14 +205,6 @@ createRoot(document.getElementById("root")).render(
                       </AdminProtectedRoute>
                     }
                   />
-                  {/* <Route
-                    path="/returns"
-                    element={
-                      <AdminProtectedRoute>
-                        <AdminReturns />
-                      </AdminProtectedRoute>
-                    }
-                  /> */}
                   <Route
                     path="/banners"
                     element={
@@ -261,327 +226,8 @@ createRoot(document.getElementById("root")).render(
             }
           />
 
-          {/* All other routes WITH AuthProvider */}
-          <Route
-            path="/*"
-            element={
-              <AuthProvider>
-                <AxiosInterceptorManager>
-                  <CartProvider>
-                    <SellerRedirect>
-                      <Routes>
-                        {/* Customer Routes */}
-                        <Route path="/" element={<Home />} />
-                        <Route
-                          path="/login"
-                          element={
-                            <AuthRoute>
-                              <CustomerLogin />
-                            </AuthRoute>
-                          }
-                        />
-                        <Route
-                          path="/register"
-                          element={
-                            <AuthRoute>
-                              <CustomerRegister />
-                            </AuthRoute>
-                          }
-                        />
-                        <Route
-                          path="/order-success"
-                          element={
-                            <ProtectedRoute>
-                              <OrderSuccess />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/forgot-password"
-                          element={<ForgotPassword />}
-                        />
-                        <Route
-                          path="/cart"
-                          element={
-                            <PageWrapper>
-                              <ShoppingCart />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/product/:id"
-                          element={
-                            <PageWrapper>
-                              <ProductView />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/new-arrivals"
-                          element={
-                            <PageWrapper>
-                              <NewArrivals />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/flash-sale"
-                          element={
-                            <PageWrapper>
-                              <NewArrivals />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/daily-deals"
-                          element={
-                            <PageWrapper>{/* <DailyDeals /> */}</PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/deals"
-                          element={
-                            <PageWrapper>{/* <DailyDeals /> */}</PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/top-rated"
-                          element={
-                            <PageWrapper>{/* <TopRated /> */}</PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/about-us"
-                          element={
-                            <PageWrapper>
-                              <AboutUs />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/our-business"
-                          element={
-                            <PageWrapper>
-                              <OurBusiness />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/buyer-protection"
-                          element={
-                            <PageWrapper>
-                              <BuyerProtection />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/chat/:sellerId/:productId"
-                          element={
-                            <ProtectedRoute requiredRole="customer">
-                              <ChatView />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/search"
-                          element={
-                            <PageWrapper>
-                              <SearchPage />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/shop"
-                          element={
-                            <PageWrapper>
-                              <ShopPage />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/advanced-search"
-                          element={
-                            <PageWrapper>
-                              <AdvancedSearch />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/account"
-                          element={
-                            <ProtectedRoute requiredRole="customer">
-                              <PageWrapper>
-                                <CustomerAccount />
-                              </PageWrapper>
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/post-ad"
-                          element={
-                            <ProtectedRoute requiredRole="customer">
-                              <PageWrapper>
-                                <PostAd />
-                              </PageWrapper>
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/checkout"
-                          element={
-                            <ProtectedRoute
-                              requiredRole="customer"
-                              promptOnRedirect={true}
-                            >
-                              <PageWrapper>
-                                <Checkout />
-                              </PageWrapper>
-                            </ProtectedRoute>
-                          }
-                        />{" "}
-                        <Route
-                          path="/nayagara-water"
-                          element={
-                            <PageWrapper>
-                              <NayagaraWaterHome />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/refund-policy"
-                          element={
-                            <PageWrapper>
-                              <RefundPolicy />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/privacy-policy"
-                          element={
-                            <PageWrapper>
-                              <PrivacyPolicy />
-                            </PageWrapper>
-                          }
-                        />
-                        <Route
-                          path="/terms-conditions"
-                          element={
-                            <PageWrapper>
-                              <TermsConditions />
-                            </PageWrapper>
-                          }
-                        />
-                        {/* Seller Routes */}
-                        <Route
-                          path="/seller/login"
-                          element={
-                            <AuthRoute>
-                              <SellerLogin />
-                            </AuthRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/register"
-                          element={
-                            <AuthRoute>
-                              <SellerRegistration />
-                            </AuthRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/dashboard"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <Dashboard />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/products"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerProducts />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/products/add"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerAddProduct />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/products/edit/:id"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerEditProduct />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/orders"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerOrders />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/customers"
-                          element={<SellerCustomers />}
-                        />
-                        <Route
-                          path="/seller/payments"
-                          element={<SellerPayments />}
-                        />
-                        <Route
-                          path="/seller/analytics"
-                          element={<SellerAnalytics />}
-                        />
-                        <Route
-                          path="/seller/messages"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerMessages />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/settings"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerSettings />
-                            </ProtectedRoute>
-                          }
-                        />
-                        <Route
-                          path="/seller/help"
-                          element={
-                            <ProtectedRoute requiredRole="seller">
-                              <SellerHelp />
-                            </ProtectedRoute>
-                          }
-                        />
-                        {/* Error Routes */}
-                        <Route path="/error/server" element={<ServerError />} />
-                        <Route
-                          path="/error/network"
-                          element={<NetworkError />}
-                        />
-                        <Route
-                          path="/error/access-denied"
-                          element={<AccessDenied />}
-                        />
-                        <Route path="*" element={<NotFound />} />
-                      </Routes>
-                    </SellerRedirect>
-                  </CartProvider>
-                </AxiosInterceptorManager>
-              </AuthProvider>
-            }
-          />
+          {/* All other routes - Customer or Seller based on subdomain */}
+          <Route path="/*" element={<AppRoutes />} />
         </Routes>
       </BrowserRouter>
     </ErrorBoundary>

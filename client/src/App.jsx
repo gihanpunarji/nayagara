@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { redirectSellerSubdomain } from "./utils/subdomain";
 
 // Import layout components
 import Header from "./components/customer/layout/Header";
@@ -78,9 +79,7 @@ const DesktopHomePage = ({
   );
 };
 
-// Main App Component with Responsive Layout
 const App = () => {
-  // State management
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All Categories");
   const [showCategories, setShowCategories] = useState(false);
@@ -107,10 +106,9 @@ const App = () => {
   // Redirect sellers to their dashboard if they access the home page
   useEffect(() => {
     if (!loading && isSeller) {
-      console.log('Seller detected on home page, redirecting to dashboard');
-      navigate('/seller/dashboard', { replace: true });
+      redirectSellerSubdomain('/seller/dashboard');
     }
-  }, [isSeller, loading, navigate]);
+  }, [isSeller, loading]);
 
   const [mainCategories, setMainCategories] = useState([]);
 
@@ -149,8 +147,6 @@ const App = () => {
 
   const quickLinks = [
 
-    { name: "New Arrivals", href: "#" },
-    { name: "Best Sellers", href: "#" },
    { name: "Nayagara Water", href: "/nayagara_water" },
   ];
 

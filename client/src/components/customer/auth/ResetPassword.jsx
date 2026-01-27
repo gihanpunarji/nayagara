@@ -2,8 +2,11 @@ import React, { useState } from "react";
 import { Link, Navigate, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { Lock, ArrowLeft, Loader2, AlertCircle, CheckCircle } from "lucide-react";
 import api from "../../../api/axios";
+import { redirectSellerSubdomain } from "../../../utils/subdomain";
 
 function ResetPassword() {
+  // console.log("ResetPassword component mounted");
+
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
@@ -11,10 +14,16 @@ function ResetPassword() {
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
-  
+
   const [searchParams] = useSearchParams();
-  
+
   const urlToken = searchParams.get("token");
+  const userRole = searchParams.get("role");
+
+  // console.log("Reset password page loaded");
+  console.log("URL token:", urlToken);
+  console.log("User role from URL:", userRole);
+  console.log("Full URL search params:", window.location.search);
 
   if(!urlToken) {
     return <Navigate to="/" replace />;
@@ -35,16 +44,40 @@ function ResetPassword() {
     setLoading(true);
     setError("");
     setSuccess("");
-
+      
     try {
+      // console.log("Attempting password reset with role:", userRole);
       const res = await api.post("/auth/reset-password", { urlToken, password });
+      // console.log("Reset response:", res.data);
+
       if (res.data.success) {
+        console.log("Password reset successful, setting up redirect...");
         setSuccess("Password reset successful! Redirecting to login...");
-        setTimeout(() => navigate("/login"), 2000);
+
+        // Determine redirect path
+        let redirectPath;
+        if (userRole === 'seller') {
+          redirectPath = 'seller subdomain';
+          console.log("User is a seller, will redirect to:", redirectPath);
+        } else {
+          redirectPath = 'customer login';
+          console.log("User is a customer, will redirect to:", redirectPath);
+        }
+
+        setTimeout(() => {
+          console.log("Executing redirect now to:", redirectPath);
+          if (userRole === 'seller') {
+            redirectSellerSubdomain('/seller/login');
+          } else {
+            navigate("/login");
+          }
+        }, 2000);
       } else {
+        console.log("Reset failed:", res.data.message);
         setError(res.data.message || "Failed to reset password.");
       }
     } catch (err) {
+      console.error("Reset error:", err);
       setError(err.response?.data?.message || "Something went wrong.");
     } finally {
       setLoading(false);

@@ -5,7 +5,8 @@ const api = axios.create({
     timeout: 1000 * 3600,
     headers: {
         'Content-Type': 'application/json',
-    }
+    },
+    withCredentials: true,
 });
 
 // Public API instance without authentication
@@ -14,7 +15,8 @@ const publicApi = axios.create({
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',
-    }
+    },
+    withCredentials: true,
 });
 
 let navigate = null;

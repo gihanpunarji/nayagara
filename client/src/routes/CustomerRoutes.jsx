@@ -30,6 +30,7 @@ import OrderSuccess from "../components/customer/pages/OrderSuccess.jsx";
 // Auth & Protection
 import AuthRoute from "../components/shared/auth/AuthRoute.jsx";
 import ProtectedRoute from "../components/shared/auth/ProtectedRoute.jsx";
+import AdminPortfolio from "../components/customer/pages/AdminPortfolio.jsx";
 
 // Error Pages
 import NotFound from "../components/shared/error/NotFound.jsx";

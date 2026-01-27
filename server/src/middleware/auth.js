@@ -58,17 +58,27 @@ const authenticateAdmin = async (req, res, next) => {
       });
     }
 
-    // Fetch full user object to ensure req.user is populated for controllers
-    const user = await User.findById(decoded.userId);
-    if (!user) {
+    // Fetch full admin object
+    const Admin = require("../models/Admin"); // Ensure Admin model is available
+    const admin = await Admin.findById(decoded.adminId);
+    
+    if (!admin) {
       return res.status(401).json({
         success: false,
-        message: "User not found",
+        message: "Admin user not found",
       });
     }
 
-    req.user = user;
-    req.admin = decoded; // Keep for backward compatibility if needed
+    // Map admin to req.user for controller compatibility
+    // Controllers expect req.user.user_id and req.user.role
+    req.user = {
+      ...admin,
+      user_id: admin.admin_id, // Map admin_id to user_id
+      role: 'admin',
+      user_email: admin.admin_email
+    };
+    
+    req.admin = decoded; 
     next();
 
   } catch (error) {

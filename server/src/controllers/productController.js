@@ -797,8 +797,8 @@ const getPublicProductById = async (req, res) => {
         GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM 
         products p
-        LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
-        LEFT JOIN categories c ON sc.categories_category_id = c.category_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id

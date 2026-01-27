@@ -41,32 +41,42 @@ const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1];
+    
     if (!token) {
-      return res.json({
+      return res.status(401).json({
         success: false,
         message: "Access token required",
       });
     }
 
-    jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }, (err, decoded) => {
-      if (err) {
-        console.error("JWT Verification Error:", err.message);
-        return res.json({
-          success: false,
-          message: "Invalid or expired token",
-        });
-      }
-      if (decoded.role !== "admin") {
-        return res.status(403).json({
-          success: false,
-          message: "Admin access required",
-        });
-      }
-      req.admin = decoded;
-      next();
+    const decoded = jwt.verify(token, JWT_SECRET);
+    
+    if (decoded.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access required",
+      });
+    }
+
+    // Fetch full user object to ensure req.user is populated for controllers
+    const user = await User.findById(decoded.userId);
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    req.user = user;
+    req.admin = decoded; // Keep for backward compatibility if needed
+    next();
+
+  } catch (error) {
+    console.error("Admin Auth middleware error:", error.message);
+    return res.status(403).json({
+      success: false,
+      message: "Invalid or expired token",
     });
-  } catch (err) {
-    console.log(err);
   }
 };
 

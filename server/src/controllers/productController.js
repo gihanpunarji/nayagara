@@ -1115,7 +1115,8 @@ const updateProductStatus = async (req, res) => {
     // Safety Logic
     // If current status is pending_approval, suspended, or draft
     // Prevent switching to 'active' (Unapproved activation attempt)
-    if (status === 'active') {
+    // ADMIN OVERRIDE: Admins can activate from any status
+    if (status === 'active' && req.user.role !== 'admin') {
       const restrictedStatuses = ['pending_approval', 'suspended', 'draft'];
       if (restrictedStatuses.includes(product.product_status)) {
         return res.status(403).json({

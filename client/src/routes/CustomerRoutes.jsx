@@ -245,6 +245,15 @@ const CustomerRoutes = () => {
         }
       />
 
+      <Route
+        path="/contact-admin"
+        element={
+          <PageWrapper>
+            <AdminPortfolio />
+          </PageWrapper>
+        }
+      />
+
       {/* Error Routes */}
       <Route path="/error/server" element={<ServerError />} />
       <Route path="/error/network" element={<NetworkError />} />

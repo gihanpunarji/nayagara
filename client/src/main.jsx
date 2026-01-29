@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import "./index.css";
@@ -45,6 +45,11 @@ const AppRoutes = () => {
   const subdomain = getSubdomain();
   const isSellerSub = isSellerSubDomain();
   const isCustomerSub = isCustomerSubDomain();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   // console.log('[AppRoutes] Subdomain:', subdomain);
   // console.log('[AppRoutes] isSellerSub:', isSellerSub);

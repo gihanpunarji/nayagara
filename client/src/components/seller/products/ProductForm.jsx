@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, ArrowLeft, Trash2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ImageUploader from './ImageUploader';
+import ProductVariants from './ProductVariants';
 import api from '../../../api/axios';
 
 const ProductForm = ({ isEdit = false, productData = null, productId = null }) => {
@@ -25,6 +26,10 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
   });
 
   const [deletedImageIds, setDeletedImageIds] = useState([]);
+
+  // Variants state
+  const [variants, setVariants] = useState([]);
+  const [deletedVariantIds, setDeletedVariantIds] = useState([]);
 
   const [dynamicFields, setDynamicFields] = useState({});
   const [errors, setErrors] = useState({});
@@ -150,6 +155,11 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       if (subcategoryId) {
         loadCategoryFields(subcategoryId);
       }
+
+      // Load Variants
+      if (productData.variants) {
+        setVariants(productData.variants);
+      }
     }
   }, [isEdit, productData]);
 
@@ -215,6 +225,19 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         setDeletedImageIds(prev => [...prev, imageRemoved.id]);
       }
     }
+  };
+
+  const handleVariantRemove = (index) => {
+    const variantToRemove = variants[index];
+
+    // If valid backend ID, add to deleted list
+    if (variantToRemove.variant_id) {
+      setDeletedVariantIds(prev => [...prev, variantToRemove.variant_id]);
+    }
+
+    const newVariants = [...variants];
+    newVariants.splice(index, 1);
+    setVariants(newVariants);
   };
 
   // Handle form submission
@@ -309,8 +332,15 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
 
 
       // Support category updates: Always send category and subcategory
+      // Support category updates: Always send category and subcategory
       formDataToSubmit.append('category', formData.category);
       formDataToSubmit.append('subcategory', formData.subcategory);
+
+      // Add Variants
+      formDataToSubmit.append('variants', JSON.stringify(variants));
+      if (deletedVariantIds.length > 0) {
+        formDataToSubmit.append('deletedVariantIds', JSON.stringify(deletedVariantIds));
+      }
 
       // Submit to API
       const url = isEdit ? `/products/${productId}` : '/products';
@@ -663,6 +693,14 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
 
           {errors.images && <p className="text-red-500 text-sm mt-2">{errors.images}</p>}
         </div>
+
+        {/* Variants */}
+        <ProductVariants
+          variants={variants}
+          setVariants={setVariants}
+          onRemove={handleVariantRemove}
+          errors={errors}
+        />
 
 
         {/* Submit Buttons */}

@@ -53,7 +53,7 @@ const register = async (req, res, role = "customer") => {
     if (existingUserWithMobile) {
       return res.status(400).json({
         success: false,
-        message: "Mobile number already registerd",
+        message: "Mobile number already registered",
       });
     }
 

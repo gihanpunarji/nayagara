@@ -33,10 +33,10 @@ const getSellers = async (req, res) => {
     const offset = (page - 1) * limit;
 
     const { sellers, total } = await User.getAllSellersWithStats(limit, offset, search, status);
-    
-    res.json({ 
-      success: true, 
-      sellers, 
+
+    res.json({
+      success: true,
+      sellers,
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
@@ -729,7 +729,7 @@ const updateUserStatus = async (req, res) => {
     }
 
     // Validate status value
-    const validStatuses = ['active', 'inactive', 'pending_verification', 'suspended', 'banned'];
+    const validStatuses = ['active', 'inactive', 'pending_verification', 'suspended', 'banned', 'verified'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
         success: false,

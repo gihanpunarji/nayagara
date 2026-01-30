@@ -37,6 +37,7 @@ const Sellers = () => {
   const [filterOptions, setFilterOptions] = useState([
     { key: 'all', label: 'All Sellers', count: 0, color: 'gray' },
     { key: 'active', label: 'Active', count: 0, color: 'green' },
+    { key: 'verified', label: 'Verified', count: 0, color: 'blue' },
     { key: 'pending_verification', label: 'Pending', count: 0, color: 'orange' },
     { key: 'suspended', label: 'Suspended', count: 0, color: 'red' }
   ]);
@@ -121,6 +122,7 @@ const Sellers = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-700 border-green-200';
+      case 'verified': return 'bg-blue-100 text-blue-700 border-blue-200';
       case 'pending_verification': return 'bg-orange-100 text-orange-700 border-orange-200';
       case 'suspended': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-gray-100 text-gray-700 border-gray-200';
@@ -170,9 +172,6 @@ const Sellers = () => {
       console.error('Failed to update seller status:', err);
       setError('Failed to update seller status');
     }
-  };
-
-  const handleBulkAction = (action) => {
   };
 
   const SellerRow = ({ seller }) => (
@@ -284,7 +283,7 @@ const Sellers = () => {
                     <Package className="w-4 h-4" />
                     <span>View Products</span>
                   </button>
-                {seller.status === 'pending_verification' && (
+                {seller.status === 'verified' && (
                   <button 
                     onClick={(e) => {
                       e.stopPropagation();

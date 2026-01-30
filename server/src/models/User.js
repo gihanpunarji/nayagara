@@ -223,6 +223,7 @@ class User {
     let connection;
     try {
       connection = await pool.getConnection();
+
       const [
         result,
       ] = await connection.execute(
@@ -230,14 +231,19 @@ class User {
         [email, mobile, verificationCode]
       );
       if (result.length === 0) {
+
         throw new Error("Invalid verification details");
       }
+
+
+
       const [
         updateResult,
       ] = await connection.execute(
-        "UPDATE users SET mobile_verified = ?, mobile_verification_code = ? WHERE user_email = ? AND user_mobile = ?",
+        "UPDATE users SET mobile_verified = ?, user_status = 'verified', mobile_verification_code = ? WHERE user_email = ? AND user_mobile = ?",
         [1, null, email, mobile]
       );
+
       return updateResult;
     } finally {
       if (connection) connection.release();

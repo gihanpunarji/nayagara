@@ -44,12 +44,12 @@ const ProductList = () => {
       if (selectedFilter !== 'all') params.append('status', selectedFilter);
       if (selectedCategory) params.append('category', selectedCategory);
       if (sortBy !== 'newest') params.append('sort', sortBy);
-      
+
       const queryString = params.toString();
       const url = `/products/seller${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await api.get(url);
-      
+
       if (response.data.success) {
         const productsData = response.data.data.map(product => ({
           id: product.product_id,
@@ -66,7 +66,7 @@ const ProductList = () => {
           orders: product.inquiry_count || 0,
           attributes: product.product_attributes
         }));
-        
+
         setProducts(productsData);
       } else {
         setError(response.data.message || 'Failed to load products');
@@ -79,7 +79,6 @@ const ProductList = () => {
     }
   };
 
-  // Load categories from API
   const loadCategories = async () => {
     try {
       const response = await api.get('/categories');
@@ -88,6 +87,54 @@ const ProductList = () => {
       }
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  // Handle status toggle
+  const handleStatusToggle = async (productId, currentStatus) => {
+    // Prevent toggling if pending approval (unless setting to inactive)
+    if (currentStatus === 'pending_approval') {
+      // Allow disabling, but warn if trying to enable
+      // Actually, since it's a toggle, we only need to check if we are trying to ACTIVATE it
+      // But the toggle UI will show "off" for pending usually? Or "warning"?
+      // Let's assume toggle is ON for active, OFF for inactive/pending.
+      // If pending, it's safer to not allow toggle TO active via simple switch.
+      // But we can allow setting to inactive.
+      
+      // For now, let's just call the API. The API has the safety checks.
+      // We will handle the optimistic UI carefully.
+    }
+
+    // Determine new status
+    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+
+    // Optimistic Update
+    setProducts(prevProducts => 
+      prevProducts.map(p => 
+        p.id === productId ? { ...p, status: newStatus } : p
+      )
+    );
+
+    try {
+      const response = await api.patch(`/products/${productId}/status`, {
+        status: newStatus
+      });
+
+      if (!response.data.success) {
+        throw new Error(response.data.message);
+      }
+      
+      // Success - no need to do anything as we already updated UI
+    } catch (error) {
+      console.error('Error updating status:', error);
+      // Revert on error
+      setProducts(prevProducts => 
+        prevProducts.map(p => 
+          p.id === productId ? { ...p, status: currentStatus } : p
+        )
+      );
+      // Optional: Show toast or error
+      alert(error.response?.data?.message || 'Failed to update status');
     }
   };
 
@@ -140,6 +187,8 @@ const ProductList = () => {
     loadProducts();
   }, [debouncedSearch, selectedFilter, selectedCategory, sortBy]);
 
+
+
   const getStatusColor = (status, stock) => {
     if (stock === 0) return 'text-red-600 bg-red-100';
     switch (status) {
@@ -171,144 +220,197 @@ const ProductList = () => {
   };
 
   const ProductCard = ({ product }) => (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
-      {/* Product Image */}
-      <div className="relative aspect-square bg-gray-100">
+    <div className="group bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-xl transition-all duration-300 overflow-hidden flex flex-col h-full">
+      {/* Product Image Area */}
+      <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
         <img
           src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
           alt={product.title}
-          className="w-full h-full object-contain"
+          className="w-full h-full object-contain mix-blend-multiply p-4 transition-transform duration-500 group-hover:scale-110"
           onError={(e) => {
             e.target.src = '/api/placeholder/400/400';
           }}
         />
 
-        {/* Status Badge */}
-        <div className="absolute top-3 left-3">
-          <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(product.status, product.stock)}`}>
+        {/* Status Badge Overlay */}
+        <div className="absolute top-3 left-3 z-10">
+          <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${
+            product.stock === 0 ? 'bg-red-500/90 text-white' :
+            product.status === 'active' ? 'bg-green-500/90 text-white' :
+            product.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
+            product.status === 'suspended' ? 'bg-red-500/90 text-white' :
+            'bg-gray-500/90 text-white'
+          }`}>
             {getStatusIcon(product.status, product.stock)}
             <span>
               {product.stock === 0 ? 'Out of Stock' :
-               product.status === 'active' ? 'Active' :
-               product.status === 'pending_approval' ? 'Pending Approval' : 
-               product.status === 'suspended' ? 'Suspended' :
-               product.status === 'inactive' ? 'Inactive' : product.status}
+                product.status === 'active' ? 'Active' :
+                  product.status === 'pending_approval' ? 'Pending' :
+                    product.status === 'suspended' ? 'Suspended' : 'Inactive'}
             </span>
           </span>
         </div>
 
-        {/* Actions */}
-        <div className="absolute top-3 right-3 flex space-x-1">
+        {/* Action Buttons Overlay (Visible on Hover in Desktop, Always on Mobile) */}
+        <div className="absolute top-3 right-3 flex flex-col space-y-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-4 group-hover:translate-x-0">
           <Link
             to={`/seller/products/edit/${product.id}`}
-            className="p-2 bg-white bg-opacity-90 text-gray-600 rounded-lg hover:bg-opacity-100 hover:text-primary-600 transition-all"
+            className="p-2 bg-white text-gray-700 rounded-full shadow-md hover:text-primary-600 hover:bg-gray-50 transition-colors"
+            title="Edit Product"
           >
             <Edit className="w-4 h-4" />
           </Link>
+          <button className="p-2 bg-white text-gray-700 rounded-full shadow-md hover:text-primary-600 hover:bg-gray-50 transition-colors" title="View Details">
+            <Eye className="w-4 h-4" />
+          </button>
         </div>
       </div>
 
-      {/* Product Info */}
-      <div className="p-4">
-        <div className="mb-2">
-          <h3 className="font-semibold text-gray-900 line-clamp-2 mb-1">
+      {/* Card Content */}
+      <div className="p-5 flex flex-col flex-grow">
+        <div className="mb-1">
+          <p className="text-xs font-medium text-gray-500 mb-1">{product.category} &bull; {product.subcategory}</p>
+          <h3 className="font-bold text-gray-900 line-clamp-2 min-h-[2.5rem] leading-tight group-hover:text-primary-700 transition-colors">
             {product.title}
           </h3>
-          <p className="text-xs text-gray-500">{product.category} • {product.subcategory}</p>
         </div>
 
-        <div className="mb-3">
-          <span className="text-lg font-bold text-primary-600">
-            {formatPrice(product.price)}
-          </span>
+        {/* Price and Stock */}
+        <div className="mt-4 mb-4 flex items-end justify-between">
+          <div>
+            <span className="block text-2xl font-bold text-primary-600 leading-none">
+              {formatPrice(product.price)}
+            </span>
+            <span className="text-xs text-gray-400 mt-1 block">
+               Added {formatDate(product.createdAt)}
+            </span>
+          </div>
         </div>
 
-        {/* Stats */}
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
-          <span className="flex items-center space-x-1">
-            <Package className="w-3 h-3" />
-            <span>Stock: {product.stock}</span>
-          </span>
-          <span className="flex items-center space-x-1">
-            <Eye className="w-3 h-3" />
-            <span>{product.views} views</span>
-          </span>
-        </div>
+        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+          <div className="flex items-center space-x-3 text-sm text-gray-500">
+             <div className="flex items-center space-x-1" title="Stock Quantity">
+                <Package className="w-4 h-4" />
+                <span className="font-medium">{product.stock}</span>
+             </div>
+             <div className="flex items-center space-x-1" title="Total Views">
+                <Eye className="w-4 h-4" />
+                <span className="font-medium">{product.views}</span>
+             </div>
+          </div>
 
-        <div className="text-xs text-gray-500">
-          Added {formatDate(product.createdAt)}
+          {/* Toggle Switch */}
+          <div className="flex items-center" title={product.status === 'active' ? 'Click to Deactivate' : 'Click to Activate'}>
+             {(['active', 'inactive', 'pending_approval'].includes(product.status)) ? (
+              <label className="relative inline-flex items-center cursor-pointer group/toggle">
+                <input
+                  type="checkbox"
+                  className="sr-only peer"
+                  checked={product.status === 'active'}
+                  onChange={() => handleStatusToggle(product.id, product.status)}
+                  disabled={product.status === 'pending_approval' || product.status === 'suspended'}
+                />
+                <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer 
+                  transition-colors duration-300
+                  ${product.status === 'active' ? 'peer-checked:bg-primary-600' : 'peer-checked:bg-gray-300'}
+                  peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all after:shadow-sm
+                  ${(product.status === 'pending_approval' || product.status === 'suspended') ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-300'}
+                `}></div>
+              </label>
+             ) : (
+               <span className="text-xs font-medium text-gray-400">Locked</span>
+             )}
+          </div>
         </div>
       </div>
     </div>
   );
 
   const ProductListItem = ({ product }) => (
-    <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all">
-      <div className="flex items-center space-x-4">
+    <div className="group bg-white rounded-xl p-4 shadow-sm border border-gray-200 hover:shadow-md transition-all duration-300">
+      <div className="flex items-center gap-6">
         {/* Image */}
-        <div className="w-20 h-20 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+        <div className="w-24 h-24 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative">
           <img
             src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
             alt={product.title}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-contain p-2 mix-blend-multiply"
             onError={(e) => {
               e.target.src = '/api/placeholder/400/400';
             }}
           />
+           {product.stock === 0 && (
+              <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+                 <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">No Stock</span>
+              </div>
+           )}
         </div>
 
         {/* Product Info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-start justify-between">
-            <div className="min-w-0 flex-1 mr-4">
-              <h3 className="font-semibold text-gray-900 truncate mb-1">
-                {product.title}
-              </h3>
-              <p className="text-sm text-gray-500 mb-2">
-                {product.category} • {product.subcategory}
-              </p>
-              <div className="flex items-center space-x-4 text-sm">
-                <span className="font-semibold text-primary-600">
-                  {formatPrice(product.price)}
-                </span>
-                <span className="text-gray-500">
-                  Stock: {product.stock}
-                </span>
-                <span className="text-gray-500">
-                  {product.views} views
-                </span>
-              </div>
-            </div>
-
-            {/* Status and Actions */}
-            <div className="flex items-center space-x-3">
-              <span className={`inline-flex items-center space-x-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(product.status, product.stock)}`}>
-                {getStatusIcon(product.status, product.stock)}
-                <span>
-                  {product.stock === 0 ? 'Out of Stock' :
-                   product.status === 'active' ? 'Active' :
-                   product.status === 'pending_approval' ? 'Pending Approval' : 
-                   product.status === 'suspended' ? 'Suspended' :
-                   product.status === 'inactive' ? 'Inactive' : product.status}
-                </span>
-              </span>
-
-              <div className="flex space-x-1">
-                <Link
-                  to={`/seller/products/edit/${product.id}`}
-                  className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-all"
-                >
-                  <Edit className="w-4 h-4" />
-                </Link>
-                <button className="p-2 text-gray-600 hover:text-primary-600 hover:bg-gray-100 rounded-lg transition-all">
-                  <Eye className="w-4 h-4" />
-                </button>
-                <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
+        <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          
+          {/* Title & Category - Col Span 5 */}
+          <div className="md:col-span-5 min-w-0">
+            <h3 className="font-bold text-gray-900 truncate mb-1 text-lg group-hover:text-primary-700 transition-colors">
+              {product.title}
+            </h3>
+            <p className="text-sm text-gray-500 flex items-center gap-2">
+              <span className="bg-gray-100 px-2 py-0.5 rounded text-xs font-medium text-gray-600">{product.category}</span>
+              <span className="text-gray-300">•</span>
+              <span>{product.subcategory}</span>
+            </p>
           </div>
+
+          {/* Stats - Col Span 3 */}
+          <div className="md:col-span-3 flex md:flex-col gap-4 md:gap-1 text-sm text-gray-600">
+             <div className="flex items-center gap-2" title="Price">
+               <span className="font-bold text-gray-900">{formatPrice(product.price)}</span>
+             </div>
+             <div className="flex items-center gap-4 text-xs text-gray-500">
+               <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" /> {product.stock}</span>
+               <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {product.views}</span>
+             </div>
+          </div>
+
+          {/* Status & Actions - Col Span 4 */}
+          <div className="md:col-span-4 flex items-center justify-end gap-6">
+             {/* Toggle */}
+             <div className="flex flex-col items-end gap-1">
+                {(['active', 'inactive', 'pending_approval'].includes(product.status)) && (
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      className="sr-only peer"
+                      checked={product.status === 'active'}
+                      onChange={() => handleStatusToggle(product.id, product.status)}
+                      disabled={product.status === 'pending_approval' || product.status === 'suspended'}
+                    />
+                    <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer 
+                      ${product.status === 'active' ? 'peer-checked:bg-primary-600' : ''} 
+                      peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
+                      ${(product.status === 'pending_approval' || product.status === 'suspended') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}
+                    `}></div>
+                  </label>
+                )}
+                <span className={`text-[10px] font-semibold uppercase tracking-wider ${
+                   product.status === 'active' ? 'text-green-600' : 
+                   product.status === 'pending_approval' ? 'text-yellow-600' : 'text-gray-400'
+                }`}>
+                   {product.status === 'pending_approval' ? 'Pending' : product.status}
+                </span>
+             </div>
+
+             {/* Action Buttons */}
+             <div className="flex items-center gap-2 border-l pl-4 border-gray-100">
+                <Link to={`/seller/products/edit/${product.id}`} className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                   <Edit className="w-4 h-4" />
+                </Link>
+                <button className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                    <MoreVertical className="w-4 h-4" />
+                </button>
+             </div>
+          </div>
+
         </div>
       </div>
     </div>
@@ -342,18 +444,16 @@ const ProductList = () => {
             <button
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
-              className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                selectedFilter === filter.key
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+              className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key
+                ? 'bg-primary-600 text-white'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
             >
               <span>{filter.label}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                selectedFilter === filter.key
-                  ? 'bg-white bg-opacity-20 text-white'
-                  : 'bg-gray-200 text-gray-600'
-              }`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedFilter === filter.key
+                ? 'bg-white bg-opacity-20 text-white'
+                : 'bg-gray-200 text-gray-600'
+                }`}>
                 {filter.count}
               </span>
             </button>
@@ -409,21 +509,19 @@ const ProductList = () => {
           <div className="flex border border-gray-300 rounded-lg overflow-hidden">
             <button
               onClick={() => setViewMode('grid')}
-              className={`p-2 ${
-                viewMode === 'grid'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              } transition-colors`}
+              className={`p-2 ${viewMode === 'grid'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+                } transition-colors`}
             >
               <Grid className="w-4 h-4" />
             </button>
             <button
               onClick={() => setViewMode('list')}
-              className={`p-2 ${
-                viewMode === 'list'
-                  ? 'bg-primary-600 text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100'
-              } transition-colors`}
+              className={`p-2 ${viewMode === 'list'
+                ? 'bg-primary-600 text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100'
+                } transition-colors`}
             >
               <ListIcon className="w-4 h-4" />
             </button>
@@ -479,8 +577,8 @@ const ProductList = () => {
                 Showing {products.length} products
                 {(searchQuery || selectedFilter !== 'all' || selectedCategory) && (
                   <span className="text-primary-600 font-medium">
-                    {' '}• {searchQuery && `"${searchQuery}"`} 
-                    {selectedFilter !== 'all' && ` • ${selectedFilter}`} 
+                    {' '}• {searchQuery && `"${searchQuery}"`}
+                    {selectedFilter !== 'all' && ` • ${selectedFilter}`}
                     {selectedCategory && ` • ${selectedCategory}`}
                   </span>
                 )}

@@ -61,8 +61,6 @@ class Order {
     product_attributes_snapshot,
     product_image_url
   }) {
-    console.log("unit price ", unit_price);
-    
     const connection = getConnection();
     const [result] = await connection.execute(
       `INSERT INTO order_items (
@@ -111,9 +109,11 @@ class Order {
   static async getOrderItems(order_id) {
     const connection = getConnection();
     const [rows] = await connection.execute(
-      `SELECT oi.*, pi.image_url as product_image_url 
+      `SELECT oi.*, pi.image_url as product_image_url,
+      CASE WHEN pr.review_id IS NOT NULL THEN 1 ELSE 0 END as is_reviewed
       FROM order_items oi
       LEFT JOIN product_images pi ON oi.product_id = pi.product_id AND pi.is_primary = 1
+      LEFT JOIN product_reviews pr ON oi.order_id = pr.order_id AND oi.product_id = pr.product_id
       WHERE oi.order_id = ?
       GROUP BY oi.order_item_id`,
       [order_id]
@@ -175,7 +175,6 @@ class Order {
        ORDER BY o.order_datetime DESC`,
       [seller_id]
     );
-    console.log(rows);
     return rows;
   }
 

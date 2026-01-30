@@ -1,6 +1,7 @@
 const Product = require("../models/Product");
 const ProductImage = require("../models/ProductImage");
 const User = require("../models/User");
+const ProductVariant = require("../models/ProductVariant");
 
 // Create a new product
 const createProduct = async (req, res) => {
@@ -21,7 +22,8 @@ const createProduct = async (req, res) => {
       metaTitle,
       metaDescription,
       expiresAt,
-      shippingCost
+      shippingCost,
+      variants // Expecting JSON string for variants
     } = req.body;
 
     // Validate required fields
@@ -95,9 +97,22 @@ const createProduct = async (req, res) => {
       await ProductImage.createMultiple(productId, imageData);
     }
 
+    // Handle variants if any
+    if (variants) {
+      try {
+        const parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+        if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+          await ProductVariant.createMultiple(productId, parsedVariants);
+        }
+      } catch (e) {
+        console.error("Error parsing/creating variants:", e);
+      }
+    }
+
     // Get the created product with images
     const createdProduct = await Product.findById(productId);
     const productImages = await ProductImage.findByProductId(productId);
+    const productVariants = await ProductVariant.findByProductId(productId);
 
     res.status(201).json({
       success: true,
@@ -172,7 +187,7 @@ const getSellerProducts = async (req, res) => {
                  'image_id', pi.image_id,
                  'image_url', pi.image_url,
                  'image_alt', pi.image_alt
-               )
+               ) ORDER BY pi.is_primary DESC, pi.image_id ASC
              ) as images_json
       FROM products p
       LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
@@ -297,6 +312,14 @@ const getProductById = async (req, res) => {
 
     // Get product images
     const images = await ProductImage.findByProductId(productId);
+    // Get product variants
+    let variants = [];
+    try {
+      variants = await ProductVariant.findByProductId(productId);
+    } catch (e) {
+      console.warn(`Product ${productId}: Variants fetch failed (table missing?):`, e.message);
+      variants = [];
+    }
 
     res.json({
       success: true,
@@ -306,7 +329,8 @@ const getProductById = async (req, res) => {
           ...product,
           product_attributes: Product.parseProductAttributes(product.product_attributes)
         },
-        images: images
+        images: images,
+        variants: variants
       }
     });
 
@@ -337,7 +361,13 @@ const updateProduct = async (req, res) => {
       metaTitle,
       metaDescription,
       expiresAt,
-      shippingCost
+      shippingCost,
+      category,
+      subcategory,
+      productStatus,
+      deletedImageIds,
+      variants, // JSON string or array
+      deletedVariantIds // JSON string or array
     } = req.body;
 
     // Validate required fields
@@ -364,6 +394,126 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // --- CHANGE DETECTION LOGIC ---
+    let hasContentChanged = false;
+
+    // Helper to compare values safely
+    const hasChanged = (val1, val2) => {
+      // Handle null/undefined vs empty string
+      const v1 = val1 === null || val1 === undefined ? '' : String(val1).trim();
+      const v2 = val2 === null || val2 === undefined ? '' : String(val2).trim();
+      return v1 !== v2;
+    };
+
+    // 1. Direct Field Comparison
+    if (
+      hasChanged(title, existingProduct.product_title) ||
+      hasChanged(description, existingProduct.product_description) ||
+      parseFloat(price) !== parseFloat(existingProduct.price) ||
+      parseFloat(market_price) !== parseFloat(existingProduct.market_price) ||
+      parseFloat(cost) !== parseFloat(existingProduct.cost) ||
+      // category/subcategory might be strings or ints
+      (category && String(category) !== String(existingProduct.category_id)) ||
+      (subcategory && String(subcategory) !== String(existingProduct.subcategory_id)) ||
+      (weightKg && parseFloat(weightKg) !== parseFloat(existingProduct.weight_kg)) ||
+      (shippingCost && parseFloat(shippingCost) !== parseFloat(existingProduct.shipping_cost))
+    ) {
+      hasContentChanged = true;
+      console.log(`Product ${productId}: Content fields changed.`);
+    }
+
+    // 2. Image Changes
+    // Check for NEW images
+    if (req.files && req.files.length > 0) {
+      hasContentChanged = true;
+      console.log(`Product ${productId}: New images uploaded.`);
+    }
+
+    // Check for DELETED images
+    let idsToDelete = [];
+    if (deletedImageIds) {
+      try {
+        if (typeof deletedImageIds === 'string') {
+          // Try parsing JSON first
+          try {
+            const parsed = JSON.parse(deletedImageIds);
+            if (Array.isArray(parsed)) idsToDelete = parsed;
+            else idsToDelete = [String(deletedImageIds)];
+          } catch (e) {
+            // If not JSON, assume comma-separated or single ID
+            if (deletedImageIds.includes(',')) {
+              idsToDelete = deletedImageIds.split(',').map(id => id.trim());
+            } else {
+              idsToDelete = [deletedImageIds.trim()];
+            }
+          }
+        } else if (Array.isArray(deletedImageIds)) {
+          idsToDelete = deletedImageIds;
+        } else {
+          // Fallback
+          idsToDelete = [String(deletedImageIds)];
+        }
+
+        // Filter out empty/invalid IDs
+        idsToDelete = idsToDelete.filter(id => id && String(id).trim() !== '' && !String(id).includes('image-'));
+
+        if (idsToDelete.length > 0) {
+          hasContentChanged = true;
+          console.log(`Product ${productId}: Images marked for deletion:`, idsToDelete);
+        }
+      } catch (e) {
+        console.error("Error parsing deletedImageIds:", e);
+      }
+    }
+
+    // 3. Variant Changes
+    let parsedVariants = [];
+    try {
+      if (variants) {
+        parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
+        if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
+          // If we have variants, content definitely changed (or at least structure did)
+          // checking deep equality is hard, so assume change if variants are provided/updated
+          hasContentChanged = true;
+        }
+      }
+    } catch (e) {
+      console.error("Error parsing variants for update:", e);
+    }
+
+    if (deletedVariantIds) {
+      hasContentChanged = true;
+    }
+
+    // --- STATUS ENFORCEMENT ---
+    let finalStatus = existingProduct.product_status;
+
+    if (hasContentChanged) {
+      // IF content changed -> Force 'pending_approval'
+      // UNLESS: The seller EXPLICITLY set it to 'inactive' to hide it.
+      // Prioritize safety: If they strictly want to hide it, let them.
+      if (productStatus === 'inactive') {
+        finalStatus = 'inactive';
+      } else {
+        finalStatus = 'pending_approval';
+      }
+    } else {
+      // IF NO content change -> Allow status toggle (Active <-> Inactive)
+      // BUT: If it was 'pending_approval', do NOT allow 'active' (admin hasn't approved yet)
+      if (productStatus) {
+        if (existingProduct.product_status === 'pending_approval' && productStatus === 'active') {
+          // Trying to activate unapproved product -> Keep pending
+          finalStatus = 'pending_approval';
+        } else {
+          // Allow normal toggle
+          finalStatus = productStatus;
+        }
+      }
+    }
+
+    console.log(`Product ${productId}: Status Update - Old: ${existingProduct.product_status}, Requested: ${productStatus}, Final: ${finalStatus}`);
+
+
     // Generate new slug if title changed
     let productSlug = existingProduct.product_slug;
     if (title !== existingProduct.product_title) {
@@ -388,20 +538,26 @@ const updateProduct = async (req, res) => {
     // Calculate expires at
     const expirationDate = expiresAt ? new Date(expiresAt) : existingProduct.expires_at;
 
+    // Handle deleted images FIRST
+    if (idsToDelete.length > 0) {
+      await ProductImage.deleteMultipleByIds(idsToDelete);
+    }
+
     // Update product
-    const affectedRows = await Product.update({
+    const affectedRows = await Product.updateRobust({
       productId: parseInt(productId),
       productTitle: title,
       productSlug: productSlug,
       productDescription: description,
-      categoryId: existingProduct.category_id, // Keep original category
+      categoryId: category || existingProduct.category_id,
+      subcategoryId: subcategory || existingProduct.subcategory_id,
       price: parseFloat(price),
       market_price: parseFloat(market_price),
       cost: parseFloat(cost),
       currencyCode: existingProduct.currency_code || 'LKR',
       weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
       stockQuantity: parseInt(stock),
-      productStatus: existingProduct.product_status, // Keep original status
+      productStatus: finalStatus,
       isFeatured: existingProduct.is_featured,
       isPromoted: existingProduct.is_promoted,
       locationCityId: locationCityId || existingProduct.location_city_id,
@@ -419,23 +575,100 @@ const updateProduct = async (req, res) => {
       });
     }
 
+    // Handle Main Image Logic (New vs Existing)
+    // 1. If user set a NEW image as primary, we must reset existing primaries first.
+    if (req.body.newImageIsPrimary === 'true') {
+      await ProductImage.resetPrimaries(productId);
+    }
+
     // Handle new image uploads if any
     if (req.files && req.files.length > 0) {
       const imageData = req.files.map((file, index) => ({
-        imageUrl: file.path, // Now contains the full Cloudinary URL
+        imageUrl: file.path,
         imageAlt: `${title} - Image ${index + 1}`
       }));
 
-      await ProductImage.createMultiple(productId, imageData);
+      // Only set first as primary if user explicitly requested it (via newImageIsPrimary flag)
+      // For updates, this prevents overriding an existing primary image
+      const setFirstAsPrimary = req.body.newImageIsPrimary === 'true';
+      await ProductImage.createMultiple(productId, imageData, setFirstAsPrimary);
+    }
+
+    // Handle Variants Update/Create/Delete
+
+    // 1. Delete removed variants
+    if (deletedVariantIds) {
+      try {
+        let variantIdsToDelete = [];
+        if (typeof deletedVariantIds === 'string') {
+          try {
+            const parsed = JSON.parse(deletedVariantIds);
+            variantIdsToDelete = Array.isArray(parsed) ? parsed : [parsed];
+          } catch (e) {
+            variantIdsToDelete = deletedVariantIds.split(',').map(id => id.trim());
+          }
+        } else if (Array.isArray(deletedVariantIds)) {
+          variantIdsToDelete = deletedVariantIds;
+        }
+
+        for (const vid of variantIdsToDelete) {
+          if (vid) {
+            try {
+              await ProductVariant.delete(vid);
+            } catch (err) { console.warn('Variant delete failed (table missing?):', err.message); }
+          }
+        }
+      } catch (e) {
+        console.error("Error processing deleted variants:", e);
+      }
+    }
+
+    // 2. Upsert (Update or Create) variants
+    if (parsedVariants && parsedVariants.length > 0) {
+      try {
+        for (const variant of parsedVariants) {
+          if (variant.variant_id) {
+            // Update existing
+            await ProductVariant.update({
+              variantId: variant.variant_id,
+              price: variant.price,
+              stockQuantity: variant.stock_quantity,
+              sku: variant.sku,
+              attributes: variant.attributes,
+              imageUrl: variant.image_url
+            });
+          } else {
+            // Create new
+            await ProductVariant.create({
+              productId: parseInt(productId),
+              price: variant.price,
+              stockQuantity: variant.stock_quantity,
+              sku: variant.sku,
+              attributes: variant.attributes,
+              imageUrl: variant.image_url
+            });
+          }
+        }
+      } catch (e) {
+        console.warn('Variant update/create failed (table missing?):', e.message);
+      }
+    }
+
+    // 2. If user set an EXISTING image as primary, we force it here.
+    if (req.body.primaryImageId) {
+      await ProductImage.setPrimary(productId, req.body.primaryImageId);
     }
 
     // Get the updated product with images
     const updatedProduct = await Product.findById(productId);
     const productImages = await ProductImage.findByProductId(productId);
+    /* const productVariants = await ProductVariant.findByProductId(productId); */
 
     res.json({
       success: true,
-      message: "Product updated successfully",
+      message: hasContentChanged
+        ? "Product updated and submitted for approval."
+        : "Product status updated successfully.",
       data: {
         product: {
           ...updatedProduct,
@@ -449,10 +682,13 @@ const updateProduct = async (req, res) => {
     console.error("Update product error:", error);
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: "Internal server error",
+      details: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 };
+
 
 // Get public products for customer views (no authentication required)
 const getPublicProducts = async (req, res) => {
@@ -541,7 +777,7 @@ const getPublicProducts = async (req, res) => {
              u.last_name as seller_last_name,
              c2.city_name as location_city_name,
              d.district_name as location_district_name,
-             GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+             GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM products p
       LEFT JOIN categories c ON p.category_id = c.category_id
       LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
@@ -662,16 +898,24 @@ const getPublicProductById = async (req, res) => {
         s.store_name,
         c2.city_name as location_city_name,
         d.district_name as location_district_name,
-        GROUP_CONCAT(pi.image_url SEPARATOR ',') as images
+        /* (SELECT COUNT(*) FROM product_reviews WHERE product_id = p.product_id AND status = 'active') as review_count, */
+        /* (SELECT AVG(rating) FROM product_reviews WHERE product_id = p.product_id AND status = 'active') as average_rating, */
+        GROUP_CONCAT(pi.image_url ORDER BY pi.is_primary DESC, pi.image_id ASC SEPARATOR ',') as images
       FROM 
         products p
-        LEFT JOIN sub_categories sc ON p.category_id = sc.sub_category_id
-        LEFT JOIN categories c ON sc.categories_category_id = c.category_id
+        LEFT JOIN categories c ON p.category_id = c.category_id
+        LEFT JOIN sub_categories sc ON p.subcategory_id = sc.sub_category_id
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         LEFT JOIN cities c2 ON p.location_city_id = c2.city_id
         LEFT JOIN districts d ON c2.district_id = d.district_id
         LEFT JOIN product_images pi ON p.product_id = pi.product_id
+        /* LEFT JOIN (
+          SELECT product_id, COUNT(*) as review_count, AVG(rating) as avg_rating
+          FROM product_reviews 
+          WHERE status = 'active'
+          GROUP BY product_id
+        ) r ON p.product_id = r.product_id */
       WHERE
         p.product_id = ?
         AND p.product_status = 'active'
@@ -698,7 +942,10 @@ const getPublicProductById = async (req, res) => {
         WHERE sub_categories_sub_category_id = ?
         ORDER BY field_id
       `;
-      const [fieldsResults] = await connection.execute(fieldsQuery, [product.category_id]);
+      // Use subcategory_id if available, otherwise 0 or handle logic. Assuming product.subcategory_id is what we need.
+      // If product.subcategory_id is null/undefined, this query might return empty (which is fine)
+      const subCatId = product.subcategory_id || 0;
+      const [fieldsResults] = await connection.execute(fieldsQuery, [subCatId]);
       categoryFields = fieldsResults;
     }
 
@@ -746,9 +993,19 @@ const getPublicProductById = async (req, res) => {
     }).filter(attr => attr.has_value); // Only include attributes that have values
 
     // Format the response
+    // Fetch variants
+    let variants = [];
+    try {
+      variants = await ProductVariant.findByProductId(productId);
+    } catch (e) {
+      console.warn("Variants table missing or error:", e.message);
+      variants = []; // Fallback to empty if table missing
+    }
+
     const formattedProduct = {
       ...product,
       images,
+      variants, // Add variants to response
       seller_name: `${product.seller_first_name} ${product.seller_last_name}`,
       price: parseFloat(product.price) || 0,
       created_at: product.created_at,
@@ -942,48 +1199,70 @@ const getAdminProducts = async (req, res) => {
 };
 
 // Update product status (Admin only)
+// Update product status (Isolated toggle for Sellers)
 const updateProductStatus = async (req, res) => {
   try {
     const { productId } = req.params;
+    const sellerId = req.user.user_id;
     const { status } = req.body;
 
-    if (!productId || !status) {
+    console.log(`[DEBUG] updateProductStatus: productId=${productId}, sellerId=${sellerId}, status=${status}`);
+
+    if (!['active', 'inactive'].includes(status)) {
       return res.status(400).json({
         success: false,
-        message: "Product ID and status are required"
+        message: "Invalid status. Only 'active' or 'inactive' allowed."
       });
     }
 
-    const allowedStatuses = ['active', 'pending_approval', 'suspended'];
-    if (!allowedStatuses.includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status. Allowed values: active, pending_approval, suspended"
-      });
-    }
-
-    const affectedRows = await Product.updateStatus(productId, status);
-
-    if (affectedRows === 0) {
+    const product = await Product.findById(productId);
+    if (!product) {
       return res.status(404).json({
         success: false,
         message: "Product not found"
       });
     }
 
+    // Check ownership only if not admin
+    if (req.user.role !== 'admin' && product.seller_id !== sellerId) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Product does not belong to you."
+      });
+    }
+
+    // Safety Logic
+    // If current status is pending_approval, suspended, or draft
+    // Prevent switching to 'active' (Unapproved activation attempt)
+    // ADMIN OVERRIDE: Admins can activate from any status
+    if (status === 'active' && req.user.role !== 'admin') {
+      const restrictedStatuses = ['pending_approval', 'suspended', 'draft'];
+      if (restrictedStatuses.includes(product.product_status)) {
+        return res.status(403).json({
+          success: false,
+          message: `Cannot activate product from '${product.product_status}' status. Wait for admin approval.`
+        });
+      }
+    }
+
+    // If allowed, update status
+    await Product.updateStatus(productId, status);
+
     res.json({
       success: true,
-      message: `Product status updated to ${status}`
+      message: `Product ${status === 'active' ? 'activated' : 'deactivated'} successfully`
     });
 
   } catch (error) {
     console.error("Update product status error:", error);
+    // DEBUG: Exposing specific error message to client for production debugging
     res.status(500).json({
       success: false,
-      message: "Internal server error"
+      message: `Internal server error: ${error.message}`
     });
   }
 };
+
 
 // Delete product (Admin only)
 const deleteProduct = async (req, res) => {

@@ -1,7 +1,8 @@
 const multer = require('multer');
 const { 
   uploadProfilePicture, 
-  uploadProductImage 
+  uploadProductImage,
+  uploadReviewImage
 } = require('../utils/cloudinaryUpload');
 
 // Configure multer to use memory storage (files will be in req.files as buffers)
@@ -110,6 +111,50 @@ const handleProductImagesUpload = async (req, res, next) => {
   }
 };
 
+// Review images upload middleware  
+const uploadReviews = multer({
+  ...multerConfig,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit per file
+    files: 3 // Maximum 3 files
+  }
+});
+
+// Middleware to handle review images upload to Cloudinary
+const handleReviewImagesUpload = async (req, res, next) => {
+  try {
+    if (!req.files || req.files.length === 0) {
+      return next();
+    }
+
+    const userId = req.user.user_id;
+    const uploadPromises = req.files.map(async (file) => {
+      const filePath = await uploadReviewImage(
+        file.buffer,
+        file.originalname,
+        userId
+      );
+
+      // Add the Cloudinary URL to each file object
+      file.path = filePath;
+      file.filename = filePath.split('/').pop();
+      file.cloudinaryUrl = filePath;
+      
+      return file;
+    });
+
+    req.files = await Promise.all(uploadPromises);
+    next();
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to upload review images',
+      error: error.message
+    });
+  }
+};
+
 // Export middleware combinations that match the original interface
 const upload = {
   single: (fieldName) => [
@@ -125,7 +170,15 @@ const productImageUpload = {
   ]
 };
 
+const reviewImageUpload = {
+  array: (fieldName, maxCount) => [
+    uploadReviews.array(fieldName, maxCount),
+    handleReviewImagesUpload
+  ]
+};
+
 module.exports = { 
   upload, 
-  productImageUpload 
+  productImageUpload,
+  reviewImageUpload
 };

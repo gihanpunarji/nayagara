@@ -4,6 +4,7 @@ import { useAuth } from "../../../context/AuthContext";
 import { useCart } from "../../../context/CartContext";
 import { useChat } from "../../../hooks/useChat";
 import ChatManager from "../../shared/chat/ChatManager";
+import ProductReviews from "../sections/ProductReviews";
 import { publicApi } from "../../../api/axios";
 import {
   ChevronLeft,
@@ -44,6 +45,8 @@ export const ProductView = () => {
   const [similarProducts, setSimilarProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedVariant, setSelectedVariant] = useState(null);
+
   const reviewsContainerRef = useRef(null);
   const touchStartX = useRef(0);
 
@@ -62,8 +65,20 @@ export const ProductView = () => {
   const handleAddToCart = async () => {
     if (!product) return;
 
+    // Check if variants exist but none selected
+    if (processedProduct?.variants?.length > 0 && !selectedVariant) {
+      alert("Please select a variation (Size/Color) before adding to cart.");
+      return;
+    }
+
     try {
-      await addToCart(product, 1);
+      // Pass the selected variant with the product
+      const productToAdd = {
+        ...processedProduct,
+        selectedVariant: selectedVariant
+      };
+
+      await addToCart(productToAdd, 1);
       // You could add a toast notification here
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -119,6 +134,9 @@ export const ProductView = () => {
       try {
         setLoading(true);
         setError(null);
+        setSelectedVariant(null); // Reset variant
+        setAttributeSelection({}); // Reset selection
+        setProduct(null); // Reset product to avoid stale data
         const response = await publicApi.get(`/products/public/${id}`);
 
         if (response.data.success) {
@@ -137,6 +155,8 @@ export const ProductView = () => {
     };
 
     fetchProduct();
+    // Scroll to top when product ID changes
+    window.scrollTo(0, 0);
   }, [id]);
 
   // Fetch similar products
@@ -179,62 +199,135 @@ export const ProductView = () => {
   // Process product data
   const processedProduct = product
     ? {
-        id: product.product_id,
-        product_id: product.product_id, // For chat navigation
-        seller_id: product.seller_id, // For chat navigation
-        name: product.product_title || "Untitled Product",
-        shortDescription:
-          product.product_description || "No description available",
-        price: parseFloat(product.price) || 0,
-        marketPrice: parseFloat(product.market_price) || 0,
-        originalPrice: parseFloat(product.market_price) || 0,
-        cost: parseFloat(product.cost) || 0,
-        shipping_cost: parseFloat(product.shipping_cost || 0),
-        rating: 4.5, // Default rating - you can implement actual ratings later
-        reviewCount: product.inquiry_count || 0, // Use inquiry count as proxy
-        images:
-          Array.isArray(product.images) && product.images.length > 0
-            ? product.images
-                .map((img) => {
-                  const imageUrl = img.image_url || img;
-                  // If the URL starts with /, prepend the backend base URL
-                  return imageUrl.startsWith("/")
-                    ? imageUrl
-                    : imageUrl;
-                })
-                .filter(Boolean)
-            : ["https://via.placeholder.com/800x600?text=No+Image"],
-        category: product.category_name || "Unknown",
-        subCategory: product.sub_category_name || "General",
-        brand: product.product_attributes?.brand || "Unknown",
-        condition: "New", // Default condition
-        warranty: product.product_attributes?.warranty
-          ? `${product.product_attributes.warranty} months`
-          : "No warranty specified",
-        location: product.location_city_name || "Location not specified",
-        categoryAttributes: product.category_attributes || [], // Dynamic fields from backend
-        seller: {
-          name: product.seller_name || "Unknown Seller",
-          rating: 4.5, // Default seller rating
-          totalReviews: 0, // Default review count
-          memberSince: product.created_at
-            ? new Date(product.created_at).getFullYear()
-            : "2024",
-          responseTime: "< 1 hour", // Default response time
-          verified: true, // Default verification status
-        },
-        features: product.product_attributes
-          ? Object.entries(product.product_attributes)
-              .map(([key, value]) => `${key}: ${value}`)
-              .filter((f) => f.includes(":") && !f.endsWith(": "))
-          : [],
-        shipping: {
-          freeShipping: true,
-          deliveryTime: "1-2 days",
-          returnPolicy: "7 days",
-        },
-      }
+      id: product.product_id,
+      product_id: product.product_id, // For chat navigation
+      seller_id: product.seller_id, // For chat navigation
+      name: product.product_title || "Untitled Product",
+      shortDescription:
+        product.product_description || "No description available",
+      price: parseFloat(product.price) || 0,
+      marketPrice: parseFloat(product.market_price) || 0,
+      originalPrice: parseFloat(product.market_price) || 0,
+      cost: parseFloat(product.cost) || 0,
+      shipping_cost: parseFloat(product.shipping_cost || 0),
+      rating: parseFloat(product.average_rating) || 0,
+      reviewCount: parseInt(product.review_count) || 0,
+      images:
+        Array.isArray(product.images) && product.images.length > 0
+          ? product.images
+            .map((img) => {
+              const imageUrl = img.image_url || img;
+              // If the URL starts with /, prepend the backend base URL
+              return imageUrl.startsWith("/")
+                ? imageUrl
+                : imageUrl;
+            })
+            .filter(Boolean)
+          : ["https://via.placeholder.com/800x600?text=No+Image"],
+      category: product.category_name || "Unknown",
+      subCategory: product.sub_category_name || "General",
+      brand: product.product_attributes?.brand || "Unknown",
+      condition: "New", // Default condition
+      warranty: product.product_attributes?.warranty
+        ? `${product.product_attributes.warranty} months`
+        : "No warranty specified",
+      location: product.location_city_name || "Location not specified",
+      categoryAttributes: product.category_attributes || [], // Dynamic fields from backend
+      // Parse variants
+      variants: product.variants ? (Array.isArray(product.variants) ? product.variants : JSON.parse(product.variants)) : [],
+      seller: {
+        name: product.seller_name || "Unknown Seller",
+        rating: 4.5, // Default seller rating
+        totalReviews: 0, // Default review count
+        memberSince: product.created_at
+          ? new Date(product.created_at).getFullYear()
+          : "2024",
+        responseTime: "< 1 hour", // Default response time
+        verified: true, // Default verification status
+      },
+      features: product.product_attributes
+        ? Object.entries(product.product_attributes)
+          .map(([key, value]) => `${key}: ${value}`)
+          .filter((f) => f.includes(":") && !f.endsWith(": "))
+        : [],
+      shipping: {
+        freeShipping: true,
+        deliveryTime: "1-2 days",
+        returnPolicy: "7 days",
+      },
+    }
     : null;
+
+  // Extract unique attributes from variants
+  const variantAttributes = React.useMemo(() => {
+    if (!processedProduct?.variants?.length) return null;
+
+    // Check what attributes exist (Size, Color usually)
+    // We assume attributes is JSON object in each variant
+    const attributesMap = {};
+
+    processedProduct.variants.forEach(v => {
+      if (!v.attributes) return;
+      const attrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+
+      Object.entries(attrs).forEach(([key, val]) => {
+        if (!attributesMap[key]) attributesMap[key] = new Set();
+        if (val) attributesMap[key].add(val);
+      });
+    });
+
+    return Object.entries(attributesMap).map(([key, valueInfo]) => ({
+      name: key,
+      values: Array.from(valueInfo)
+    }));
+  }, [processedProduct]);
+
+  // Helper to check if a combination is available
+  const getVariantForSelection = (currentSelection) => {
+    if (!processedProduct?.variants) return null;
+    return processedProduct.variants.find(v => {
+      const content = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+      // Check if all selected keys match
+      return Object.entries(currentSelection).every(([key, val]) => content[key] === val);
+    });
+  };
+
+  // State for attribute selection
+  const [attributeSelection, setAttributeSelection] = useState({});
+
+  // Reset selection when product changes
+  useEffect(() => {
+    setAttributeSelection({});
+    setSelectedVariant(null);
+  }, [processedProduct?.id]);
+
+  // Update selected variant when selection changes
+  useEffect(() => {
+    if (!variantAttributes || variantAttributes.length === 0) {
+      setSelectedVariant(null);
+      return;
+    }
+
+    // Check if all needed attributes are selected
+    const allSelected = variantAttributes.every(attr => attributeSelection[attr.name]);
+
+    if (allSelected) {
+      const mappedVariant = getVariantForSelection(attributeSelection);
+      setSelectedVariant(mappedVariant || null);
+
+      // Optionally update image if variant has one
+      if (mappedVariant && mappedVariant.image_url && processedProduct.images) {
+        const idx = processedProduct.images.indexOf(mappedVariant.image_url);
+        if (idx !== -1) setCurrentImageIndex(idx);
+      }
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [attributeSelection, variantAttributes]);
+
+  // Determine current display price
+  const displayPrice = selectedVariant ? parseFloat(selectedVariant.price) : (processedProduct ? processedProduct.price : 0);
+  const displayStock = selectedVariant ? selectedVariant.stock_quantity : (processedProduct ? processedProduct.stock_quantity : 0);
 
   // Mock reviews (you can implement actual reviews later)
   const reviews = [];
@@ -311,8 +404,19 @@ export const ProductView = () => {
 
   const handleBuyNow = async () => {
     if (!product) return;
+    if (processedProduct?.variants?.length > 0 && !selectedVariant) {
+      alert("Please select a variation (Size/Color) before buying.");
+      return;
+    }
+
     try {
-      const itemToCheckout = { ...processedProduct, quantity: 1 };
+      // Create checkout item with correct price/variant
+      const itemToCheckout = {
+        ...processedProduct,
+        price: displayPrice,
+        selectedVariant: selectedVariant,
+        quantity: 1
+      };
       const subtotal = itemToCheckout.price;
       const itemCount = 1;
 
@@ -443,7 +547,7 @@ export const ProductView = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             {/* Image Gallery */}
             <div className="space-y-4">
-              <div 
+              <div
                 className="relative bg-white lg:rounded-xl overflow-hidden aspect-square flex items-center justify-center p-4 border border-gray-100"
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
@@ -474,11 +578,10 @@ export const ProductView = () => {
                     <button
                       key={index}
                       onClick={() => setCurrentImageIndex(index)}
-                      className={`w-3 h-3 rounded-full transition-colors ${
-                        index === currentImageIndex
-                          ? "bg-primary-600"
-                          : "bg-white/50"
-                      }`}
+                      className={`w-3 h-3 rounded-full transition-colors ${index === currentImageIndex
+                        ? "bg-primary-600"
+                        : "bg-white/50"
+                        }`}
                     />
                   ))}
                 </div>
@@ -490,11 +593,10 @@ export const ProductView = () => {
                   <button
                     key={index}
                     onClick={() => setCurrentImageIndex(index)}
-                    className={`w-16 h-16 bg-gray-50 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${
-                      index === currentImageIndex
-                        ? "border-primary-600"
-                        : "border-transparent hover:border-gray-300"
-                    }`}
+                    className={`w-16 h-16 bg-gray-50 rounded-lg overflow-hidden border-2 transition-colors flex-shrink-0 ${index === currentImageIndex
+                      ? "border-primary-600"
+                      : "border-transparent hover:border-gray-300"
+                      }`}
                   >
                     <img
                       src={image}
@@ -524,11 +626,10 @@ export const ProductView = () => {
                     {[...Array(5)].map((_, i) => (
                       <Star
                         key={i}
-                        className={`w-5 h-5 ${
-                          i < Math.floor(processedProduct.rating)
-                            ? "text-yellow-400 fill-current"
-                            : "text-gray-300"
-                        }`}
+                        className={`w-5 h-5 ${i < Math.floor(processedProduct.rating)
+                          ? "text-yellow-400 fill-current"
+                          : "text-gray-300"
+                          }`}
                       />
                     ))}
                   </div>
@@ -548,19 +649,69 @@ export const ProductView = () => {
               {/* Price */}
               <div className="flex items-center gap-3">
                 <span className="text-3xl font-bold text-primary-600">
-                  Rs. {processedProduct.price.toLocaleString()}
+                  Rs. {displayPrice.toLocaleString()}
                 </span>
-                {processedProduct.marketPrice > 0 && processedProduct.marketPrice > processedProduct.price && (
+                {processedProduct.marketPrice > 0 && processedProduct.marketPrice > displayPrice && (
                   <>
                     <span className="text-xl text-gray-400 line-through">
                       Rs. {processedProduct.marketPrice.toLocaleString()}
                     </span>
                     <span className="bg-red-100 text-red-600 text-sm font-bold px-2 py-1 rounded">
-                      {Math.round(((processedProduct.marketPrice - processedProduct.price) / processedProduct.marketPrice) * 100)}% OFF
+                      {Math.round(((processedProduct.marketPrice - displayPrice) / processedProduct.marketPrice) * 100)}% OFF
                     </span>
                   </>
                 )}
               </div>
+
+              {/* Variant Selection */}
+              {variantAttributes && variantAttributes.length > 0 && (
+                <div className="space-y-4 py-4 border-t border-b border-gray-100">
+                  {variantAttributes.map(attr => (
+                    <div key={attr.name}>
+                      <h3 className="text-sm font-medium text-gray-900 mb-2">{attr.name}: <span className="text-gray-500 font-normal">{attributeSelection[attr.name]}</span></h3>
+                      <div className="flex flex-wrap gap-2">
+                        {attr.values.map(val => {
+                          const isSelected = attributeSelection[attr.name] === val;
+                          return (
+                            <button
+                              key={val}
+                              onClick={() => setAttributeSelection(prev => ({ ...prev, [attr.name]: val }))}
+                              className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all
+                                              ${isSelected
+                                  ? 'border-primary-600 bg-primary-50 text-primary-700'
+                                  : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                                }
+                                            `}
+                            >
+                              {val}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* Selection Status */}
+                  {selectedVariant ? (
+                    <div className="text-sm text-green-600 font-medium flex items-center">
+                      <Shield className="w-4 h-4 mr-1" /> Stock: {selectedVariant.stock_quantity} available
+                    </div>
+                  ) : (
+                    Object.keys(attributeSelection).length > 0 && (
+                      <div className="text-sm text-orange-500">
+                        Please select all options to see availability.
+                      </div>
+                    )
+                  )}
+                </div>
+              )}
+
+              {/* Stock Message if no variants */}
+              {(!variantAttributes || variantAttributes.length === 0) && (
+                <div className="text-sm text-gray-500 mb-2">
+                  Stock: {processedProduct.stock_quantity || 0} available
+                </div>
+              )}
 
               {/* Actions */}
               <div className="flex items-center space-x-2">
@@ -568,25 +719,24 @@ export const ProductView = () => {
                   onClick={handleAddToCart}
                   disabled={
                     cartLoading ||
-                    (processedProduct?.stock_quantity !== undefined &&
-                      processedProduct.stock_quantity <= 0)
+                    (displayStock <= 0) ||
+                    (variantAttributes && variantAttributes.length > 0 && !selectedVariant)
                   }
-                  className={`w-auto py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${
-                    inCart
-                      ? "bg-green-600 text-white hover:bg-green-700"
-                      : "bg-primary-600 text-white hover:bg-primary-700"
-                  } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  className={`w-auto py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2 ${inCart
+                    ? "bg-green-600 text-white hover:bg-green-700"
+                    : "bg-primary-600 text-white hover:bg-primary-700"
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <ShoppingCart className="w-5 h-5" />
                   <span>
                     {cartLoading
                       ? "Adding..."
                       : inCart
-                      ? `In Cart (${cartQuantity})`
-                      : "Add to Cart"}
+                        ? `In Cart (${cartQuantity})`
+                        : "Add to Cart"}
                   </span>
                 </button>
-                <button 
+                <button
                   onClick={handleBuyNow}
                   className="w-auto bg-gray-800 text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-900 transition-colors flex items-center justify-center space-x-2">
                   <Zap className="w-5 h-5" />
@@ -614,40 +764,40 @@ export const ProductView = () => {
             <div className="pt-4">
               {processedProduct.categoryAttributes &&
                 processedProduct.categoryAttributes.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {processedProduct.categoryAttributes
-                      .filter(
-                        (attr) =>
-                          attr.display_value &&
-                          attr.display_value.trim() !== "" &&
-                          attr.display_value !== "null" &&
-                          attr.display_value !== "undefined"
-                      )
-                      .map((attr, index) => (
-                        <div
-                          key={index}
-                          className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg"
-                        >
-                          <span className="text-sm font-medium text-gray-700">
-                            {attr.field_label}
-                          </span>
-                          <span className="text-sm text-gray-900 font-semibold">
-                            {attr.display_value}
-                          </span>
-                        </div>
-                      ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-gray-500">
-                    <div className="text-4xl mb-2">📋</div>
-                    <p className="text-sm">
-                      No additional specifications available.
-                    </p>
-                    <p className="text-xs mt-1">
-                      Check the product description for more details.
-                    </p>
-                  </div>
-                )}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {processedProduct.categoryAttributes
+                    .filter(
+                      (attr) =>
+                        attr.display_value &&
+                        attr.display_value.trim() !== "" &&
+                        attr.display_value !== "null" &&
+                        attr.display_value !== "undefined"
+                    )
+                    .map((attr, index) => (
+                      <div
+                        key={index}
+                        className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg"
+                      >
+                        <span className="text-sm font-medium text-gray-700">
+                          {attr.field_label}
+                        </span>
+                        <span className="text-sm text-gray-900 font-semibold">
+                          {attr.display_value}
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <div className="text-4xl mb-2">📋</div>
+                  <p className="text-sm">
+                    No additional specifications available.
+                  </p>
+                  <p className="text-xs mt-1">
+                    Check the product description for more details.
+                  </p>
+                </div>
+              )}
             </div>
           </details>
 
@@ -657,6 +807,7 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
+              {/* Seller Info Hidden as per request
               <div className="flex items-center space-x-4 mb-4">
                 {sellerImageUrl ? (
                   <img
@@ -677,12 +828,13 @@ export const ProductView = () => {
                   </div>
                 </div>
               </div>
+              */}
               <button
                 onClick={handleOpenChat}
                 className="w-full md:w-48 bg-primary-600 text-white py-3 rounded-lg font-medium hover:bg-primary-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <MessageCircle className="w-5 h-5" />
-                <span>Chat with Seller</span>
+                <span>Chat</span>
               </button>
             </div>
           </details>
@@ -693,7 +845,7 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
-              {/* Reviews will go here */}
+              <ProductReviews productId={processedProduct.id} />
             </div>
           </details>
         </div>
@@ -737,7 +889,7 @@ export const ProductView = () => {
       </div>
 
       {/* Sticky Footer for Mobile */}
-      
+
 
       {/* Chat Manager */}
       <ChatManager

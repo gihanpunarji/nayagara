@@ -8,43 +8,43 @@ import { useCart } from '../../../context/CartContext';
 
 const ShoppingCart = () => {
   const navigate = useNavigate();
-  const { 
-    cart: cartItems, 
-    updateQuantity, 
-    removeFromCart, 
-    clearCart, 
-    subtotal, 
-    shipping, 
-    total, 
-    itemCount, 
-    isEmpty, 
-    loading 
+  const {
+    cart: cartItems,
+    updateQuantity,
+    removeFromCart,
+    clearCart,
+    subtotal,
+    shipping,
+    total,
+    itemCount,
+    isEmpty,
+    loading
   } = useCart();
-  
+
   const [promoCode, setPromoCode] = useState('');
   const [appliedPromo, setAppliedPromo] = useState(null);
 
-  const handleUpdateQuantity = (productId, newQuantity) => {
+  const handleUpdateQuantity = (itemId, newQuantity) => {
     if (newQuantity < 1) return;
-    updateQuantity(productId, newQuantity);
+    updateQuantity(itemId, newQuantity);
   };
 
-  const handleRemoveItem = (productId) => {
-    removeFromCart(productId);
+  const handleRemoveItem = (itemId) => {
+    removeFromCart(itemId);
   };
 
 
   // Calculate selected items (all items for now, can add selection logic later)
   const selectedCartItems = cartItems.filter(item => item.inStock);
-  
+
   // Global shipping cost (can be customized later)
   const shippingCost = shipping || 0;
-  
+
   // Calculate savings (if products have original prices)
   const savings = selectedCartItems.reduce((sum, item) =>
     sum + ((item.originalPrice || item.price) - item.price) * item.quantity, 0
   );
-  
+
   let discount = 0;
   if (appliedPromo) {
     discount = appliedPromo.type === 'percentage'
@@ -122,7 +122,7 @@ const ShoppingCart = () => {
                       <div className="flex-1 min-w-0">
                         <div className="flex justify-between">
                           <div className="flex-1">
-                            <h3 
+                            <h3
                               className="text-lg font-bold text-gray-900 mb-1 cursor-pointer hover:text-primary-600 transition-colors"
                               onClick={() => navigate(`/product/${item.product_id || item.id}`)}
                             >
@@ -138,6 +138,18 @@ const ShoppingCart = () => {
                                 <span className="text-primary-600 font-medium">{item.shipping}</span>
                               </div>
                             </div>
+
+                            {/* Display Variant Attributes */}
+                            {item.attributes && Object.keys(item.attributes).length > 0 && (
+                              <div className="flex flex-wrap gap-2 mb-2">
+                                {Object.entries(item.attributes).map(([key, val]) => (
+                                  <span key={key} className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded border border-gray-200">
+                                    {key}: <span className="font-medium text-gray-800">{val}</span>
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+
                             <p className="text-sm text-gray-600 mb-2">Sold by: {item.seller}</p>
 
                             {!item.inStock && (
@@ -150,7 +162,7 @@ const ShoppingCart = () => {
 
                           <div className="flex flex-col items-end space-y-2">
                             <button
-                              onClick={() => handleRemoveItem(item.product_id || item.id)}
+                              onClick={() => handleRemoveItem(item.id)}
                               className="p-1 text-gray-400 hover:text-error transition-colors"
                             >
                               <Trash2 className="w-4 h-4" />
@@ -173,7 +185,7 @@ const ShoppingCart = () => {
                           {item.inStock && (
                             <div className="flex items-center border border-gray-300 rounded-lg">
                               <button
-                                onClick={() => handleUpdateQuantity(item.product_id || item.id, item.quantity - 1)}
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                                 disabled={item.quantity <= 1}
                                 className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                               >
@@ -181,7 +193,7 @@ const ShoppingCart = () => {
                               </button>
                               <span className="px-4 py-2 font-medium">{item.quantity}</span>
                               <button
-                                onClick={() => handleUpdateQuantity(item.product_id || item.id, item.quantity + 1)}
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                                 disabled={item.quantity >= item.stockCount}
                                 className="p-2 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                               >
@@ -208,7 +220,7 @@ const ShoppingCart = () => {
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 sticky top-6">
               <h2 className="text-lg font-heading font-bold text-gray-900 mb-6">Order Summary</h2>
 
-            
+
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal ({itemCount} items)</span>

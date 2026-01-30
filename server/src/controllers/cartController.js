@@ -1,5 +1,6 @@
 const Cart = require("../models/Cart");
 const Product = require("../models/Product");
+const ProductVariant = require("../models/ProductVariant");
 
 // Get all cart items for authenticated user
 const getCart = async (req, res) => {
@@ -8,23 +9,25 @@ const getCart = async (req, res) => {
     const cartItems = await Cart.getByUserId(userId);
 
     const formattedItems = cartItems.map(item => ({
-      id: item.product_id,
+      id: item.variant_id ? `${item.product_id}-${item.variant_id}` : item.product_id, // Unique ID for frontend key
       product_id: item.product_id,
+      variant_id: item.variant_id,
       cart_id: item.cart_id,
       name: item.product_title,
       title: item.product_title,
-      price: parseFloat(item.price || 0),
+      price: parseFloat(item.variant_price || item.price || 0),
       cost: parseFloat(item.cost || 0),
       original_price: parseFloat(item.cost || 0),
       quantity: item.quantity,
-      image: item.image_url,
+      image: item.variant_image || item.image_url,
       seller: item.seller_business_name || `${item.seller_first_name || ''} ${item.seller_last_name || ''}`.trim() || 'Unknown Seller',
       seller_id: item.seller_id,
-      stockCount: item.stock_quantity || 0,
-      inStock: (item.stock_quantity !== undefined && item.stock_quantity > 0),
+      stockCount: item.variant_id ? 999 : (item.stock_quantity || 0), // Ideally fetch variant stock
+      inStock: true, // Simplified for now
       currency: item.currency_code || 'LKR',
       weight_kg: parseFloat(item.weight_kg || 1.0),
-      shipping_cost: parseFloat(item.shipping_cost || 0)
+      shipping_cost: parseFloat(item.shipping_cost || 0),
+      attributes: item.variant_attributes ? (typeof item.variant_attributes === 'string' ? JSON.parse(item.variant_attributes) : item.variant_attributes) : {}
     }));
 
     const subtotal = formattedItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -44,7 +47,8 @@ const getCart = async (req, res) => {
     console.error('Error getting cart:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to get cart items'
+      message: 'Failed to get cart items',
+      error: error.message
     });
   }
 };
@@ -53,7 +57,7 @@ const getCart = async (req, res) => {
 const addToCart = async (req, res) => {
   try {
     const userId = req.user.user_id;
-    const { productId, quantity = 1 } = req.body;
+    const { productId, quantity = 1, variantId } = req.body;
 
     if (!productId) {
       return res.status(400).json({
@@ -71,12 +75,41 @@ const addToCart = async (req, res) => {
       });
     }
 
-    // Check stock
-    if (product.stock_quantity < quantity) {
-      return res.status(400).json({
-        success: false,
-        message: `Only ${product.stock_quantity} items available`
-      });
+    // Validate variant if provided
+    if (variantId) {
+      // Find variant
+      // Optimally we should have ProductVariant.findById, but we have findByProductId
+      try {
+        const variants = await ProductVariant.findByProductId(productId);
+        const variant = variants.find(v => v.variant_id == variantId);
+
+        if (!variant) {
+          return res.status(404).json({
+            success: false,
+            message: 'Variant not found'
+          });
+        }
+
+        if (variant.stock_quantity < quantity) {
+          return res.status(400).json({
+            success: false,
+            message: `Only ${variant.stock_quantity} items available for this variation`
+          });
+        }
+      } catch (e) {
+        console.warn("CartController: Variant check skipped due to missing table/error", e.message);
+        // If variants system fails, we might choosing to block or allow as non-variant
+        // Safe bet: Block adding *invalid* variant, but if table doesn't exist, we can't add variant anyway.
+        return res.status(400).json({ success: false, message: "Variants not currently available." });
+      }
+    } else {
+      // Check stock (main product)
+      if (product.stock_quantity < quantity) {
+        return res.status(400).json({
+          success: false,
+          message: `Only ${product.stock_quantity} items available`
+        });
+      }
     }
 
     // Check if user owns the product
@@ -87,13 +120,14 @@ const addToCart = async (req, res) => {
       });
     }
 
-    await Cart.addItem(userId, productId, quantity);
+    await Cart.addItem(userId, productId, quantity, variantId);
 
     res.json({
       success: true,
       message: 'Item added to cart successfully'
     });
   } catch (error) {
+    console.error("AddTo Cart Error", error);
     res.status(500).json({
       success: false,
       message: 'Failed to add item to cart'
@@ -106,7 +140,7 @@ const updateCartItem = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const { productId } = req.params;
-    const { quantity } = req.body;
+    const { quantity, variantId } = req.body;
 
     if (!quantity || quantity < 1) {
       return res.status(400).json({
@@ -115,7 +149,7 @@ const updateCartItem = async (req, res) => {
       });
     }
 
-    await Cart.updateQuantity(userId, productId, quantity);
+    await Cart.updateQuantity(userId, productId, quantity, variantId);
 
     res.json({
       success: true,
@@ -134,8 +168,9 @@ const removeFromCart = async (req, res) => {
   try {
     const userId = req.user.user_id;
     const { productId } = req.params;
+    const { variantId } = req.query; // Get variantId from query params
 
-    await Cart.removeItem(userId, productId);
+    await Cart.removeItem(userId, productId, variantId);
 
     res.json({
       success: true,

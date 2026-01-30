@@ -32,9 +32,10 @@ const EditProduct = () => {
             market_price: product.market_price.toString(),
             cost: product.cost.toString(),
             category: product.category_id.toString(),
-            subcategory: product.category_id.toString(), // Using same as category_id since API stores subcategory_id as category_id
+            subcategory: product.subcategory_id ? product.subcategory_id.toString() : '',
             stock: product.stock_quantity.toString(),
-            status: product.product_status,
+            stock: product.stock_quantity.toString(),
+            productStatus: product.product_status,
             weightKg: product.weight_kg,
             shippingCost: product.shipping_cost ? product.shipping_cost.toString() : '',
             locationCityId: product.location_city_id,

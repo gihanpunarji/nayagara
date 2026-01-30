@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { Upload, X, GripVertical, Star, Eye } from 'lucide-react';
 
-const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
+const ImageUploader = ({ images = [], onUpdate, onRemove, maxImages = 10, error }) => {
   const fileInputRef = useRef(null);
   const [draggedItem, setDraggedItem] = useState(null);
   const [draggedOver, setDraggedOver] = useState(null);
@@ -10,12 +10,12 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
   // Handle file selection
   const handleFileSelect = useCallback((files) => {
     if (!files || files.length === 0) return;
-    
+
     const remainingSlots = maxImages - images.length;
     if (remainingSlots <= 0) return;
-    
+
     const filesToProcess = Array.from(files).slice(0, remainingSlots).filter(file => file.type.startsWith('image/'));
-    
+
     if (filesToProcess.length === 0) return;
 
     const newImages = [];
@@ -78,6 +78,10 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
 
   // Handle image removal
   const removeImage = (imageId) => {
+    const imageToRemove = images.find(img => img.id === imageId);
+    if (imageToRemove && onRemove) {
+      onRemove(imageToRemove);
+    }
     onUpdate(images.filter(img => img.id !== imageId));
   };
 
@@ -144,9 +148,8 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
       {/* Upload Area */}
       {images.length < maxImages && (
         <div
-          className={`border-2 border-dashed rounded-xl transition-colors ${
-            error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
-          }`}
+          className={`border-2 border-dashed rounded-xl transition-colors ${error ? 'border-red-300 bg-red-50' : 'border-gray-300 hover:border-primary-400 bg-gray-50'
+            }`}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
         >
@@ -154,9 +157,8 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
             // Empty state - show upload instructions
             <div className="p-8 text-center">
               <div className="space-y-4">
-                <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${
-                  error ? 'bg-red-100' : 'bg-primary-100'
-                }`}>
+                <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center ${error ? 'bg-red-100' : 'bg-primary-100'
+                  }`}>
                   <Upload className={`w-6 h-6 ${error ? 'text-red-600' : 'text-primary-600'}`} />
                 </div>
 
@@ -198,7 +200,7 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
                   <span>Add More</span>
                 </button>
               </div>
-              
+
               {/* Mini preview grid */}
               <div className="grid grid-cols-6 gap-2">
                 {images.slice(0, 6).map((image, index) => (
@@ -227,7 +229,7 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
                   </div>
                 )}
               </div>
-              
+
               <p className="text-xs text-gray-500 mt-2 text-center">
                 Click "Add More" to upload additional images or scroll down to manage existing ones
               </p>
@@ -269,9 +271,8 @@ const ImageUploader = ({ images = [], onUpdate, maxImages = 10, error }) => {
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDropReorder(e, index)}
                 onDragEnd={handleDragEnd}
-                className={`relative group rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-move ${
-                  draggedOver === index ? 'border-primary-400 shadow-lg' : 'border-gray-200'
-                } ${draggedItem === index ? 'opacity-50 scale-95' : ''}`}
+                className={`relative group rounded-xl overflow-hidden border-2 transition-all duration-200 cursor-move ${draggedOver === index ? 'border-primary-400 shadow-lg' : 'border-gray-200'
+                  } ${draggedItem === index ? 'opacity-50 scale-95' : ''}`}
               >
                 {/* Main Image Badge */}
                 {index === 0 && (

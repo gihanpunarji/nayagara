@@ -10,7 +10,7 @@ const AccountSidebar = ({ activeTab, setActiveTab }) => {
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard', icon: User },
     { id: 'orders', label: 'My Orders', icon: Package },
-    { id: 'my-ads', label: 'My Ads', icon: Car },
+    // { id: 'my-ads', label: 'My Ads', icon: Car }, // Hidden for Phase 2
     { id: 'wallet', label: 'My Wallet', icon: CreditCard },
     { id: 'addresses', label: 'Addresses', icon: MapPin },
     { id: 'support', label: 'Help & Support', icon: HelpCircle }

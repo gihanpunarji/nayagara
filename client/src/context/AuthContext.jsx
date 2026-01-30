@@ -17,7 +17,8 @@ export const AuthProvider = ({ children }) => {
   const [userRole, setUserRole] = useState(null);
 
   // Clear authentication data
-  const clearAuth = useCallback(() => {
+  const clearAuth = useCallback((reason) => {
+    // console.warn(`[AuthDebug] clearing auth. Reason: ${reason}`);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('userRole');
@@ -34,45 +35,52 @@ export const AuthProvider = ({ children }) => {
       const storedRole = localStorage.getItem('userRole');
 
       if (token && userData) {
-        // Verify token is still valid by making a test API call
+        // Set header immediately so any subsequent calls use it
         api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 
         try {
-          // For now, assume token is valid if it exists in localStorage
-          // In production, you should verify with backend
-          const parsedUser = JSON.parse(userData);
+          let parsedUser = JSON.parse(userData);
+          // If parsedUser is empty, throw
+          if (!parsedUser) {
+             throw new Error("Invalid user data structure");
+          }
+
           setUser(parsedUser);
           setUserRole(storedRole || parsedUser.user_role || 'customer');
 
-          // Refresh seller profile to get latest status
+          // Refresh seller profile if needed
           if ((storedRole === 'seller' || parsedUser.user_role === 'seller')) {
             try {
               const res = await api.get('/seller/profile');
               if (res.data && res.data.success) {
-                const freshUser = {
-                  ...res.data.user,
-                  status: res.data.user.user_status || res.data.user.status 
-                };
+                const freshUser = { ...res.data.user };
+                // Keep password out (backend should handle it, but safety first)
+                delete freshUser.user_password;
+                
                 setUser(freshUser);
                 localStorage.setItem('user', JSON.stringify(freshUser));
               }
             } catch (err) {
-              console.error("Failed to refresh seller profile", err);
+              // Do NOT logout on minor failures unless 401
+              if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                 clearAuth('Server rejected token (401/403)');
+              }
             }
           }
         } catch (error) {
-          // Token is invalid, clear auth
-          clearAuth();
+          clearAuth('Corrupted user data in storage');
         }
       } else {
-        clearAuth();
+        // We do NOT call clearAuth() here if it's already null, to avoid loop
+        // But we ensure state is null
+        if (user) clearAuth('Storage mismatch detected');
       }
     } catch (error) {
-      clearAuth();
+      clearAuth('Critical checkAuth failure');
     } finally {
       setLoading(false);
     }
-  }, [clearAuth]);
+  }, [clearAuth, user]);
 
   // Real-time localStorage monitoring
   useEffect(() => {
@@ -92,16 +100,16 @@ export const AuthProvider = ({ children }) => {
     };
 
     // Listen for localStorage changes from other tabs/windows
-    window.addEventListener('storage', handleStorageChange);
+    // window.addEventListener('storage', handleStorageChange);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
+      // window.removeEventListener('storage', handleStorageChange);
     };
   }, [checkAuth]);
 
   // Handle logout
   const handleLogout = () => {
-    clearAuth();
+    clearAuth('Manual Logout');
   };
 
   // Initialize auth check
@@ -138,7 +146,8 @@ export const AuthProvider = ({ children }) => {
         };
       }
     } catch (error) {
-      console.error('Customer login error:', error);
+      // Safe logging: Don't log the full error object as it may contain the request payload (password)
+      console.error('Customer login error:', error.response?.data?.message || error.message);
       return {
         success: false,
         error: error.response?.data?.message || error.message || 'Login failed'

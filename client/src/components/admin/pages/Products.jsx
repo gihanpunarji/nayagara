@@ -46,7 +46,7 @@ const Products = () => {
     total: 0,
     active: 0,
     pending: 0, // Maps to 'pending_approval'
-    suspended: 0,
+    inactive: 0,
     featured: 0,
     out_of_stock: 0
   });
@@ -55,7 +55,7 @@ const Products = () => {
     { key: 'all', label: 'All Products' },
     { key: 'active', label: 'Active' },
     { key: 'pending_approval', label: 'Pending' },
-    { key: 'suspended', label: 'Suspended' }
+    { key: 'inactive', label: 'Inactive' }
   ];
 
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -127,7 +127,7 @@ const Products = () => {
       total: products.length,
       active: products.filter(p => p.product_status === 'active').length,
       pending: products.filter(p => p.product_status === 'pending_approval').length,
-      suspended: products.filter(p => p.product_status === 'suspended').length,
+      inactive: products.filter(p => p.product_status === 'inactive').length,
       featured: products.filter(p => p.is_featured).length,
       out_of_stock: products.filter(p => p.stock_quantity === 0).length
     });
@@ -282,10 +282,10 @@ const Products = () => {
               )}
               {product.product_status === 'active' && (
                 <button
-                  onClick={() => handleStatusUpdate(product.product_id, 'suspended')}
+                  onClick={() => handleStatusUpdate(product.product_id, 'inactive')}
                   className="w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-red-50 flex items-center space-x-2"
                 >
-                  <Ban className="w-4 h-4" /><span>Suspend</span>
+                  <Ban className="w-4 h-4" /><span>Inactive</span>
                 </button>
               )}
                {(product.product_status === 'inactive' || product.product_status === 'suspended') && (
@@ -330,7 +330,7 @@ const Products = () => {
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Total</p><p className="text-xl font-bold text-gray-900">{stats.total}</p></div>
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Active</p><p className="text-xl font-bold text-green-600">{stats.active}</p></div>
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Pending</p><p className="text-xl font-bold text-yellow-600">{stats.pending}</p></div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Suspended</p><p className="text-xl font-bold text-red-600">{stats.suspended}</p></div>
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Inactive</p><p className="text-xl font-bold text-red-600">{stats.inactive}</p></div>
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Featured</p><p className="text-xl font-bold text-purple-600">{stats.featured}</p></div>
             <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Out of Stock</p><p className="text-xl font-bold text-red-500">{stats.out_of_stock}</p></div>
         </div>

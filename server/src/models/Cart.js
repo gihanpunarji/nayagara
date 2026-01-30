@@ -4,7 +4,7 @@ class Cart {
   // Get all cart items for a user
   static async getByUserId(userId) {
     const connection = getConnection();
-    
+
     try {
       const [rows] = await connection.execute(`
         SELECT
@@ -25,17 +25,22 @@ class Cart {
           (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1) as image_url,
           u.first_name as seller_first_name,
           u.last_name as seller_last_name,
-          s.store_name as seller_business_name
+          s.store_name as seller_business_name,
+          sc.variant_id
+          /* pv.attributes as variant_attributes, */
+          /* pv.price as variant_price, */
+          /* pv.image_url as variant_image */
         FROM shopping_cart sc
         LEFT JOIN shopping_cart_item sci ON sc.cart_id = sci.shopping_cart_cart_id
         LEFT JOIN products p ON sc.product_id = p.product_id
+        /* LEFT JOIN product_variants pv ON sc.variant_id = pv.variant_id */
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         WHERE sc.user_id = ? AND sci.quantity IS NOT NULL
         GROUP BY sc.cart_id, sci.cart_item_id
         ORDER BY sc.created_at DESC
       `, [userId]);
-      
+
       return rows;
     } catch (error) {
       console.error("Error in Cart.getByUserId:", error);
@@ -44,27 +49,34 @@ class Cart {
   }
 
   // Add item to cart or update quantity if exists
-  static async addItem(userId, productId, quantity = 1) {
+  static async addItem(userId, productId, quantity = 1, variantId = null) {
     const connection = getConnection();
-    
+
     try {
-      // Check if cart entry exists
-      const [existingCart] = await connection.execute(`
-        SELECT cart_id FROM shopping_cart 
-        WHERE user_id = ? AND product_id = ?
-      `, [userId, productId]);
-      
+      // Check if cart entry exists (matching product AND variant)
+      let query = `SELECT cart_id FROM shopping_cart WHERE user_id = ? AND product_id = ?`;
+      const params = [userId, productId];
+
+      if (variantId) {
+        query += ` AND variant_id = ?`;
+        params.push(variantId);
+      } else {
+        query += ` AND variant_id IS NULL`;
+      }
+
+      const [existingCart] = await connection.execute(query, params);
+
       let cartId;
-      
+
       if (existingCart.length > 0) {
         // Cart exists, check if item exists
         cartId = existingCart[0].cart_id;
-        
+
         const [existingItem] = await connection.execute(`
           SELECT cart_item_id, quantity FROM shopping_cart_item 
           WHERE shopping_cart_cart_id = ?
         `, [cartId]);
-        
+
         if (existingItem.length > 0) {
           // Update existing item
           await connection.execute(`
@@ -82,18 +94,18 @@ class Cart {
       } else {
         // Create new cart and item
         const [cartResult] = await connection.execute(`
-          INSERT INTO shopping_cart (user_id, product_id)
-          VALUES (?, ?)
-        `, [userId, productId]);
-        
+          INSERT INTO shopping_cart (user_id, product_id, variant_id)
+          VALUES (?, ?, ?)
+        `, [userId, productId, variantId]);
+
         cartId = cartResult.insertId;
-        
+
         await connection.execute(`
           INSERT INTO shopping_cart_item (quantity, shopping_cart_cart_id)
           VALUES (?, ?)
         `, [quantity, cartId]);
       }
-      
+
       return { success: true, cartId };
     } catch (error) {
       throw error;
@@ -101,38 +113,71 @@ class Cart {
   }
 
   // Update item quantity
-  static async updateQuantity(userId, productId, quantity) {
+  static async updateQuantity(userId, productId, quantity, variantId = null) {
     const connection = getConnection();
-    
+
     try {
-      await connection.execute(`
+      let query = `
         UPDATE shopping_cart_item sci
         JOIN shopping_cart sc ON sci.shopping_cart_cart_id = sc.cart_id
         SET sci.quantity = ?
         WHERE sc.user_id = ? AND sc.product_id = ?
-      `, [quantity, userId, productId]);
+      `;
+      const params = [quantity, userId, productId];
+
+      if (variantId) {
+        query += ` AND sc.variant_id = ?`;
+        params.push(variantId);
+      } else {
+        // If variantId is explicitly null (or undef treated as base), we usually target base items
+        // BUT if old items have NULL variant_id, this works.
+        query += ` AND sc.variant_id IS NULL`;
+      }
+
+      await connection.execute(query, params);
     } catch (error) {
       throw error;
     }
   }
 
   // Remove item from cart
-  static async removeItem(userId, productId) {
+  static async removeItem(userId, productId, variantId = null) {
     const connection = getConnection();
-    
+
     try {
-      // Delete cart item first
+      // Logic: Find cart_id first to be safe, or direct delete with joined criteria
+      // Simple approach: Delete item then cart if empty?
+      // Existing code deletes sci then sc.
+
+      let whereClause = `WHERE sc.user_id = ? AND sc.product_id = ?`;
+      const params = [userId, productId];
+
+      if (variantId) {
+        whereClause += ` AND sc.variant_id = ?`;
+        params.push(variantId);
+      } else {
+        whereClause += ` AND sc.variant_id IS NULL`;
+      }
+
+      // Delete cart item
       await connection.execute(`
         DELETE sci FROM shopping_cart_item sci
         JOIN shopping_cart sc ON sci.shopping_cart_cart_id = sc.cart_id
-        WHERE sc.user_id = ? AND sc.product_id = ?
-      `, [userId, productId]);
-      
-      // Delete cart entry
+        ${whereClause}
+      `, params);
+
+      // Delete cart entry (shopping_cart)
+      // Note: we need to use same WHERE clause on shopping_cart table (sc alias is not valid in direct Delete sometimes unless Multi-table delete)
+      // Standard DELETE FROM shopping_cart WHERE user_id = .. uses params again
+
+      let scWhere = `WHERE user_id = ? AND product_id = ?`;
+      if (variantId) scWhere += ` AND variant_id = ?`;
+      else scWhere += ` AND variant_id IS NULL`;
+
       await connection.execute(`
         DELETE FROM shopping_cart 
-        WHERE user_id = ? AND product_id = ?
-      `, [userId, productId]);
+        ${scWhere}
+      `, params);
     } catch (error) {
       throw error;
     }
@@ -141,7 +186,7 @@ class Cart {
   // Clear all cart items for user
   static async clearCart(userId) {
     const connection = getConnection();
-    
+
     try {
       // Delete all cart items
       await connection.execute(`
@@ -149,7 +194,7 @@ class Cart {
         JOIN shopping_cart sc ON sci.shopping_cart_cart_id = sc.cart_id
         WHERE sc.user_id = ?
       `, [userId]);
-      
+
       // Delete all cart entries
       await connection.execute(`
         DELETE FROM shopping_cart WHERE user_id = ?

@@ -11,43 +11,43 @@ const ProductGrid = () => {
 
   // Observer for infinite scroll
   const observer = useRef();
-  
+
   const lastProductElementRef = useCallback((node) => {
     if (loading) return;
     if (observer.current) observer.current.disconnect();
-    
+
     observer.current = new IntersectionObserver(entries => {
       if (entries[0].isIntersecting && hasMore) {
         setPage(prevPage => prevPage + 1);
       }
     });
-    
+
     if (node) observer.current.observe(node);
   }, [loading, hasMore]);
 
   // Fetch products when page changes
   useEffect(() => {
     let isMounted = true;
-    
+
     const fetchProducts = async () => {
       setLoading(true);
       try {
         // Fetch with pagination
         const response = await publicApi.get(`/products/public?limit=8&page=${page}`);
-        
+
         if (isMounted && response.data.success) {
           const newProducts = response.data.data.map(product => ({
             id: product.product_id,
             name: product.product_title,
             price: `Rs. ${parseFloat(product.price || 0).toLocaleString()}`,
             originalPrice: product.market_price ? `Rs. ${parseFloat(product.market_price).toLocaleString()}` : null,
-            image: product.images?.length > 0 
-              ? product.images[0].image_url 
+            image: product.images?.length > 0
+              ? product.images[0].image_url
               : 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
             rating: 0.0, // Placeholder if not in API
             reviews: Math.floor(Math.random() * 500) + 50, // Placeholder
             badge: product.is_featured ? 'Featured' : null,
-            discount: product.market_price && product.market_price > product.price 
+            discount: product.market_price && product.market_price > product.price
               ? Math.round(((product.market_price - product.price) / product.market_price) * 100)
               : null,
             shipping: '', // Placeholder or logic based on price
@@ -60,8 +60,10 @@ const ProductGrid = () => {
             const uniqueNewProducts = newProducts.filter(p => !existingIds.has(p.id));
             return [...prev, ...uniqueNewProducts];
           });
-          
+
           setHasMore(newProducts.length > 0);
+        } else if (isMounted && response.data.success && response.data.data.length === 0) {
+          setHasMore(false);
         }
       } catch (error) {
         console.error('Error fetching products:', error);
@@ -183,7 +185,7 @@ const ProductGrid = () => {
             </div>
           );
         })}
-        
+
         {/* Loading Skeletons for next page */}
         {loading && [1, 2, 3, 4].map((item) => (
           <div key={`loading-${item}`} className="border border-gray-200 rounded-xl overflow-hidden bg-white animate-pulse h-full">
@@ -203,7 +205,7 @@ const ProductGrid = () => {
           </div>
         ))}
       </div>
-      
+
       {!hasMore && products.length > 0 && (
         <div className="text-center mt-8 text-gray-500 pb-4">
           <p>You've reached the end!</p>

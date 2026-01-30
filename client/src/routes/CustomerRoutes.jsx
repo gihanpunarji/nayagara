@@ -22,7 +22,7 @@ import ChatView from "../components/customer/pages/ChatView.jsx";
 import NayagaraWaterHome from "../components/customer/pages/Nayagara_water_home.jsx";
 import HelpCenter from "../components/customer/pages/HelpCenter.jsx";
 import RefundPolicy from "../components/customer/pages/RefundPolicy.jsx";
-import PrivacyPolicy from "../components/customer/pages/PrivacyPolicy.jsx";
+import SystemPrivacy from "../components/customer/pages/SystemPrivacy.jsx";
 import TermsConditions from "../components/customer/pages/TermsConditions.jsx";
 import PostAd from "../components/customer/pages/PostAd.jsx";
 import OrderSuccess from "../components/customer/pages/OrderSuccess.jsx";
@@ -30,6 +30,7 @@ import OrderSuccess from "../components/customer/pages/OrderSuccess.jsx";
 // Auth & Protection
 import AuthRoute from "../components/shared/auth/AuthRoute.jsx";
 import ProtectedRoute from "../components/shared/auth/ProtectedRoute.jsx";
+import AdminPortfolio from "../components/customer/pages/AdminPortfolio.jsx";
 
 // Error Pages
 import NotFound from "../components/shared/error/NotFound.jsx";
@@ -232,7 +233,7 @@ const CustomerRoutes = () => {
         path="/privacy-policy"
         element={
           <PageWrapper>
-            <PrivacyPolicy />
+            <SystemPrivacy />
           </PageWrapper>
         }
       />
@@ -245,11 +246,21 @@ const CustomerRoutes = () => {
         }
       />
 
+      <Route
+        path="/contact-admin"
+        element={
+          <PageWrapper>
+            <AdminPortfolio />
+          </PageWrapper>
+        }
+      />
+
       {/* Error Routes */}
       <Route path="/error/server" element={<ServerError />} />
       <Route path="/error/network" element={<NetworkError />} />
       <Route path="/error/access-denied" element={<AccessDenied />} />
       <Route path="*" element={<NotFound />} />
+
     </Routes>
   );
 };

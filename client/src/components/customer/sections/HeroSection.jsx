@@ -13,7 +13,7 @@ const HeroSection = () => {
       cta: "Start Shopping",
       badge: "Top Rated",
       color: "from-primary-600 to-primary-800",
-      imgClass: "brightness-50"
+      imgClass: "object-cover brightness-50"
     },
     {
       title: "PREMIUM PLATFORM",
@@ -22,16 +22,18 @@ const HeroSection = () => {
       image: "/marketplace_banner_dark.png",
       cta: "Explore Stores",
       badge: "Exclusive",
-      color: "from-secondary-600 to-secondary-800"
+      color: "from-secondary-600 to-secondary-800",
+      imgClass: "object-cover"
     },
     {
       title: "HUGE DISCOUNTS",
       subtitle: "Unbeatable Prices",
       description: "Get the best value for your money every day",
-      image: "/discounts_banner_dark.png",
+      image: "/huge_discounts_banner_clean.png",
       cta: "View Offers",
       badge: "Best Deals",
-      color: "from-primary-500 to-secondary-600"
+      color: "from-primary-500 to-secondary-600",
+      imgClass: "object-cover"
     }
   ];
 
@@ -47,13 +49,16 @@ const HeroSection = () => {
       {/* Main Banner */}
       <article className="xl:col-span-3">
         <div className="relative h-44 md:h-64 xl:h-96 rounded-lg md:rounded-xl xl:rounded-2xl overflow-hidden shadow-green-lg" role="region" aria-roledescription="carousel" aria-label="Featured promotions">
-          <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent z-1"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent z-1 pointer-events-none"></div>
+          {/* Dark hover overlay */}
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/30 transition-colors duration-300 z-2"></div>
+          
           <img
             src={heroBanners[currentSlide].image}
             alt={`${heroBanners[currentSlide].title} - ${heroBanners[currentSlide].subtitle}: ${heroBanners[currentSlide].description}`}
-            className={`absolute inset-0 w-full h-full object-cover object-center transition-all duration-1000 ${heroBanners[currentSlide].imgClass || ''}`}
+            className={`absolute inset-0 w-full h-full min-w-full min-h-full object-center transition-all duration-1000 ${heroBanners[currentSlide].imgClass || 'object-cover'}`}
             loading="eager"
-            fetchpriority="high"
+            fetchPriority="high"
           />
 
           <div className="absolute inset-0 z-2 flex items-center p-3 md:p-5 xl:p-8">

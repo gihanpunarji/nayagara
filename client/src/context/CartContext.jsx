@@ -58,11 +58,11 @@ export const CartProvider = ({ children }) => {
   }, [isAuthenticated, user, loadCartFromLocalStorage]);
 
   // Add item to API (authenticated users)
-  const addItemToAPI = useCallback(async (productId, quantity) => {
+  const addItemToAPI = useCallback(async (productId, quantity, variantId = null) => {
     if (!isAuthenticated || !user) return false;
 
     try {
-      await api.post('/cart/add', { productId, quantity });
+      await api.post('/cart/add', { productId, quantity, variantId });
       return true;
     } catch (error) {
       return false;
@@ -72,10 +72,15 @@ export const CartProvider = ({ children }) => {
   // Add product to cart
   const addToCart = useCallback(async (product, quantity = 1) => {
     const productId = product.product_id || product.id;
+    const selectedVariant = product.selectedVariant || null;
+    const variantId = selectedVariant ? selectedVariant.variant_id : null;
+
+    // Unique Item ID (Product ID or ProductID-VariantID)
+    const itemId = variantId ? `${productId}-${variantId}` : productId;
 
     if (isAuthenticated && user) {
       // For authenticated users: add to database
-      const success = await addItemToAPI(productId, quantity);
+      const success = await addItemToAPI(productId, quantity, variantId);
       if (success) {
         // Reload cart from API to get updated data
         await loadCartFromAPI();
@@ -84,32 +89,45 @@ export const CartProvider = ({ children }) => {
     } else {
       // For guest users: add to localStorage
       const productTitle = product.product_title || product.name;
-      const productPrice = parseFloat(product.price || 0);
+
+      // Determine price and image based on variant
+      let price = parseFloat(product.price || 0);
+      let image = product.image; // basic product image
+
+      if (typeof product.images === 'string') {
+        image = product.images.split(',')[0].trim();
+      } else if (Array.isArray(product.images) && product.images.length > 0) {
+        image = product.images[0]?.image_url || product.images[0];
+      }
+
+      if (selectedVariant) {
+        if (selectedVariant.price) price = parseFloat(selectedVariant.price);
+        if (selectedVariant.image_url) image = selectedVariant.image_url;
+      }
 
       const cartItem = {
-        id: productId,
+        id: itemId,
         product_id: productId,
+        variant_id: variantId,
         name: productTitle,
         title: productTitle,
-        price: productPrice,
+        price: price,
         quantity: quantity,
         weight_kg: parseFloat(product.weight_kg || 1.0),
-        images: product.images ? (
-          typeof product.images === 'string' ?
-            [product.images.split(',')[0].trim()] :
-            (Array.isArray(product.images) ? [product.images[0]?.image_url || product.images[0]] : [product.images])
-        ) : (product.image ? [product.image] : []),
+        images: [image], // specific image
+        image: image,
         seller: product.seller_name || product.seller || 'Unknown Seller',
         seller_id: product.seller_id,
         category: product.category,
         subcategory: product.sub_category_name || product.subCategory,
         location: product.city_name || product.location,
-        inStock: (product.stock_quantity !== undefined && product.stock_quantity > 0) || product.stock_quantity === undefined,
-        stockCount: product.stock_quantity || 999
+        inStock: true, // simplified
+        stockCount: selectedVariant ? selectedVariant.stock_quantity : (product.stock_quantity || 999),
+        attributes: selectedVariant && selectedVariant.attributes ? selectedVariant.attributes : {}
       };
 
       setCart(prevCart => {
-        const existingItemIndex = prevCart.findIndex(item => item.product_id === productId || item.id === productId);
+        const existingItemIndex = prevCart.findIndex(item => item.id === itemId);
         let newCart;
 
         if (existingItemIndex > -1) {
@@ -133,11 +151,24 @@ export const CartProvider = ({ children }) => {
   }, [isAuthenticated, user, addItemToAPI, loadCartFromAPI, saveCartToLocalStorage]);
 
   // Remove product from cart
-  const removeFromCart = useCallback(async (productId) => {
+  const removeFromCart = useCallback(async (itemId) => {
     if (isAuthenticated && user) {
       // For authenticated users: remove from database
       try {
-        await api.delete(`/cart/item/${productId}`);
+        // itemId can be "pid" or "pid-vid"
+        let productId = itemId;
+        let variantId = null;
+
+        if (typeof itemId === 'string' && itemId.includes('-')) {
+          const parts = itemId.split('-');
+          productId = parts[0];
+          variantId = parts[1];
+        }
+
+        let url = `/cart/item/${productId}`;
+        if (variantId) url += `?variantId=${variantId}`;
+
+        await api.delete(url);
         // Reload cart from API
         await loadCartFromAPI();
       } catch (error) {
@@ -146,7 +177,7 @@ export const CartProvider = ({ children }) => {
     } else {
       // For guest users: remove from localStorage
       setCart(prevCart => {
-        const newCart = prevCart.filter(item => item.product_id !== productId && item.id !== productId);
+        const newCart = prevCart.filter(item => item.id !== itemId);
         saveCartToLocalStorage(newCart);
         return newCart;
       });
@@ -154,16 +185,25 @@ export const CartProvider = ({ children }) => {
   }, [isAuthenticated, user, loadCartFromAPI, saveCartToLocalStorage]);
 
   // Update item quantity
-  const updateQuantity = useCallback(async (productId, newQuantity) => {
+  const updateQuantity = useCallback(async (itemId, newQuantity) => {
     if (newQuantity <= 0) {
-      removeFromCart(productId);
+      removeFromCart(itemId);
       return;
     }
 
     if (isAuthenticated && user) {
       // For authenticated users: update in database
       try {
-        await api.put(`/cart/item/${productId}`, { quantity: newQuantity });
+        let productId = itemId;
+        let variantId = null;
+
+        if (typeof itemId === 'string' && itemId.includes('-')) {
+          const parts = itemId.split('-');
+          productId = parts[0];
+          variantId = parts[1];
+        }
+
+        await api.put(`/cart/item/${productId}`, { quantity: newQuantity, variantId });
         // Reload cart from API
         await loadCartFromAPI();
       } catch (error) {
@@ -173,7 +213,7 @@ export const CartProvider = ({ children }) => {
       // For guest users: update in localStorage
       setCart(prevCart => {
         const newCart = prevCart.map(item =>
-          (item.product_id === productId || item.id === productId)
+          (item.id === itemId)
             ? { ...item, quantity: newQuantity }
             : item
         );
@@ -186,7 +226,7 @@ export const CartProvider = ({ children }) => {
   // Clear entire cart
   const clearCart = useCallback(async () => {
     setCart([]);
-    
+
     // Clear from appropriate storage
     if (isAuthenticated && user) {
       try {
@@ -272,13 +312,16 @@ export const CartProvider = ({ children }) => {
 
   // Check if item is in cart
   const isInCart = useCallback((productId) => {
-    return cart.some(item => item.product_id === productId || item.id === productId);
+    // Crude check: if ANY variant of this product is in cart
+    return cart.some(item => item.product_id === productId);
   }, [cart]);
 
-  // Get item quantity in cart
+  // Get item quantity in cart (Total for product, or specific if needed)
+  // Note: Previous behavior was by product ID.
   const getItemQuantity = useCallback((productId) => {
-    const item = cart.find(item => item.product_id === productId || item.id === productId);
-    return item ? item.quantity : 0;
+    return cart
+      .filter(item => item.product_id === productId)
+      .reduce((sum, item) => sum + item.quantity, 0);
   }, [cart]);
 
   const value = {

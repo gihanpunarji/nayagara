@@ -10,7 +10,13 @@ export default defineConfig({
         target: 'https://www.payhere.lk',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/payhere/, '')
+      },
+      '/api': {
+        target: 'http://localhost:5001',
+        changeOrigin: true,
+        secure: false
       }
-    }
+    },
+    host: true // Listen on all local IPs to support subdomains like sellers.localhost
   }
 })

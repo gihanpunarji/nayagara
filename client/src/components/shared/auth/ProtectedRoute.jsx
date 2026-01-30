@@ -35,11 +35,18 @@ const ProtectedRoute = ({ children, requiredRole = null, promptOnRedirect = fals
   }
 
   // Check role-based access
+  // Check role-based access
   if (requiredRole && userRole !== requiredRole) {
-    // Redirect based on user role
-    if (userRole === 'seller') {
-      return <Navigate to="/seller/dashboard" replace />;
-    } else if (userRole === 'customer') {
+    // console.log('[ProtectedRoute] Role mismatch. Required:', requiredRole, 'Current:', userRole);
+    
+    // If trying to access seller routes but logged in as customer, show Access Denied or logout
+    if (requiredRole === 'seller') {
+       // If on localhost path-based dev, force redirect to seller login
+       if (window.location.pathname.startsWith('/seller')) {
+          return <Navigate to="/seller/login" replace />;
+       }
+       return <Navigate to="/seller/login" replace />;
+    } else if (requiredRole === 'customer') {
       return <Navigate to="/" replace />;
     } else {
       return <Navigate to="/login" replace />;

@@ -46,7 +46,7 @@ router.patch("/users/:userId/status", updateUserStatus);
 router.get("/dashboard", getAdminDashboardData);
 router.get("/orders", getAllOrders);
 router.get("/products", getAdminProducts);
-router.patch("/products/:productId/status", updateProductStatus);
+router.patch("/products/:productId/status", authenticateAdmin, updateProductStatus);
 router.delete("/products/:productId", deleteProduct);
 router.get("/categories", getAdminCategories);
 router.get("/notifications", getNotifications);

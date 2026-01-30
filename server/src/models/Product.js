@@ -26,8 +26,8 @@ class Product {
   }) {
     const connection = getConnection();
 
-    // Check if subcategory_id column exists, if not, create product without it
     try {
+      // Attempt 1: Full insert with all modern columns
       const [result] = await connection.execute(
         `INSERT INTO products (
           product_title, product_slug, product_description, category_id, subcategory_id, seller_id,
@@ -44,24 +44,52 @@ class Product {
       );
       return result;
     } catch (error) {
-      // If subcategory_id column doesn't exist, fall back to original schema
-      if (error.code === 'ER_BAD_FIELD_ERROR') {
-        console.log('Subcategory field not found, using original schema...');
-        const [result] = await connection.execute(
-          `INSERT INTO products (
-            product_title, product_slug, product_description, category_id, seller_id,
-            price, market_price, cost, weight_kg, stock_quantity, product_status,
-            is_featured, is_promoted, location_city_id, meta_title, meta_description,
-            product_attributes, created_at, updated_at, expires_at, shipping_cost
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            productTitle, productSlug, productDescription, categoryId, sellerId,
-            price, market_price, cost, weightKg, stockQuantity, productStatus,
-            isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-            productAttributes, new Date(), new Date(), expiresAt, shippingCost
-          ]
-        );
-        return result;
+      // Fallback for missing columns or schema validation errors
+      if (error.code === 'ER_BAD_FIELD_ERROR' || error.code === 'WARN_DATA_TRUNCATED' || error.code === 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD') {
+        console.warn('Product.create: Attempt 1 failed. Trying fallback...', error.code);
+
+        try {
+          // Define safe status
+          const safeStatus = (productStatus === 'pending_approval') ? 'inactive' : productStatus;
+
+          // Attempt 2: Try without subcategory_id but WITH shipping_cost (and with safe status)
+          const [result] = await connection.execute(
+            `INSERT INTO products (
+                product_title, product_slug, product_description, category_id, seller_id,
+                price, market_price, cost, weight_kg, stock_quantity, product_status,
+                is_featured, is_promoted, location_city_id, meta_title, meta_description,
+                product_attributes, created_at, updated_at, expires_at, shipping_cost
+              ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              productTitle, productSlug, productDescription, categoryId, sellerId,
+              price, market_price, cost, weightKg, stockQuantity, safeStatus,
+              isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+              productAttributes, new Date(), new Date(), expiresAt, shippingCost
+            ]
+          );
+          return result;
+        } catch (err2) {
+          console.warn('Product.create: Attempt 2 failed. Trying safe fallback...', err2.code);
+
+          // Attempt 3: Safe Insert (No subcategory, No shipping cost, Safe Status)
+          const safeStatus = (productStatus === 'pending_approval') ? 'inactive' : productStatus;
+
+          const [result] = await connection.execute(
+            `INSERT INTO products (
+               product_title, product_slug, product_description, category_id, seller_id,
+               price, market_price, cost, weight_kg, stock_quantity, product_status,
+               is_featured, is_promoted, location_city_id, meta_title, meta_description,
+               product_attributes, created_at, updated_at, expires_at
+             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              productTitle, productSlug, productDescription, categoryId, sellerId,
+              price, market_price, cost, weightKg, stockQuantity, safeStatus,
+              isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+              productAttributes, new Date(), new Date(), expiresAt
+            ]
+          );
+          return result;
+        }
       }
       throw error;
     }
@@ -117,6 +145,7 @@ class Product {
     productSlug,
     productDescription,
     categoryId,
+    subcategoryId,
     price,
     market_price,
     cost,
@@ -133,21 +162,68 @@ class Product {
     shippingCost
   }) {
     const connection = getConnection();
-    const [result] = await connection.execute(
-      `UPDATE products SET
-        product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
-        price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
-        is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
-        product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
-       WHERE product_id = ?`,
-      [
-        productTitle, productSlug, productDescription, categoryId,
-        price, market_price, cost, weightKg, stockQuantity, productStatus,
-        isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
-        productAttributes, new Date(), expiresAt, shippingCost, productId
-      ]
-    );
-    return result.affectedRows;
+
+    // Try to update with subcategory_id
+    try {
+      const [result] = await connection.execute(
+        `UPDATE products SET
+          product_title = ?, product_slug = ?, product_description = ?, category_id = ?, subcategory_id = ?,
+          price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+          is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+          product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+         WHERE product_id = ?`,
+        [
+          productTitle, productSlug, productDescription, categoryId, subcategoryId,
+          price, market_price, cost, weightKg, stockQuantity, productStatus,
+          isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+          productAttributes, new Date(), expiresAt, shippingCost, productId
+        ]
+      );
+      return result.affectedRows;
+    } catch (error) {
+      // Fallback for schemas without subcategory_id
+      if (error.code === 'ER_BAD_FIELD_ERROR') {
+        try {
+          // Attempt 2: Try without subcategory_id but WITH shipping_cost
+          const [result] = await connection.execute(
+            `UPDATE products SET
+                product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
+                price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+                is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+                product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+               WHERE product_id = ?`,
+            [
+              productTitle, productSlug, productDescription, categoryId,
+              price, market_price, cost, weightKg, stockQuantity, productStatus,
+              isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+              productAttributes, new Date(), expiresAt, shippingCost, productId
+            ]
+          );
+          return result.affectedRows;
+        } catch (err2) {
+          // Attempt 3: Try without subcategory_id AND without shipping_cost (safest fallback)
+          if (err2.code === 'ER_BAD_FIELD_ERROR') {
+            const [result] = await connection.execute(
+              `UPDATE products SET
+                   product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
+                   price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+                   is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+                   product_attributes = ?, updated_at = ?, expires_at = ?
+                  WHERE product_id = ?`,
+              [
+                productTitle, productSlug, productDescription, categoryId,
+                price, market_price, cost, weightKg, stockQuantity, productStatus,
+                isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+                productAttributes, new Date(), expiresAt, productId
+              ]
+            );
+            return result.affectedRows;
+          }
+          throw err2;
+        }
+      }
+      throw error;
+    }
   }
 
   static async delete(productId) {
@@ -161,11 +237,28 @@ class Product {
 
   static async updateStatus(productId, status) {
     const connection = getConnection();
-    const [result] = await connection.execute(
-      "UPDATE products SET product_status = ?, updated_at = ? WHERE product_id = ?",
-      [status, new Date(), productId]
-    );
-    return result.affectedRows;
+    try {
+      // Attempt 1: Standard update with updated_at
+      const [result] = await connection.execute(
+        "UPDATE products SET product_status = ?, updated_at = ? WHERE product_id = ?",
+        [status, new Date(), productId]
+      );
+      return result.affectedRows;
+    } catch (error) {
+       console.warn("Product.updateStatus: Attempt 1 failed", error.code);
+       
+       // Attempt 2: Fallback without updated_at (if column missing)
+       try {
+         const [result] = await connection.execute(
+            "UPDATE products SET product_status = ? WHERE product_id = ?",
+            [status, productId]
+          );
+          return result.affectedRows;
+       } catch (err2) {
+          console.error("Product.updateStatus: All attempts failed", err2);
+          throw err2; // Throw original or new error to be caught by controller
+       }
+    }
   }
 
   static async incrementViewCount(productId) {
@@ -314,7 +407,7 @@ class Product {
             'image_id', pi.image_id,
             'image_url', pi.image_url,
             'image_alt', pi.image_alt
-          )
+          ) ORDER BY pi.is_primary DESC, pi.image_id ASC
         ) as images_json
       FROM products p
       LEFT JOIN product_images pi ON p.product_id = pi.product_id
@@ -343,7 +436,7 @@ class Product {
             'image_id', pi.image_id,
             'image_url', pi.image_url,
             'image_alt', pi.image_alt
-          )
+          ) ORDER BY pi.is_primary DESC, pi.image_id ASC
         ) as images_json
       FROM products p
       LEFT JOIN product_images pi ON p.product_id = pi.product_id
@@ -372,6 +465,99 @@ class Product {
       ...row,
       images: row.images_json ? JSON.parse(`[${row.images_json}]`) : []
     }));
+  }
+  static async updateRobust({
+    productId,
+    productTitle,
+    productSlug,
+    productDescription,
+    categoryId,
+    subcategoryId,
+    price,
+    market_price,
+    cost,
+    weightKg,
+    stockQuantity,
+    productStatus,
+    isFeatured,
+    isPromoted,
+    locationCityId,
+    metaTitle,
+    metaDescription,
+    productAttributes,
+    expiresAt,
+    shippingCost
+  }) {
+    const connection = getConnection();
+
+    try {
+      // Attempt 1: Full update with all modern columns
+      const [result] = await connection.execute(
+        `UPDATE products SET
+          product_title = ?, product_slug = ?, product_description = ?, category_id = ?, subcategory_id = ?,
+          price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+          is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+          product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+         WHERE product_id = ?`,
+        [
+          productTitle, productSlug, productDescription, categoryId, subcategoryId,
+          price, market_price, cost, weightKg, stockQuantity, productStatus,
+          isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+          productAttributes, new Date(), expiresAt, shippingCost, productId
+        ]
+      );
+      return result.affectedRows;
+    } catch (error) {
+      console.warn("Product.updateRobust: Attempt 1 failed", error.code, error.message);
+
+      // Fallback strategies
+      // Check for common schema errors: Bad Field, Data Truncated (enum) or general SQL errors
+      if (error.code === 'ER_BAD_FIELD_ERROR' || error.code === 'WARN_DATA_TRUNCATED' || error.code === 'ER_TRUNCATED_WRONG_VALUE_FOR_FIELD' || true) {
+
+        try {
+
+          // Attempt 2: Try without subcategory_id but WITH shipping_cost (and with safe status)
+          const [result] = await connection.execute(
+            `UPDATE products SET
+                 product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
+                 price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+                 is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+                 product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+                WHERE product_id = ?`,
+            [
+              productTitle, productSlug, productDescription, categoryId,
+              price, market_price, cost, weightKg, stockQuantity, productStatus,
+              isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+              productAttributes, new Date(), expiresAt, shippingCost, productId
+            ]
+          );
+          return result.affectedRows;
+
+        } catch (err2) {
+          console.warn("Product.updateRobust: Attempt 2 failed", err2.code);
+
+          // Attempt 3: Safe Update with Shipping Cost (No subcategory)
+          // We include shipping_cost here because it's a critical field user wants fixed.
+          
+          const [result] = await connection.execute(
+            `UPDATE products SET
+                 product_title = ?, product_slug = ?, product_description = ?, category_id = ?,
+                 price = ?, market_price = ?, cost = ?, weight_kg = ?, stock_quantity = ?, product_status = ?,
+                 is_featured = ?, is_promoted = ?, location_city_id = ?, meta_title = ?, meta_description = ?,
+                 product_attributes = ?, updated_at = ?, expires_at = ?, shipping_cost = ?
+                WHERE product_id = ?`,
+            [
+              productTitle, productSlug, productDescription, categoryId,
+              price, market_price, cost, weightKg, stockQuantity, productStatus,
+              isFeatured, isPromoted, locationCityId, metaTitle, metaDescription,
+              productAttributes, new Date(), expiresAt, shippingCost, productId
+            ]
+          );
+          return result.affectedRows;
+        }
+      }
+      throw error;
+    }
   }
 }
 

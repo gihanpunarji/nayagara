@@ -143,7 +143,7 @@ const OurBusiness = () => {
             <div className="grid grid-cols-1 gap-4">
               
               <a
-                href="/contact"
+                href="/contact-admin"
                 className="bg-white text-primary-600 py-3 px-6 rounded-lg font-medium border border-primary-600 hover:bg-primary-50 transition-colors"
               >
                 Contact Our Business Team

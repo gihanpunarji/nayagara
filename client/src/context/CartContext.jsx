@@ -116,7 +116,7 @@ export const CartProvider = ({ children }) => {
         weight_kg: parseFloat(product.weight_kg || 1.0),
         images: [image], // specific image
         image: image,
-        seller: product.seller_name || product.seller || 'Unknown Seller',
+        seller: product.seller_name || (typeof product.seller === 'object' ? product.seller.name : product.seller) || 'Unknown Seller',
         seller_id: product.seller_id,
         category: product.category,
         subcategory: product.sub_category_name || product.subCategory,

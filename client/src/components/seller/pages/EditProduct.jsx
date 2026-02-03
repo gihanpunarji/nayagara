@@ -16,13 +16,13 @@ const EditProduct = () => {
       try {
         setIsLoading(true);
         setError('');
-        
+
         const response = await api.get(`/products/${id}`);
-        
+
         if (response.data.success) {
           const product = response.data.data.product;
           const images = response.data.data.images;
-          
+
           // Transform data to match form structure
           const formattedProduct = {
             id: product.product_id,
@@ -49,7 +49,7 @@ const EditProduct = () => {
             })),
             dynamicFields: product.product_attributes || {}
           };
-          
+
           setProductData(formattedProduct);
         } else {
           setError(response.data.message || 'Failed to load product');
@@ -68,8 +68,11 @@ const EditProduct = () => {
       }
     };
 
-    if (id) {
+    if (id && id !== 'null' && id !== 'undefined') {
       fetchProduct();
+    } else {
+      setError('Invalid product ID');
+      setIsLoading(false);
     }
   }, [id]);
 

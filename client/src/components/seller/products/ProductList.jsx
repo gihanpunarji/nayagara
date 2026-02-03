@@ -68,6 +68,9 @@ const ProductList = () => {
         }));
 
         setProducts(productsData);
+        if (response.data.stats) {
+          setStats(response.data.stats);
+        }
       } else {
         setError(response.data.message || 'Failed to load products');
       }
@@ -100,7 +103,7 @@ const ProductList = () => {
       // Let's assume toggle is ON for active, OFF for inactive/pending.
       // If pending, it's safer to not allow toggle TO active via simple switch.
       // But we can allow setting to inactive.
-      
+
       // For now, let's just call the API. The API has the safety checks.
       // We will handle the optimistic UI carefully.
     }
@@ -109,8 +112,8 @@ const ProductList = () => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
 
     // Optimistic Update
-    setProducts(prevProducts => 
-      prevProducts.map(p => 
+    setProducts(prevProducts =>
+      prevProducts.map(p =>
         p.id === productId ? { ...p, status: newStatus } : p
       )
     );
@@ -123,13 +126,13 @@ const ProductList = () => {
       if (!response.data.success) {
         throw new Error(response.data.message);
       }
-      
+
       // Success - no need to do anything as we already updated UI
     } catch (error) {
       console.error('Error updating status:', error);
       // Revert on error
-      setProducts(prevProducts => 
-        prevProducts.map(p => 
+      setProducts(prevProducts =>
+        prevProducts.map(p =>
           p.id === productId ? { ...p, status: currentStatus } : p
         )
       );
@@ -139,25 +142,28 @@ const ProductList = () => {
   };
 
   // OPTIMIZED: Calculate status filters with useMemo - single iteration instead of 6
-  const statusFilters = useMemo(() => {
-    // Count all statuses in a single iteration
-    const counts = products.reduce((acc, product) => {
-      acc[product.status] = (acc[product.status] || 0) + 1;
-      if (product.stock === 0) {
-        acc.out_of_stock = (acc.out_of_stock || 0) + 1;
-      }
-      return acc;
-    }, {});
+  // We cannot rely on 'products' for counts because 'products' is filtered/paginated.
+  // We need to use the counts returned from the API (if implemented) or persist them.
+  // For now, let's assume the API will return a 'counts' object in the meta or we rely on a separate fetch.
+  // BUT since we are editing the backend too, let's assume we will get 'stats' from the API.
+  const [stats, setStats] = useState({
+    total: 0,
+    active: 0,
+    pending_approval: 0,
+    suspended: 0,
+    inactive: 0,
+    out_of_stock: 0
+  });
 
-    return [
-      { key: 'all', label: 'All Products', count: products.length },
-      { key: 'active', label: 'Active', count: counts.active || 0 },
-      { key: 'pending_approval', label: 'Pending Approval', count: counts.pending_approval || 0 },
-      { key: 'suspended', label: 'Suspended', count: counts.suspended || 0 },
-      { key: 'inactive', label: 'Inactive', count: counts.inactive || 0 },
-      { key: 'out_of_stock', label: 'Out of Stock', count: counts.out_of_stock || 0 }
-    ];
-  }, [products]);
+  const statusFilters = [
+    { key: 'all', label: 'All Products', count: stats.total || 0 },
+    { key: 'active', label: 'Active', count: stats.active || 0 },
+    { key: 'pending_approval', label: 'Pending Approval', count: stats.pending_approval || 0 },
+    { key: 'suspended', label: 'Suspended', count: stats.suspended || 0 },
+    { key: 'inactive', label: 'Inactive', count: stats.inactive || 0 },
+    { key: 'out_of_stock', label: 'Out of Stock', count: stats.out_of_stock || 0 }
+  ];
+
 
   const sortOptions = [
     { key: 'newest', label: 'Newest First' },
@@ -212,7 +218,8 @@ const ProductList = () => {
   };
 
   const formatPrice = (price) => {
-    return `Rs. ${price.toLocaleString()}`;
+    if (price === undefined || price === null || isNaN(price)) return 'Rs. 0.00';
+    return `Rs. ${parseFloat(price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (dateString) => {
@@ -224,23 +231,22 @@ const ProductList = () => {
       {/* Product Image Area */}
       <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
         <img
-          src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
+          src={product.images && product.images.length > 0 ? product.images[0] : "data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3e%3crect width='400' height='400' fill='%23f3f4f6'/%3e%3ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e"}
           alt={product.title}
           className="w-full h-full object-contain mix-blend-multiply p-4 transition-transform duration-500 group-hover:scale-110"
           onError={(e) => {
-            e.target.src = '/api/placeholder/400/400';
+            e.target.src = "data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3e%3crect width='400' height='400' fill='%23f3f4f6'/%3e%3ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e";
           }}
         />
 
         {/* Status Badge Overlay */}
         <div className="absolute top-3 left-3 z-10">
-          <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${
-            product.stock === 0 ? 'bg-red-500/90 text-white' :
+          <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${product.stock === 0 ? 'bg-red-500/90 text-white' :
             product.status === 'active' ? 'bg-green-500/90 text-white' :
-            product.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
-            product.status === 'suspended' ? 'bg-red-500/90 text-white' :
-            'bg-gray-500/90 text-white'
-          }`}>
+              product.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
+                product.status === 'suspended' ? 'bg-red-500/90 text-white' :
+                  'bg-gray-500/90 text-white'
+            }`}>
             {getStatusIcon(product.status, product.stock)}
             <span>
               {product.stock === 0 ? 'Out of Stock' :
@@ -282,26 +288,26 @@ const ProductList = () => {
               {formatPrice(product.price)}
             </span>
             <span className="text-xs text-gray-400 mt-1 block">
-               Added {formatDate(product.createdAt)}
+              Added {formatDate(product.createdAt)}
             </span>
           </div>
         </div>
 
         <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
           <div className="flex items-center space-x-3 text-sm text-gray-500">
-             <div className="flex items-center space-x-1" title="Stock Quantity">
-                <Package className="w-4 h-4" />
-                <span className="font-medium">{product.stock}</span>
-             </div>
-             <div className="flex items-center space-x-1" title="Total Views">
-                <Eye className="w-4 h-4" />
-                <span className="font-medium">{product.views}</span>
-             </div>
+            <div className="flex items-center space-x-1" title="Stock Quantity">
+              <Package className="w-4 h-4" />
+              <span className="font-medium">{product.stock}</span>
+            </div>
+            <div className="flex items-center space-x-1" title="Total Views">
+              <Eye className="w-4 h-4" />
+              <span className="font-medium">{product.views}</span>
+            </div>
           </div>
 
           {/* Toggle Switch */}
           <div className="flex items-center" title={product.status === 'active' ? 'Click to Deactivate' : 'Click to Activate'}>
-             {(['active', 'inactive', 'pending_approval'].includes(product.status)) ? (
+            {(['active', 'inactive', 'pending_approval'].includes(product.status)) ? (
               <label className="relative inline-flex items-center cursor-pointer group/toggle">
                 <input
                   type="checkbox"
@@ -317,9 +323,9 @@ const ProductList = () => {
                   ${(product.status === 'pending_approval' || product.status === 'suspended') ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-300'}
                 `}></div>
               </label>
-             ) : (
-               <span className="text-xs font-medium text-gray-400">Locked</span>
-             )}
+            ) : (
+              <span className="text-xs font-medium text-gray-400">Locked</span>
+            )}
           </div>
         </div>
       </div>
@@ -332,23 +338,23 @@ const ProductList = () => {
         {/* Image */}
         <div className="w-24 h-24 bg-gray-50 rounded-lg overflow-hidden flex-shrink-0 border border-gray-100 relative">
           <img
-            src={product.images && product.images.length > 0 ? product.images[0] : '/api/placeholder/400/400'}
+            src={product.images && product.images.length > 0 ? product.images[0] : "data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3e%3crect width='400' height='400' fill='%23f3f4f6'/%3e%3ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e"}
             alt={product.title}
             className="w-full h-full object-contain p-2 mix-blend-multiply"
             onError={(e) => {
-              e.target.src = '/api/placeholder/400/400';
+              e.target.src = "data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400' viewBox='0 0 400 400'%3e%3crect width='400' height='400' fill='%23f3f4f6'/%3e%3ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='24' fill='%239ca3af' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e";
             }}
           />
-           {product.stock === 0 && (
-              <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
-                 <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">No Stock</span>
-              </div>
-           )}
+          {product.stock === 0 && (
+            <div className="absolute inset-0 bg-white/60 flex items-center justify-center">
+              <span className="text-[10px] font-bold bg-red-100 text-red-700 px-1.5 py-0.5 rounded">No Stock</span>
+            </div>
+          )}
         </div>
 
         {/* Product Info */}
         <div className="flex-1 min-w-0 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          
+
           {/* Title & Category - Col Span 5 */}
           <div className="md:col-span-5 min-w-0">
             <h3 className="font-bold text-gray-900 truncate mb-1 text-lg group-hover:text-primary-700 transition-colors">
@@ -363,52 +369,51 @@ const ProductList = () => {
 
           {/* Stats - Col Span 3 */}
           <div className="md:col-span-3 flex md:flex-col gap-4 md:gap-1 text-sm text-gray-600">
-             <div className="flex items-center gap-2" title="Price">
-               <span className="font-bold text-gray-900">{formatPrice(product.price)}</span>
-             </div>
-             <div className="flex items-center gap-4 text-xs text-gray-500">
-               <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" /> {product.stock}</span>
-               <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {product.views}</span>
-             </div>
+            <div className="flex items-center gap-2" title="Price">
+              <span className="font-bold text-gray-900">{formatPrice(product.price)}</span>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-gray-500">
+              <span className="flex items-center gap-1"><Package className="w-3.5 h-3.5" /> {product.stock}</span>
+              <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5" /> {product.views}</span>
+            </div>
           </div>
 
           {/* Status & Actions - Col Span 4 */}
           <div className="md:col-span-4 flex items-center justify-end gap-6">
-             {/* Toggle */}
-             <div className="flex flex-col items-end gap-1">
-                {(['active', 'inactive', 'pending_approval'].includes(product.status)) && (
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={product.status === 'active'}
-                      onChange={() => handleStatusToggle(product.id, product.status)}
-                      disabled={product.status === 'pending_approval' || product.status === 'suspended'}
-                    />
-                    <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer 
+            {/* Toggle */}
+            <div className="flex flex-col items-end gap-1">
+              {(['active', 'inactive', 'pending_approval'].includes(product.status)) && (
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={product.status === 'active'}
+                    onChange={() => handleStatusToggle(product.id, product.status)}
+                    disabled={product.status === 'pending_approval' || product.status === 'suspended'}
+                  />
+                  <div className={`w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer 
                       ${product.status === 'active' ? 'peer-checked:bg-primary-600' : ''} 
                       peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all
                       ${(product.status === 'pending_approval' || product.status === 'suspended') ? 'opacity-50 cursor-not-allowed' : 'hover:bg-gray-300'}
                     `}></div>
-                  </label>
-                )}
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${
-                   product.status === 'active' ? 'text-green-600' : 
-                   product.status === 'pending_approval' ? 'text-yellow-600' : 'text-gray-400'
+                </label>
+              )}
+              <span className={`text-[10px] font-semibold uppercase tracking-wider ${product.status === 'active' ? 'text-green-600' :
+                product.status === 'pending_approval' ? 'text-yellow-600' : 'text-gray-400'
                 }`}>
-                   {product.status === 'pending_approval' ? 'Pending' : product.status}
-                </span>
-             </div>
+                {product.status === 'pending_approval' ? 'Pending' : product.status}
+              </span>
+            </div>
 
-             {/* Action Buttons */}
-             <div className="flex items-center gap-2 border-l pl-4 border-gray-100">
-                <Link to={`/seller/products/edit/${product.id}`} className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
-                   <Edit className="w-4 h-4" />
-                </Link>
-                <button className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
-                    <MoreVertical className="w-4 h-4" />
-                </button>
-             </div>
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 border-l pl-4 border-gray-100">
+              <Link to={`/seller/products/edit/${product.id}`} className="p-2 text-gray-400 hover:text-primary-600 hover:bg-primary-50 rounded-lg transition-colors">
+                <Edit className="w-4 h-4" />
+              </Link>
+              <button className="p-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                <MoreVertical className="w-4 h-4" />
+              </button>
+            </div>
           </div>
 
         </div>

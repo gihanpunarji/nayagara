@@ -54,7 +54,7 @@ const OrderManagement = () => {
     try {
       setLoading(true);
       const response = await api.get('/orders/seller');
-    
+
       if (response.data.success) {
         const fetchedOrders = response.data.data.map(order => ({
           id: order.order_number,
@@ -78,7 +78,7 @@ const OrderManagement = () => {
           orderDate: order.order_datetime,
           paymentStatus: order.payment_status,
         }));
-        
+
         setOrders(fetchedOrders);
         setError(null);
       } else {
@@ -141,32 +141,43 @@ const OrderManagement = () => {
   };
 
 
+  // Calculate counts using useMemo to avoid mutation bug
+  const filterCounts = React.useMemo(() => {
+    const counts = {
+      all: orders.length,
+      pending: 0,
+      confirmed: 0,
+      processing: 0,
+      shipped: 0,
+      delivered: 0,
+      cancelled: 0,
+      refunded: 0
+    };
+
+    orders.forEach(order => {
+      if (counts[order.status] !== undefined) {
+        counts[order.status]++;
+      }
+    });
+
+    return counts;
+  }, [orders]);
+
   const statusFilters = [
-    { key: 'all', label: 'All Orders', count: 0, color: 'bg-gray-100 text-gray-600' },
-    { key: 'pending', label: 'Pending', count: 0, color: 'bg-orange-100 text-orange-600' },
-    { key: 'confirmed', label: 'Confirmed', count: 0, color: 'bg-teal-100 text-teal-600' },
-    { key: 'processing', label: 'Processing', count: 0, color: 'bg-blue-100 text-blue-600' },
-    { key: 'shipped', label: 'Shipped', count: 0, color: 'bg-purple-100 text-purple-600' },
-    { key: 'delivered', label: 'Delivered', count: 0, color: 'bg-green-100 text-green-600' },
-    { key: 'cancelled', label: 'Canceled', count: 0, color: 'bg-red-100 text-red-600' },
-    { key: 'refunded', label: 'Refunded', count: 0, color: 'bg-yellow-100 text-yellow-600' }
+    { key: 'all', label: 'All Orders', count: filterCounts.all, color: 'bg-gray-100 text-gray-600' },
+    { key: 'pending', label: 'Pending', count: filterCounts.pending, color: 'bg-orange-100 text-orange-600' },
+    { key: 'confirmed', label: 'Confirmed', count: filterCounts.confirmed, color: 'bg-teal-100 text-teal-600' },
+    { key: 'processing', label: 'Processing', count: filterCounts.processing, color: 'bg-blue-100 text-blue-600' },
+    { key: 'shipped', label: 'Shipped', count: filterCounts.shipped, color: 'bg-purple-100 text-purple-600' },
+    { key: 'delivered', label: 'Delivered', count: filterCounts.delivered, color: 'bg-green-100 text-green-600' },
+    { key: 'cancelled', label: 'Canceled', count: filterCounts.cancelled, color: 'bg-red-100 text-red-600' },
+    { key: 'refunded', label: 'Refunded', count: filterCounts.refunded, color: 'bg-yellow-100 text-yellow-600' }
   ];
 
-  // Initialize orders and update counts
+  // Initialize orders
   useEffect(() => {
     fetchOrders();
   }, [isAuthenticated]);
-
-  // Update status filter counts when orders change
-  useEffect(() => {
-    statusFilters.forEach(filter => {
-      if (filter.key === 'all') {
-        filter.count = orders.length;
-      } else {
-        filter.count = orders.filter(order => order.status === filter.key).length;
-      }
-    });
-  }, [orders]);
 
   // Filter orders
   useEffect(() => {
@@ -550,18 +561,16 @@ const OrderManagement = () => {
             <button
               key={filter.key}
               onClick={() => setSelectedFilter(filter.key)}
-              className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${
-                selectedFilter === filter.key
-                  ? 'bg-primary-600 text-white'
-                  : `${filter.color} hover:bg-opacity-80`
-              }`}
+              className={`inline-flex items-center space-x-2 px-3 py-1.5 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key
+                ? 'bg-primary-600 text-white'
+                : `${filter.color} hover:bg-opacity-80`
+                }`}
             >
               <span>{filter.label}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded-full ${
-                selectedFilter === filter.key
-                  ? 'bg-white bg-opacity-20 text-white'
-                  : 'bg-white bg-opacity-60'
-              }`}>
+              <span className={`text-xs px-1.5 py-0.5 rounded-full ${selectedFilter === filter.key
+                ? 'bg-white bg-opacity-20 text-white'
+                : 'bg-white bg-opacity-60'
+                }`}>
                 {filter.count}
               </span>
             </button>

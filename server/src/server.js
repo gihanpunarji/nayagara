@@ -1,4 +1,4 @@
-const express = require("express");
+const express = require("express"); // Restart trigger 2
 const cors = require("cors");
 require("dotenv").config();
 const { connectDB } = require("./config/database");
@@ -37,7 +37,7 @@ app.use(
     origin: function (origin, callback) {
       // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-      
+
       if (allowedOrigins.indexOf(origin) !== -1) {
         callback(null, true);
       } else {

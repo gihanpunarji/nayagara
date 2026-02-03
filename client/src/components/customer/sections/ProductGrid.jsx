@@ -33,7 +33,7 @@ const ProductGrid = () => {
       setLoading(true);
       try {
         // Fetch with pagination
-        const response = await publicApi.get(`/products/public?limit=8&page=${page}`);
+        const response = await publicApi.get(`/products/public?limit=8&page=${page}&skipCount=true`);
 
         if (isMounted && response.data.success) {
           const newProducts = response.data.data.map(product => ({

@@ -245,19 +245,19 @@ class Product {
       );
       return result.affectedRows;
     } catch (error) {
-       console.warn("Product.updateStatus: Attempt 1 failed", error.code);
-       
-       // Attempt 2: Fallback without updated_at (if column missing)
-       try {
-         const [result] = await connection.execute(
-            "UPDATE products SET product_status = ? WHERE product_id = ?",
-            [status, productId]
-          );
-          return result.affectedRows;
-       } catch (err2) {
-          console.error("Product.updateStatus: All attempts failed", err2);
-          throw err2; // Throw original or new error to be caught by controller
-       }
+      console.warn("Product.updateStatus: Attempt 1 failed", error.code);
+
+      // Attempt 2: Fallback without updated_at (if column missing)
+      try {
+        const [result] = await connection.execute(
+          "UPDATE products SET product_status = ? WHERE product_id = ?",
+          [status, productId]
+        );
+        return result.affectedRows;
+      } catch (err2) {
+        console.error("Product.updateStatus: All attempts failed", err2);
+        throw err2; // Throw original or new error to be caught by controller
+      }
     }
   }
 
@@ -396,50 +396,59 @@ class Product {
     }
   }
 
-  // OPTIMIZED: Fetch products with images in a single query (fixes N+1 problem)
+  // OPTIMIZED: Fetch products with images using two-step query (Avoids GROUP BY issues)
   static async findBySellerIdWithImages(sellerId, limit = 50, offset = 0) {
     const connection = getConnection();
-    const [rows] = await connection.execute(
-      `SELECT
-        p.*,
-        GROUP_CONCAT(
-          JSON_OBJECT(
-            'image_id', pi.image_id,
-            'image_url', pi.image_url,
-            'image_alt', pi.image_alt
-          ) ORDER BY pi.is_primary DESC, pi.image_id ASC
-        ) as images_json
-      FROM products p
-      LEFT JOIN product_images pi ON p.product_id = pi.product_id
-      WHERE p.seller_id = ?
-      GROUP BY p.product_id
-      ORDER BY p.created_at DESC
-      LIMIT ? OFFSET ?`,
+
+    // 1. Fetch Products directly (pagination is safe here)
+    const [products] = await connection.execute(
+      `SELECT * FROM products 
+       WHERE seller_id = ? 
+       ORDER BY created_at DESC 
+       LIMIT ? OFFSET ?`,
       [sellerId, limit, offset]
     );
 
-    // Parse images JSON
-    return rows.map(row => ({
-      ...row,
-      images: row.images_json ? JSON.parse(`[${row.images_json}]`) : []
+    if (products.length === 0) return [];
+
+    // 2. Fetch Images for these products
+    const productIds = products.map(p => p.product_id);
+    const placeholders = productIds.map(() => '?').join(',');
+
+    const [images] = await connection.execute(
+      `SELECT * FROM product_images 
+       WHERE product_id IN (${placeholders}) 
+       ORDER BY product_id, is_primary DESC, image_id ASC`,
+      productIds
+    );
+
+    // 3. Map images to products in memory
+    const imagesByProduct = {};
+    images.forEach(img => {
+      if (!imagesByProduct[img.product_id]) {
+        imagesByProduct[img.product_id] = [];
+      }
+      imagesByProduct[img.product_id].push({
+        image_id: img.image_id,
+        image_url: img.image_url,
+        image_alt: img.image_alt
+      });
+    });
+
+    return products.map(product => ({
+      ...product,
+      images: imagesByProduct[product.product_id] || []
     }));
   }
 
-  // OPTIMIZED: Fetch all products with images for public view
+  // OPTIMIZED: Fetch all products with images for public view (Two-step)
   static async findAllWithImages(limit = 50, offset = 0, filters = {}) {
     const connection = getConnection();
+
+    // 1. Build Query for Products
     let query = `
-      SELECT
-        p.*,
-        GROUP_CONCAT(
-          JSON_OBJECT(
-            'image_id', pi.image_id,
-            'image_url', pi.image_url,
-            'image_alt', pi.image_alt
-          ) ORDER BY pi.is_primary DESC, pi.image_id ASC
-        ) as images_json
+      SELECT p.*
       FROM products p
-      LEFT JOIN product_images pi ON p.product_id = pi.product_id
       WHERE p.product_status = 'approved'
     `;
     const params = [];
@@ -455,15 +464,41 @@ class Product {
       params.push(searchTerm, searchTerm);
     }
 
-    query += ` GROUP BY p.product_id ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
+    query += ` ORDER BY p.created_at DESC LIMIT ? OFFSET ?`;
     params.push(limit, offset);
 
-    const [rows] = await connection.execute(query, params);
+    // Fetch Products
+    const [products] = await connection.execute(query, params);
 
-    // Parse images JSON
-    return rows.map(row => ({
-      ...row,
-      images: row.images_json ? JSON.parse(`[${row.images_json}]`) : []
+    if (products.length === 0) return [];
+
+    // 2. Fetch Images
+    const productIds = products.map(p => p.product_id);
+    const placeholders = productIds.map(() => '?').join(',');
+
+    const [images] = await connection.execute(
+      `SELECT * FROM product_images 
+       WHERE product_id IN (${placeholders}) 
+       ORDER BY product_id, is_primary DESC, image_id ASC`,
+      productIds
+    );
+
+    // 3. Map
+    const imagesByProduct = {};
+    images.forEach(img => {
+      if (!imagesByProduct[img.product_id]) {
+        imagesByProduct[img.product_id] = [];
+      }
+      imagesByProduct[img.product_id].push({
+        image_id: img.image_id,
+        image_url: img.image_url,
+        image_alt: img.image_alt
+      });
+    });
+
+    return products.map(product => ({
+      ...product,
+      images: imagesByProduct[product.product_id] || []
     }));
   }
   static async updateRobust({
@@ -538,7 +573,7 @@ class Product {
 
           // Attempt 3: Safe Update with Shipping Cost (No subcategory)
           // We include shipping_cost here because it's a critical field user wants fixed.
-          
+
           const [result] = await connection.execute(
             `UPDATE products SET
                  product_title = ?, product_slug = ?, product_description = ?, category_id = ?,

@@ -37,7 +37,6 @@ class Cart {
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         WHERE sc.user_id = ? AND sci.quantity IS NOT NULL
-        GROUP BY sc.cart_id, sci.cart_item_id
         ORDER BY sc.created_at DESC
       `, [userId]);
 

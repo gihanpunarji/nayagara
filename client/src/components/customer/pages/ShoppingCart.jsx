@@ -109,12 +109,12 @@ const ShoppingCart = () => {
 
                       <div className="flex-shrink-0">
                         <img
-                          src={item.image || (item.images && item.images.length > 0 ? (typeof item.images[0] === 'string' ? item.images[0] : item.images[0].image_url) : null) || 'https://via.placeholder.com/150x150?text=No+Image'}
+                          src={item.image || (item.images && item.images.length > 0 ? (typeof item.images[0] === 'string' ? item.images[0] : item.images[0].image_url) : null) || "data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3e%3crect width='150' height='150' fill='%23f3f4f6'/%3e%3ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='16' fill='%239ca3af' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e"}
                           alt={item.name || item.title}
                           className="w-20 h-20 sm:w-24 sm:h-24 object-contain rounded-lg bg-gray-50 cursor-pointer hover:opacity-80 transition-opacity"
                           onClick={() => navigate(`/product/${item.product_id || item.id}`)}
                           onError={(e) => {
-                            e.target.src = 'https://via.placeholder.com/150x150?text=No+Image';
+                            e.target.src = "data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' width='150' height='150' viewBox='0 0 150 150'%3e%3crect width='150' height='150' fill='%23f3f4f6'/%3e%3ctext x='50%25' y='50%25' font-family='Arial, sans-serif' font-size='16' fill='%239ca3af' text-anchor='middle' dy='.3em'%3eNo Image%3c/text%3e%3c/svg%3e";
                           }}
                         />
                       </div>
@@ -150,7 +150,7 @@ const ShoppingCart = () => {
                               </div>
                             )}
 
-                            <p className="text-sm text-gray-600 mb-2">Sold by: {item.seller}</p>
+                            <p className="text-sm text-gray-600 mb-2">Sold by: {typeof item.seller === 'object' ? (item.seller.name || 'Unknown Seller') : item.seller}</p>
 
                             {!item.inStock && (
                               <div className="flex items-center space-x-2 mb-2">

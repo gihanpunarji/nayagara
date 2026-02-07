@@ -648,9 +648,7 @@ export const ProductView = () => {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
                   {processedProduct.name}
                 </h1>
-                <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-                  {processedProduct.shortDescription}
-                </p>
+
               </div>
 
               {/* Rating & Reviews */}
@@ -847,30 +845,9 @@ export const ProductView = () => {
               <ChevronDown className="w-5 h-5 transition-transform group-open:rotate-180" />
             </summary>
             <div className="pt-4">
-              {processedProduct.categoryAttributes &&
-                processedProduct.categoryAttributes.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {processedProduct.categoryAttributes
-                    .filter(
-                      (attr) =>
-                        attr.display_value &&
-                        attr.display_value.trim() !== "" &&
-                        attr.display_value !== "null" &&
-                        attr.display_value !== "undefined"
-                    )
-                    .map((attr, index) => (
-                      <div
-                        key={index}
-                        className="flex justify-between items-center py-2 px-3 bg-gray-50 rounded-lg"
-                      >
-                        <span className="text-sm font-medium text-gray-700">
-                          {attr.field_label}
-                        </span>
-                        <span className="text-sm text-gray-900 font-semibold">
-                          {attr.display_value}
-                        </span>
-                      </div>
-                    ))}
+              {processedProduct.shortDescription ? (
+                <div>
+                  {processedProduct.shortDescription}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">

@@ -34,7 +34,6 @@ const EditProduct = () => {
             category: product.category_id.toString(),
             subcategory: product.subcategory_id ? product.subcategory_id.toString() : '',
             stock: product.stock_quantity.toString(),
-            stock: product.stock_quantity.toString(),
             productStatus: product.product_status,
             weightKg: product.weight_kg,
             shippingCost: product.shipping_cost ? product.shipping_cost.toString() : '',

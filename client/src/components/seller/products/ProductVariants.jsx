@@ -1,96 +1,133 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, X, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, X, AlertCircle, Check } from 'lucide-react';
 
 const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) => {
-    const [newVariant, setNewVariant] = useState({
-        attributes: {
-            Size: '',
-            Color: ''
-        },
+    // Mode: 'single' or 'batch' (though we can just make the form smart)
+    const [attributeKeys, setAttributeKeys] = useState({
+        primary: 'Size',
+        secondary: 'Color'
+    });
+
+    const [batchForm, setBatchForm] = useState({
+        size: '',
+        colors: [], // Array of selected colors
         price: '',
         stock_quantity: '',
         sku: ''
     });
 
     const [showAddForm, setShowAddForm] = useState(false);
+    const [customColor, setCustomColor] = useState('');
 
-    // Common sizes and colors (could be fetched or dynamic in future)
+    // Predefined lists
     const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', 'Free Size'];
-    const colors = ['Red', 'Blue', 'Green', 'Black', 'White', 'Yellow', 'Purple', 'Orange', 'Pink', 'Grey', 'Brown', 'Beige', 'Multicolor'];
+    // Common web colors with hex for display
+    const predefinedColors = [
+        { name: 'Red', hex: '#FF0000' },
+        { name: 'Blue', hex: '#0000FF' },
+        { name: 'Green', hex: '#008000' },
+        { name: 'Black', hex: '#000000' },
+        { name: 'White', hex: '#FFFFFF', border: true },
+        { name: 'Yellow', hex: '#FFFF00' },
+        { name: 'Purple', hex: '#800080' },
+        { name: 'Orange', hex: '#FFA500' },
+        { name: 'Pink', hex: '#FFC0CB' },
+        { name: 'Grey', hex: '#808080' },
+        { name: 'Brown', hex: '#A52A2A' },
+        { name: 'Beige', hex: '#F5F5DC' },
+        { name: 'Multicolor', hex: 'linear-gradient(to right, red, blue, green)' }
+    ];
 
-    const handleAddVariant = () => {
-        if (!newVariant.price || !newVariant.stock_quantity) {
-            alert("Price and Stock are required for a variation.");
-            return;
+    const toggleColor = (colorName) => {
+        if (batchForm.colors.includes(colorName)) {
+            setBatchForm(prev => ({ ...prev, colors: prev.colors.filter(c => c !== colorName) }));
+        } else {
+            setBatchForm(prev => ({ ...prev, colors: [...prev.colors, colorName] }));
         }
-
-        if (!newVariant.attributes.Size && !newVariant.attributes.Color) {
-            alert("At least one attribute (Size or Color) is required.");
-            return;
-        }
-
-        // Check availability
-        const alreadyExists = variants.some(v =>
-            (v.attributes?.Size === newVariant.attributes.Size) &&
-            (v.attributes?.Color === newVariant.attributes.Color) &&
-            !v.isDeleted
-        );
-
-        if (alreadyExists) {
-            alert("This variation already exists.");
-            return;
-        }
-
-        const variantToAdd = {
-            ...newVariant,
-            // Ensure numbers
-            price: parseFloat(newVariant.price),
-            stock_quantity: parseInt(newVariant.stock_quantity),
-            // Temp ID for key
-            tempId: Date.now()
-        };
-
-        setVariants([...variants, variantToAdd]);
-
-        // Reset form
-        setNewVariant({
-            attributes: {
-                Size: '',
-                Color: ''
-            },
-            price: '',
-            stock_quantity: '',
-            sku: ''
-        });
-        setShowAddForm(false);
     };
 
-    const removeVariant = (index) => {
-        const updated = [...variants];
-        const variant = updated[index];
+    const handleAddCustomColor = () => {
+        if (customColor && !batchForm.colors.includes(customColor)) {
+            setBatchForm(prev => ({ ...prev, colors: [...prev.colors, customColor] }));
+            setCustomColor('');
+        }
+    };
 
-        if (variant.variant_id) {
-            // If it has a real ID (from DB), mark as deleted
-            // We'll filter these out in display, but keep them in state to send to backend as 'deletedVariantIds' if needed
-            // Actually, it's easier to maintain a separate 'deleted' list in parent, 
-            // or just mark 'isDeleted' flag here and filter in UI.
-            // Let's assume parent handles deletion logic if we pass modified array.
-            // Wait, best practice: separate 'deletedVariantIds' in parent.
-            // Or helper: just remove from list if new, add to "deleted" list if existing.
-            // For now, I'll just remove from this list, and let parent compare or handle "deletedVariantIds".
-            // Actually, ProductForm needs to know what to delete.
-            // I will add an `onRemove` prop to handle this logic cleanly.
+    const handleBatchAdd = () => {
+        if (!batchForm.price || !batchForm.stock_quantity) {
+            alert("Price and Stock are required.");
+            return;
         }
 
-        // Parent handles removal logic via setVariants usually?
-        // Let's just pass index to parent if possible, but here we have setVariants.
-        // If I just remove it from array, parent state updates.
-        // If it was an existing variant, we accept that it's gone from the "active" list.
-        // The parent needs to track what was removed.
+        if (!batchForm.size && batchForm.colors.length === 0) {
+            alert("Please select at least a Size or some Colors.");
+            return;
+        }
 
-        // NOTE: This component might need to be smarter or receive a 'removeVariant' function prop.
-        // For MVP, I'll assume setVariants updates the list, and I'll handle "deleted" tracking in parent 
-        // by comparing with initial data, OR I ask for an onRemove callback.
+        const newVariants = [];
+        const timestamp = Date.now();
+
+        // If defined colors, create one variant per color
+        if (batchForm.colors.length > 0) {
+            batchForm.colors.forEach((color, index) => {
+                // Check duplicate
+                const exists = variants.some(v =>
+                    v.attributes?.Size === batchForm.size &&
+                    v.attributes?.Color === color &&
+                    !v.isDeleted
+                );
+
+                if (!exists) {
+                    newVariants.push({
+                        attributes: {
+                            Size: batchForm.size,
+                            Color: color
+                        },
+                        price: parseFloat(batchForm.price),
+                        stock_quantity: parseInt(batchForm.stock_quantity),
+                        sku: batchForm.sku ? `${batchForm.sku}-${batchForm.size}-${color}` : '',
+                        tempId: `${timestamp}-${index}`
+                    });
+                }
+            });
+        } else {
+            // Just size, no color
+            const exists = variants.some(v =>
+                v.attributes?.Size === batchForm.size &&
+                (!v.attributes?.Color) &&
+                !v.isDeleted
+            );
+
+            if (!exists) {
+                newVariants.push({
+                    attributes: {
+                        Size: batchForm.size,
+                        Color: ''
+                    },
+                    price: parseFloat(batchForm.price),
+                    stock_quantity: parseInt(batchForm.stock_quantity),
+                    sku: batchForm.sku ? `${batchForm.sku}-${batchForm.size}` : '',
+                    tempId: `${timestamp}-0`
+                });
+            }
+        }
+
+        if (newVariants.length === 0) {
+            alert("No new variants created (duplicates might exist).");
+            return;
+        }
+
+        setVariants([...variants, ...newVariants]);
+
+        // Reset necessary fields but keep price/stock for convenience? 
+        // User might want to add another size with same price.
+        setBatchForm(prev => ({
+            ...prev,
+            size: '',
+            colors: [], // Clear colors
+            // Keep price/stock/sku base
+        }));
+        // Don't close form, allows rapid entry
     };
 
     return (
@@ -98,7 +135,7 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-lg font-semibold text-gray-900">Product Variations</h2>
-                    <p className="text-sm text-gray-500">Add different options like sizes and colors with their own prices.</p>
+                    <p className="text-sm text-gray-500">Create variations by combining Size with multiple Colors.</p>
                 </div>
                 {!showAddForm && (
                     <button
@@ -107,140 +144,203 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
                         className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 font-medium"
                     >
                         <Plus className="w-4 h-4" />
-                        <span>Add Variant</span>
+                        <span>Add Variants</span>
                     </button>
                 )}
             </div>
 
             {showAddForm && (
-                <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                        {/* Size */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Size</label>
-                            <select
-                                value={newVariant.attributes.Size}
-                                onChange={(e) => setNewVariant({ ...newVariant, attributes: { ...newVariant.attributes, Size: e.target.value } })}
-                                className="w-full text-sm border-gray-300 rounded-lg"
-                            >
-                                <option value="">Select Size</option>
-                                {sizes.map(s => <option key={s} value={s}>{s}</option>)}
-                            </select>
-                        </div>
-                        {/* Color */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Color</label>
-                            <div className="relative">
+                <div className="bg-gray-50 p-6 rounded-xl mb-6 border border-gray-200 shadow-inner">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="font-semibold text-gray-800">Add New Variations</h3>
+                        <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        {/* Row 1: Size & Price & Stock */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            {/* Size */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Size</label>
+                                <select
+                                    value={batchForm.size}
+                                    onChange={(e) => setBatchForm(prev => ({ ...prev, size: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                >
+                                    <option value="">Select Size</option>
+                                    {sizes.map(s => <option key={s} value={s}>{s}</option>)}
+                                </select>
+                            </div>
+
+                            {/* Price */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Price (Rs.) <span className="text-red-500">*</span></label>
                                 <input
-                                    list="colors-list"
-                                    type="text"
-                                    placeholder="Select or Type Color"
-                                    value={newVariant.attributes.Color}
-                                    onChange={(e) => setNewVariant({ ...newVariant, attributes: { ...newVariant.attributes, Color: e.target.value } })}
-                                    className="w-full text-sm border-gray-300 rounded-lg"
+                                    type="number"
+                                    min="0"
+                                    value={batchForm.price}
+                                    onChange={(e) => setBatchForm(prev => ({ ...prev, price: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                    placeholder="0.00"
                                 />
-                                <datalist id="colors-list">
-                                    {colors.map(c => <option key={c} value={c} />)}
-                                </datalist>
+                            </div>
+
+                            {/* Stock */}
+                            <div className="space-y-2">
+                                <label className="block text-sm font-medium text-gray-700">Stock Quantity <span className="text-red-500">*</span></label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    value={batchForm.stock_quantity}
+                                    onChange={(e) => setBatchForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                    placeholder="0"
+                                />
                             </div>
                         </div>
-                        {/* Price */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Price (Rs.) *</label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={newVariant.price}
-                                onChange={(e) => setNewVariant({ ...newVariant, price: e.target.value })}
-                                className="w-full text-sm border-gray-300 rounded-lg"
-                                placeholder="0.00"
-                            />
+
+                        {/* Row 2: Colors Multi-Select */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-medium text-gray-700">Available Colors for this Size</label>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {predefinedColors.map(c => {
+                                    const isSelected = batchForm.colors.includes(c.name);
+                                    return (
+                                        <button
+                                            key={c.name}
+                                            type="button"
+                                            onClick={() => toggleColor(c.name)}
+                                            className={`
+                                                flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all
+                                                ${isSelected
+                                                    ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-100 ring-offset-1'
+                                                    : 'border-gray-200 hover:border-gray-300 bg-white'
+                                                }
+                                            `}
+                                        >
+                                            <span
+                                                className={`w-3 h-3 rounded-full border ${c.border ? 'border-gray-200' : 'border-transparent'}`}
+                                                style={{ background: c.hex }}
+                                            ></span>
+                                            <span className="text-sm font-medium">{c.name}</span>
+                                            {isSelected && <Check className="w-3 h-3 ml-1" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Custom Color Input */}
+                            <div className="flex items-center space-x-2 max-w-xs">
+                                <input
+                                    type="text"
+                                    value={customColor}
+                                    onChange={(e) => setCustomColor(e.target.value)}
+                                    placeholder="Add custom color..."
+                                    className="flex-1 text-sm border-gray-300 rounded-lg"
+                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomColor())}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={handleAddCustomColor}
+                                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                >
+                                    Add
+                                </button>
+                            </div>
                         </div>
-                        {/* Stock */}
-                        <div>
-                            <label className="block text-xs font-medium text-gray-700 mb-1">Stock *</label>
-                            <input
-                                type="number"
-                                min="0"
-                                value={newVariant.stock_quantity}
-                                onChange={(e) => setNewVariant({ ...newVariant, stock_quantity: e.target.value })}
-                                className="w-full text-sm border-gray-300 rounded-lg"
-                                placeholder="0"
-                            />
+
+                        {/* Footer Actions */}
+                        <div className="flex justify-end pt-4 border-t border-gray-100">
+                            <button
+                                type="button"
+                                onClick={() => setShowAddForm(false)}
+                                className="px-4 py-2 mr-3 text-sm font-medium text-gray-600 hover:text-gray-800"
+                            >
+                                Done
+                            </button>
+                            <button
+                                type="button"
+                                onClick={handleBatchAdd}
+                                className="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 shadow-sm flex items-center"
+                            >
+                                <Plus className="w-4 h-4 mr-2" />
+                                Add {batchForm.colors.length > 0 ? `${batchForm.colors.length} Variants` : 'Variant'}
+                            </button>
                         </div>
-                    </div>
-                    <div className="flex justify-end space-x-3">
-                        <button
-                            type="button"
-                            onClick={() => setShowAddForm(false)}
-                            className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800"
-                        >
-                            Cancel
-                        </button>
-                        <button
-                            type="button"
-                            onClick={handleAddVariant}
-                            className="px-3 py-1.5 text-sm bg-primary-600 text-white rounded-lg hover:bg-primary-700"
-                        >
-                            Save Variant
-                        </button>
                     </div>
                 </div>
             )}
 
             {/* Variants List */}
             {variants.length > 0 ? (
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="border-b border-gray-100">
-                                <th className="py-3 px-2 text-xs font-medium text-gray-500 uppercase">Size</th>
-                                <th className="py-3 px-2 text-xs font-medium text-gray-500 uppercase">Color</th>
-                                <th className="py-3 px-2 text-xs font-medium text-gray-500 uppercase">Price</th>
-                                <th className="py-3 px-2 text-xs font-medium text-gray-500 uppercase">Stock</th>
-                                <th className="py-3 px-2 text-xs font-medium text-gray-500 uppercase text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {variants.map((v, idx) => (
-                                <tr key={v.variant_id || v.tempId || idx} className="group hover:bg-gray-50 border-b border-gray-50 last:border-0">
-                                    <td className="py-3 px-2 text-sm text-gray-900">{v.attributes?.Size || '-'}</td>
-                                    <td className="py-3 px-2 text-sm text-gray-900">
-                                        {v.attributes?.Color ? (
-                                            <span className="flex items-center">
-                                                <span className="w-3 h-3 rounded-full mr-2 border border-gray-200" style={{ backgroundColor: v.attributes.Color }}></span>
-                                                {v.attributes.Color}
-                                            </span>
-                                        ) : '-'}
-                                    </td>
-                                    <td className="py-3 px-2 text-sm text-gray-900">Rs. {parseFloat(v.price).toLocaleString()}</td>
-                                    <td className="py-3 px-2 text-sm text-gray-900">{v.stock_quantity}</td>
-                                    <td className="py-3 px-2 text-right">
-                                        <button
-                                            type="button"
-                                            onClick={() => {
-                                                if (onRemove) {
-                                                    onRemove(idx);
-                                                } else {
-                                                    const newMethods = [...variants];
-                                                    newMethods.splice(idx, 1);
-                                                    setVariants(newMethods);
-                                                }
-                                            }}
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </td>
+                <div className="overflow-hidden border border-gray-200 rounded-xl">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse bg-white">
+                            <thead className="bg-gray-50">
+                                <tr>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Size</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Color</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (Rs.)</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-gray-100">
+                                {variants.map((v, idx) => (
+                                    <tr key={v.variant_id || v.tempId || idx} className="hover:bg-gray-50 transition-colors group">
+                                        <td className="py-3 px-4 text-sm font-medium text-gray-900">{v.attributes?.Size || '-'}</td>
+                                        <td className="py-3 px-4 text-sm text-gray-700">
+                                            {v.attributes?.Color ? (
+                                                <div className="flex items-center space-x-2">
+                                                    <span
+                                                        className="w-4 h-4 rounded-full border border-gray-200 shadow-sm"
+                                                        style={{
+                                                            backgroundColor: predefinedColors.find(c => c.name === v.attributes.Color)?.hex || v.attributes.Color,
+                                                            background: v.attributes.Color === 'Multicolor' ? 'linear-gradient(to right, red, blue, green)' : undefined
+                                                        }}
+                                                    ></span>
+                                                    <span>{v.attributes.Color}</span>
+                                                </div>
+                                            ) : '-'}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-700">
+                                            {parseFloat(v.price).toLocaleString()}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-700">
+                                            {v.stock_quantity}
+                                        </td>
+                                        <td className="py-3 px-4 text-right">
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    if (onRemove) {
+                                                        onRemove(idx);
+                                                    } else {
+                                                        const newMethods = [...variants];
+                                                        newMethods.splice(idx, 1);
+                                                        setVariants(newMethods);
+                                                    }
+                                                }}
+                                                className="p-1 text-gray-400 hover:text-red-500 transition-colors rounded hover:bg-red-50"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             ) : (
-                <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                    <p>No variations added yet.</p>
-                    <button onClick={() => setShowAddForm(true)} className="text-primary-600 text-sm mt-1 hover:underline">Add one now</button>
+                <div className="text-center py-12 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+                    <div className="mx-auto w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-3">
+                        <Plus className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-sm font-medium text-gray-900">No variations added</h3>
+                    <p className="mt-1 text-sm text-gray-500">Combine sizes and colors to track inventory.</p>
                 </div>
             )}
         </div>

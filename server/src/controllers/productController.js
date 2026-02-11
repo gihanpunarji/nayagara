@@ -471,14 +471,36 @@ const updateProduct = async (req, res) => {
     try {
       if (variants) {
         parsedVariants = typeof variants === 'string' ? JSON.parse(variants) : variants;
-        if (Array.isArray(parsedVariants) && parsedVariants.length > 0) {
-          // If we have variants, content definitely changed (or at least structure did)
-          // checking deep equality is hard, so assume change if variants are provided/updated
+
+        // Fetch existing variants to compare
+        const existingVariants = await ProductVariant.findByProductId(productId);
+
+        if (parsedVariants.length !== existingVariants.length) {
           hasContentChanged = true;
+        } else {
+          // Check content of each variant
+          for (const v of parsedVariants) {
+            if (!v.variant_id) { hasContentChanged = true; break; }
+            const existing = existingVariants.find(ev => ev.variant_id === v.variant_id);
+            if (!existing) { hasContentChanged = true; break; }
+
+            const priceChanged = Math.abs(parseFloat(v.price) - parseFloat(existing.price)) > 0.01;
+            // Stock changes should NOT trigger pending approval
+            // const stockChanged = ... 
+            const attrsv = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+            const attrse = typeof existing.attributes === 'string' ? JSON.parse(existing.attributes) : existing.attributes;
+            const attributesChanged = JSON.stringify(attrsv) !== JSON.stringify(attrse);
+
+            if (priceChanged || attributesChanged) {
+              hasContentChanged = true;
+              break;
+            }
+          }
         }
       }
     } catch (e) {
       console.error("Error parsing variants for update:", e);
+      hasContentChanged = true;
     }
 
     if (deletedVariantIds) {

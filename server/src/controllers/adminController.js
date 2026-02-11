@@ -2,6 +2,7 @@ const User = require("../models/User");
 const AdminDashboard = require("../models/AdminDashboard");
 const Category = require("../models/Category");
 const SubCategory = require("../models/SubCategory");
+const CategoryField = require("../models/CategoryField");
 const Bank = require("../models/Bank");
 const Payment = require("../models/Payment");
 const SellerEarning = require("../models/SellerEarning");
@@ -767,6 +768,84 @@ const updateUserStatus = async (req, res) => {
   }
 };
 
+const addCategoryField = async (req, res) => {
+  try {
+    const { subCategoryId, fieldName, fieldOptions } = req.body;
+
+    if (!subCategoryId || !fieldName || !fieldOptions) {
+      return res.status(400).json({
+        success: false,
+        message: "Subcategory ID, field name, and options are required"
+      });
+    }
+
+    // Convert options array to JSON string
+    const optionsString = JSON.stringify(Array.isArray(fieldOptions) ? fieldOptions : [fieldOptions]);
+
+    const result = await CategoryField.create({
+      fieldName,
+      fieldLabel: fieldName,
+      fieldType: 'select', // Assuming default is select/dropdown for variations like Size/Color
+      fieldOptions: optionsString,
+      isRequired: 0,
+      validationRules: null,
+      subCategoryId
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Category field added successfully",
+      data: {
+        id: result.insertId,
+        fieldName,
+        fieldOptions: JSON.parse(optionsString),
+        subCategoryId
+      }
+    });
+  } catch (error) {
+    console.error("Error adding category field:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to add category field",
+      error: error.message
+    });
+  }
+};
+
+const deleteCategoryField = async (req, res) => {
+  try {
+    const { fieldId } = req.params;
+
+    if (!fieldId) {
+      return res.status(400).json({
+        success: false,
+        message: "Field ID is required"
+      });
+    }
+
+    const result = await CategoryField.delete(fieldId);
+
+    if (result === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "Category field not found"
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "Category field deleted successfully"
+    });
+  } catch (error) {
+    console.error("Error deleting category field:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to delete category field",
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   getAdminProfile,
   updateAdminProfile,
@@ -786,4 +865,6 @@ module.exports = {
   getAllSellerPayments,
   recordSellerPayment,
   updateUserStatus,
+  addCategoryField,
+  deleteCategoryField,
 };

@@ -5,11 +5,15 @@ class ProductVariant {
         productId,
         price,
         stockQuantity,
+        stock_quantity, // Support snake_case alias
         sku,
         attributes,
         imageUrl
     }) {
         const connection = getConnection();
+        // Use camelCase if available, otherwise snake_case
+        const finalStock = stockQuantity !== undefined ? stockQuantity : stock_quantity;
+
         const [result] = await connection.execute(
             `INSERT INTO product_variants (
         product_id, price, stock_quantity, sku, attributes, image_url
@@ -17,7 +21,7 @@ class ProductVariant {
             [
                 productId,
                 price,
-                stockQuantity,
+                finalStock,
                 sku || null,
                 JSON.stringify(attributes || {}),
                 imageUrl || null

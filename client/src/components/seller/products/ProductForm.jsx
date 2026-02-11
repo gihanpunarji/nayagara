@@ -695,11 +695,13 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         </div>
 
         {/* Variants */}
+        {/* Variants */}
         <ProductVariants
           variants={variants}
           setVariants={setVariants}
           onRemove={handleVariantRemove}
           errors={errors}
+          subCategoryId={formData.subcategory}
         />
 
 

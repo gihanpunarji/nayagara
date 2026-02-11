@@ -26,7 +26,8 @@ import {
   Phone,
   Mail,
   Award,
-  ShoppingCart
+  ShoppingCart,
+  AlertCircle
 } from "lucide-react";
 
 export const ProductView = () => {
@@ -259,13 +260,11 @@ export const ProductView = () => {
     : null;
 
   // Extract unique attributes from variants
+  // Extract unique attributes from variants
   const variantAttributes = React.useMemo(() => {
     if (!processedProduct?.variants?.length) return null;
 
-    // Check what attributes exist (Size, Color usually)
-    // We assume attributes is JSON object in each variant
     const attributesMap = {};
-
     processedProduct.variants.forEach(v => {
       if (!v.attributes) return;
       const attrs = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
@@ -281,6 +280,41 @@ export const ProductView = () => {
       values: Array.from(valueInfo)
     }));
   }, [processedProduct]);
+
+  // Helper to get available values for an attribute based on other selections
+  const getAvailableValues = (attributeName) => {
+    if (!processedProduct?.variants) return [];
+
+    // Filter variants that match ALL currently selected attributes EXCEPT the one we are checking
+    const relevantVariants = processedProduct.variants.filter(v => {
+      if (!v.attributes) return false;
+      const content = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+      if (!content) return false;
+
+      // Check if variant matches current selection for all OTHER attributes
+      return Object.entries(attributeSelection).every(([key, val]) => {
+        if (key === attributeName) return true; // Ignore the attribute we are currently listing values for
+        return content[key] === val;
+      });
+    });
+
+    // Extract unique values for the target attribute from these relevant variants
+    const values = new Set();
+    relevantVariants.forEach(v => {
+      const content = typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes;
+      if (content && content[attributeName]) values.add(content[attributeName]);
+    });
+
+    return Array.from(values);
+  };
+
+  // Common colors map
+  const colorMap = {
+    'Red': '#FF0000', 'Blue': '#3B82F6', 'Green': '#22C55E', 'Black': '#000000',
+    'White': '#FFFFFF', 'Yellow': '#EAB308', 'Purple': '#A855F7', 'Orange': '#F97316',
+    'Pink': '#EC4899', 'Grey': '#6B7280', 'Brown': '#78350F', 'Beige': '#F5F5DC',
+    'Multicolor': 'linear-gradient(to right, red, blue, green)'
+  };
 
   // Helper to check if a combination is available
   const getVariantForSelection = (currentSelection) => {
@@ -663,41 +697,92 @@ export const ProductView = () => {
 
               {/* Variant Selection */}
               {variantAttributes && variantAttributes.length > 0 && (
-                <div className="space-y-4 py-4 border-t border-b border-gray-100">
-                  {variantAttributes.map(attr => (
-                    <div key={attr.name}>
-                      <h3 className="text-sm font-medium text-gray-900 mb-2">{attr.name}: <span className="text-gray-500 font-normal">{attributeSelection[attr.name]}</span></h3>
-                      <div className="flex flex-wrap gap-2">
-                        {attr.values.map(val => {
-                          const isSelected = attributeSelection[attr.name] === val;
-                          return (
-                            <button
-                              key={val}
-                              onClick={() => setAttributeSelection(prev => ({ ...prev, [attr.name]: val }))}
-                              className={`px-3 py-1.5 rounded-lg border text-sm font-medium transition-all
-                                              ${isSelected
-                                  ? 'border-primary-600 bg-primary-50 text-primary-700'
-                                  : 'border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
-                                }
-                                            `}
-                            >
-                              {val}
-                            </button>
-                          );
-                        })}
+                <div className="bg-gray-50 rounded-xl p-5 border border-gray-100 space-y-6">
+                  {variantAttributes.map(attr => {
+                    // Check available values dynamically based on other selections
+                    const availableValues = getAvailableValues(attr.name);
+                    const isColor = attr.name.toLowerCase() === 'color';
+
+                    return (
+                      <div key={attr.name}>
+                        <div className="flex justify-between items-center mb-3">
+                          <h3 className="text-sm font-semibold text-gray-900">{attr.name}: <span className="text-primary-600 font-normal">{attributeSelection[attr.name]}</span></h3>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {attr.values.map(val => {
+                            const isSelected = attributeSelection[attr.name] === val;
+                            const isAvailable = availableValues.includes(val);
+                            // Special handling for Colors
+                            if (isColor) {
+                              const hexColor = colorMap[val] || val;
+                              return (
+                                <button
+                                  key={val}
+                                  onClick={() => isAvailable && setAttributeSelection(prev => ({ ...prev, [attr.name]: val }))}
+                                  disabled={!isAvailable}
+                                  className={`
+                                        group relative w-10 h-10 rounded-full border-2 flex items-center justify-center transition-all
+                                        ${isSelected
+                                      ? 'border-primary-600 ring-2 ring-primary-100 ring-offset-2 scale-110'
+                                      : 'border-gray-200 hover:border-gray-300 hover:scale-105'
+                                    }
+                                        ${!isAvailable ? 'opacity-30 cursor-not-allowed grayscale' : 'cursor-pointer'}
+                                      `}
+                                  title={val}
+                                  style={{ background: hexColor === 'White' || hexColor === '#FFFFFF' ? '#FFFFFF' : hexColor }}
+                                >
+                                  {/* Inner dot for white colors or selected state */}
+                                  {isAvailable && (isSelected || hexColor === 'White' || hexColor === '#FFFFFF') && (
+                                    <span className="sr-only">{val}</span>
+                                  )}
+                                  {/* Checkmark for selected */}
+                                  {isSelected && (
+                                    <div className={`w-3 h-3 rounded-full ${hexColor === 'White' || hexColor === '#FFFFFF' ? 'bg-primary-600' : 'bg-white'}`}></div>
+                                  )}
+                                </button>
+                              );
+                            }
+
+                            // Standard Pill
+                            return (
+                              <button
+                                key={val}
+                                onClick={() => isAvailable && setAttributeSelection(prev => ({ ...prev, [attr.name]: val }))}
+                                disabled={!isAvailable}
+                                className={`
+                                    px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm
+                                    ${isSelected
+                                    ? 'bg-primary-600 text-white shadow-primary-500/30 ring-2 ring-primary-100 ring-offset-1'
+                                    : 'bg-white border border-gray-200 text-gray-700 hover:border-gray-300 hover:bg-gray-50'
+                                  }
+                                    ${!isAvailable
+                                    ? 'opacity-40 cursor-not-allowed bg-gray-100 text-gray-400 border-gray-100 shadow-none'
+                                    : 'active:scale-95'
+                                  }
+                                  `}
+                              >
+                                {val}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
 
                   {/* Selection Status */}
                   {selectedVariant ? (
-                    <div className="text-sm text-green-600 font-medium flex items-center">
-                      <Shield className="w-4 h-4 mr-1" /> Stock: {selectedVariant.stock_quantity} available
+                    <div className="flex items-center text-sm bg-green-50 text-green-700 p-3 rounded-lg border border-green-100 animate-fadeIn">
+                      <Shield className="w-4 h-4 mr-2" />
+                      <span className="font-medium">In Stock</span>
+                      <span className="mx-2">•</span>
+                      <span>{selectedVariant.stock_quantity} available</span>
                     </div>
                   ) : (
                     Object.keys(attributeSelection).length > 0 && (
-                      <div className="text-sm text-orange-500">
-                        Please select all options to see availability.
+                      <div className="flex items-center text-sm bg-orange-50 text-orange-700 p-3 rounded-lg border border-orange-100">
+                        <AlertCircle className="w-4 h-4 mr-2" />
+                        <span>Please select all options to check availability.</span>
                       </div>
                     )
                   )}

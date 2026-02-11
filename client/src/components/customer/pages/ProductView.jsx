@@ -761,7 +761,7 @@ export const ProductView = () => {
             </summary>
             <div className="pt-4">
               {processedProduct.shortDescription ? (
-                <div>
+                <div className="whitespace-pre-wrap text-gray-600 leading-relaxed">
                   {processedProduct.shortDescription}
                 </div>
               ) : (

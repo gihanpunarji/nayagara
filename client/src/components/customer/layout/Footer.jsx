@@ -26,7 +26,7 @@ const Footer = () => {
                 <h1 className="text-2xl font-heading font-bold text-gray-900 tracking-wide">
                   Nayagara<span className="text-primary-600">.lk</span>
                 </h1>
-                <p className="text-xs text-gray-500 tracking-wider uppercase">Sri Lanka's #1 Marketplace</p>
+                <p className="text-xs text-gray-500 tracking-wider uppercase">Sri Lanka's #1 Online Shopping</p>
               </div>
             </div>
             

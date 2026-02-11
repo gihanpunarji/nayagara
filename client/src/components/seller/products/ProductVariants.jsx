@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'; // Added useEffect
 import { Plus, Trash2, X, AlertCircle, Check } from 'lucide-react';
+import api from '../../../api/axios'; // Added api import
 
-const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) => {
+const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, subCategoryId }) => { // Added subCategoryId
     // Mode: 'single' or 'batch' (though we can just make the form smart)
     const [attributeKeys, setAttributeKeys] = useState({
         primary: 'Size',
@@ -18,9 +19,47 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
 
     const [showAddForm, setShowAddForm] = useState(false);
     const [customColor, setCustomColor] = useState('');
+    const [dynamicSizes, setDynamicSizes] = useState(null); // State for dynamic sizes
 
     // Predefined lists
-    const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', 'Free Size'];
+    const defaultSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', 'Free Size'];
+    const [sizes, setSizes] = useState(defaultSizes); // Use state for sizes
+
+    // Fetch dynamic category fields
+    useEffect(() => {
+        if (subCategoryId) {
+            const fetchFields = async () => {
+                try {
+                    const response = await api.get(`/subcategories/${subCategoryId}/fields`);
+                    if (response.data.success && response.data.data.length > 0) {
+                        const fields = response.data.data;
+
+                        // Look for a field that looks like a "Size" or "Primary Variation"
+                        // For now, we take the first field or specifically "Size"
+                        const sizeField = fields.find(f =>
+                            ['size', 'capacity', 'volume', 'dimension', 'weight'].includes(f.field_name.toLowerCase())
+                        ) || fields[0]; // Fallback to first field if strictly size not found
+
+                        // Only override if options exist
+                        if (sizeField && sizeField.field_options && sizeField.field_options.length > 0) {
+                            setSizes(sizeField.field_options);
+                            setAttributeKeys(prev => ({ ...prev, primary: sizeField.field_name }));
+                        } else {
+                            setSizes(defaultSizes);
+                            setAttributeKeys(prev => ({ ...prev, primary: 'Size' }));
+                        }
+                    } else {
+                        setSizes(defaultSizes);
+                        setAttributeKeys(prev => ({ ...prev, primary: 'Size' }));
+                    }
+                } catch (error) {
+                    console.error("Error fetching category fields:", error);
+                }
+            };
+            fetchFields();
+        }
+    }, [subCategoryId]);
+
     // Common web colors with hex for display
     const predefinedColors = [
         { name: 'Red', hex: '#FF0000' },
@@ -72,16 +111,16 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
             batchForm.colors.forEach((color, index) => {
                 // Check duplicate
                 const exists = variants.some(v =>
-                    v.attributes?.Size === batchForm.size &&
-                    v.attributes?.Color === color &&
+                    v.attributes?.[attributeKeys.primary] === batchForm.size &&
+                    v.attributes?.[attributeKeys.secondary] === color &&
                     !v.isDeleted
                 );
 
                 if (!exists) {
                     newVariants.push({
                         attributes: {
-                            Size: batchForm.size,
-                            Color: color
+                            [attributeKeys.primary]: batchForm.size,
+                            [attributeKeys.secondary]: color
                         },
                         price: parseFloat(batchForm.price),
                         stock_quantity: parseInt(batchForm.stock_quantity),
@@ -93,16 +132,16 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
         } else {
             // Just size, no color
             const exists = variants.some(v =>
-                v.attributes?.Size === batchForm.size &&
-                (!v.attributes?.Color) &&
+                v.attributes?.[attributeKeys.primary] === batchForm.size &&
+                (!v.attributes?.[attributeKeys.secondary]) &&
                 !v.isDeleted
             );
 
             if (!exists) {
                 newVariants.push({
                     attributes: {
-                        Size: batchForm.size,
-                        Color: ''
+                        [attributeKeys.primary]: batchForm.size,
+                        [attributeKeys.secondary]: ''
                     },
                     price: parseFloat(batchForm.price),
                     stock_quantity: parseInt(batchForm.stock_quantity),
@@ -163,13 +202,13 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                             {/* Size */}
                             <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Size</label>
+                                <label className="block text-sm font-medium text-gray-700">{attributeKeys.primary}</label>
                                 <select
                                     value={batchForm.size}
                                     onChange={(e) => setBatchForm(prev => ({ ...prev, size: e.target.value }))}
                                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
                                 >
-                                    <option value="">Select Size</option>
+                                    <option value="">Select {attributeKeys.primary}</option>
                                     {sizes.map(s => <option key={s} value={s}>{s}</option>)}
                                 </select>
                             </div>
@@ -203,7 +242,7 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
 
                         {/* Row 2: Colors Multi-Select */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Available Colors for this Size</label>
+                            <label className="block text-sm font-medium text-gray-700">Available {attributeKeys.secondary}s for this {attributeKeys.primary}</label>
                             <div className="flex flex-wrap gap-2 mb-3">
                                 {predefinedColors.map(c => {
                                     const isSelected = batchForm.colors.includes(c.name);
@@ -280,8 +319,8 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
                         <table className="w-full text-left border-collapse bg-white">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Size</th>
-                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Color</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{attributeKeys.primary}</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{attributeKeys.secondary}</th>
                                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (Rs.)</th>
                                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
                                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -290,18 +329,18 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {} }) 
                             <tbody className="divide-y divide-gray-100">
                                 {variants.map((v, idx) => (
                                     <tr key={v.variant_id || v.tempId || idx} className="hover:bg-gray-50 transition-colors group">
-                                        <td className="py-3 px-4 text-sm font-medium text-gray-900">{v.attributes?.Size || '-'}</td>
+                                        <td className="py-3 px-4 text-sm font-medium text-gray-900">{v.attributes?.[attributeKeys.primary] || '-'}</td>
                                         <td className="py-3 px-4 text-sm text-gray-700">
-                                            {v.attributes?.Color ? (
+                                            {v.attributes?.[attributeKeys.secondary] ? (
                                                 <div className="flex items-center space-x-2">
                                                     <span
                                                         className="w-4 h-4 rounded-full border border-gray-200 shadow-sm"
                                                         style={{
-                                                            backgroundColor: predefinedColors.find(c => c.name === v.attributes.Color)?.hex || v.attributes.Color,
-                                                            background: v.attributes.Color === 'Multicolor' ? 'linear-gradient(to right, red, blue, green)' : undefined
+                                                            backgroundColor: predefinedColors.find(c => c.name === v.attributes[attributeKeys.secondary])?.hex || v.attributes[attributeKeys.secondary],
+                                                            background: v.attributes[attributeKeys.secondary] === 'Multicolor' ? 'linear-gradient(to right, red, blue, green)' : undefined
                                                         }}
                                                     ></span>
-                                                    <span>{v.attributes.Color}</span>
+                                                    <span>{v.attributes[attributeKeys.secondary]}</span>
                                                 </div>
                                             ) : '-'}
                                         </td>

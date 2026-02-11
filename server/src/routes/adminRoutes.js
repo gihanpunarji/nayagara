@@ -1,7 +1,7 @@
 const express = require("express");
 const multer = require("multer");
 const { authenticateAdmin } = require("../middleware/auth");
-const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment, getAllSellerPayments, recordSellerPayment, updateUserStatus } = require("../controllers/adminController");
+const { getAdminProfile, updateAdminProfile, getCustomers, getSellers, getAdminDashboardData, getAdminCategories, addCategory, updateCategory, addSubCategory, deleteSubCategory, toggleCategoryStatus, deleteCategory, getSellerBankDetails, getSellerEarnings, recordPayment, getAllSellerPayments, recordSellerPayment, updateUserStatus, addCategoryField, deleteCategoryField } = require("../controllers/adminController");
 const { getAllOrders } = require("../controllers/orderController");
 const { getAnalytics } = require("../controllers/analyticsController");
 const { getNotifications } = require("../controllers/notificationController");
@@ -62,8 +62,12 @@ router.patch("/categories/:categoryId/status", toggleCategoryStatus);
 router.delete("/categories/:categoryId", deleteCategory);
 
 // Subcategory routes
-router.post("/subcategories", addSubCategory);
-router.delete("/subcategories/:subcategoryId", deleteSubCategory);
+router.post("/subcategories", authenticateAdmin, addSubCategory);
+router.delete("/subcategories/:subcategoryId", authenticateAdmin, deleteSubCategory);
+
+// Category Field routes
+router.post("/category-fields", authenticateAdmin, addCategoryField);
+router.delete("/category-fields/:fieldId", authenticateAdmin, deleteCategoryField);
 
 // Payment and earnings routes
 router.get("/sellers/:sellerId/bank", getSellerBankDetails);

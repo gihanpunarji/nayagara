@@ -1,0 +1,11 @@
+[dotenv@17.2.2] injecting env (16) from .env -- tip: 📡 auto-backup env with Radar: https://dotenvx.com/radar
+Database Config: {
+  host: '193.203.184.9',
+  user: 'u331468302_nayagara_water',
+  database: 'u331468302_nayagara_water'
+}
+Connecting to database...
+Connected successfully.
+Creating category_fields table...
+Table category_fields created/ensured successfully.
+Connection closed.

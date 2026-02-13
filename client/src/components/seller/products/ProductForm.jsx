@@ -695,16 +695,12 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         </div>
 
         {/* Variants */}
-        {/* Variants */}
         <ProductVariants
           variants={variants}
           setVariants={setVariants}
-          onRemove={handleVariantRemove}
-          errors={errors}
           subCategoryId={formData.subcategory}
+          errors={errors}
         />
-
-
         {/* Submit Buttons */}
         <div className="flex items-center justify-between pt-6">
           <div>

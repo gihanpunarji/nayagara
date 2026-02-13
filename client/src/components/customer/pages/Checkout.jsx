@@ -14,25 +14,22 @@ const StepIndicator = memo(({ steps, currentStep }) => (
       {steps.map((step, index) => (
         <React.Fragment key={step.id}>
           <div className="flex items-center">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-              step.completed
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${step.completed
                 ? 'bg-primary-500 text-white'
                 : currentStep === step.id
-                ? 'bg-primary-100 text-primary-600'
-                : 'bg-gray-100 text-gray-400'
-            }`}>
+                  ? 'bg-primary-100 text-primary-600'
+                  : 'bg-gray-100 text-gray-400'
+              }`}>
               {step.completed ? <Check className="w-4 h-4" /> : step.id}
             </div>
-            <span className={`ml-2 text-sm font-medium ${
-              currentStep === step.id ? 'text-primary-600' : 'text-gray-500'
-            }`}>
+            <span className={`ml-2 text-sm font-medium ${currentStep === step.id ? 'text-primary-600' : 'text-gray-500'
+              }`}>
               {step.title}
             </span>
           </div>
           {index < steps.length - 1 && (
-            <div className={`flex-1 h-1 mx-4 ${
-              step.completed ? 'bg-primary-500' : 'bg-gray-200'
-            }`} />
+            <div className={`flex-1 h-1 mx-4 ${step.completed ? 'bg-primary-500' : 'bg-gray-200'
+              }`} />
           )}
         </React.Fragment>
       ))}
@@ -41,31 +38,31 @@ const StepIndicator = memo(({ steps, currentStep }) => (
 ));
 
 // AddressStep Component - moved outside to prevent re-renders
-const AddressStep = memo(({ 
-  billingAddress, 
-  shippingAddress, 
-  sameAsBilling, 
-  provinces, 
-  districts, 
-  cities, 
-  userAddresses, 
-  loadingAddress, 
-  savingAddress, 
-  updateBillingLine1, 
-  updateBillingLine2, 
-  updateBillingPostalCode, 
-  updateShippingLine1, 
-  updateShippingLine2, 
-  updateShippingPostalCode, 
-  handleBillingAddressChange, 
-  handleShippingAddressChange, 
-  handleSameAsBillingChange, 
-  handleProvinceChange, 
-  handleDistrictChange, 
-  saveCurrentAddress, 
+const AddressStep = memo(({
+  billingAddress,
+  shippingAddress,
+  sameAsBilling,
+  provinces,
+  districts,
+  cities,
+  userAddresses,
+  loadingAddress,
+  savingAddress,
+  updateBillingLine1,
+  updateBillingLine2,
+  updateBillingPostalCode,
+  updateShippingLine1,
+  updateShippingLine2,
+  updateShippingPostalCode,
+  handleBillingAddressChange,
+  handleShippingAddressChange,
+  handleSameAsBillingChange,
+  handleProvinceChange,
+  handleDistrictChange,
+  saveCurrentAddress,
   setAddressAsDefault,
-  isAuthenticated, 
-  isAddressValid 
+  isAuthenticated,
+  isAddressValid
 }) => (
   <div className="space-y-6">
     {loadingAddress && (
@@ -76,7 +73,7 @@ const AddressStep = memo(({
         </div>
       </div>
     )}
-    
+
     {/* Saved Addresses */}
     {userAddresses.length > 0 && !loadingAddress && (
       <div className="bg-white rounded-xl border border-gray-200 p-6">
@@ -95,7 +92,7 @@ const AddressStep = memo(({
                   province: address.province_name || '',
                   country: address.country_name || 'Sri Lanka'
                 };
-                
+
                 // Load districts and cities first to prevent re-renders
                 if (address.province_id) {
                   await handleProvinceChange(address.province_id, 'billing');
@@ -103,7 +100,7 @@ const AddressStep = memo(({
                     await handleDistrictChange(address.district_id, 'billing');
                   }
                 }
-                
+
                 // Set the billing address
                 handleBillingAddressChange('line1', formattedAddress.line1);
                 handleBillingAddressChange('line2', formattedAddress.line2);
@@ -111,7 +108,7 @@ const AddressStep = memo(({
                 handleBillingAddressChange('district', formattedAddress.district);
                 handleBillingAddressChange('postalCode', formattedAddress.postalCode);
                 handleBillingAddressChange('province', formattedAddress.province);
-                
+
                 // Set shipping address to same data and enable same as billing checkbox
                 handleShippingAddressChange('line1', formattedAddress.line1);
                 handleShippingAddressChange('line2', formattedAddress.line2);
@@ -140,7 +137,7 @@ const AddressStep = memo(({
                     {address.city_name}, {address.district_name}, {address.province_name}
                   </p>
                   <p className="text-sm text-gray-600">{address.postal_code}</p>
-                  
+
                   {/* Set as Default Checkbox */}
                   <div className="mt-3 flex items-center">
                     <input
@@ -411,11 +408,10 @@ const PaymentStep = memo(({ selectedPayment, setSelectedPayment, paymentMethods,
           <div
             key={method.id}
             onClick={() => setSelectedPayment(method.id)}
-            className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${
-              selectedPayment === method.id
+            className={`p-4 border-2 rounded-lg cursor-pointer transition-colors ${selectedPayment === method.id
                 ? 'border-primary-500 bg-primary-50'
                 : 'border-gray-200 hover:border-primary-300'
-            }`}
+              }`}
           >
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
@@ -430,11 +426,10 @@ const PaymentStep = memo(({ selectedPayment, setSelectedPayment, paymentMethods,
                   </p>
                 )}
               </div>
-              <div className={`w-5 h-5 rounded-full border-2 ${
-                selectedPayment === method.id
+              <div className={`w-5 h-5 rounded-full border-2 ${selectedPayment === method.id
                   ? 'border-primary-500 bg-primary-500'
                   : 'border-gray-300'
-              }`}>
+                }`}>
                 {selectedPayment === method.id && (
                   <Check className="w-3 h-3 text-white mx-auto mt-0.5" />
                 )}
@@ -464,13 +459,13 @@ const PaymentStep = memo(({ selectedPayment, setSelectedPayment, paymentMethods,
 ));
 
 // ReviewStep Component - moved outside to prevent re-renders
-const ReviewStep = memo(({ 
-  cartItems, 
-  billingAddress, 
-  shippingAddress, 
-  sameAsBilling, 
-  selectedPayment, 
-  paymentMethods, 
+const ReviewStep = memo(({
+  cartItems,
+  billingAddress,
+  shippingAddress,
+  sameAsBilling,
+  selectedPayment,
+  paymentMethods,
   setCurrentStep,
   navigate,
   handlePlaceOrder,
@@ -500,14 +495,30 @@ const ReviewStep = memo(({
               />
               <div className="flex-1">
                 <p className="font-medium text-gray-900">{
-                  item.product_title || 
-                  item.name || 
-                  item.title || 
+                  item.product_title ||
+                  item.name ||
+                  item.title ||
                   'Product'
                 }</p>
+                {/* Display Attributes */}
+                {(item.attributes || (item.selectedVariant && item.selectedVariant.attributes)) && (
+                  (() => {
+                    const attrs = item.attributes || item.selectedVariant.attributes;
+                    if (Object.keys(attrs).length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-2 my-1">
+                        {Object.entries(attrs).map(([key, val]) => (
+                          <span key={key} className="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded border border-gray-200">
+                            {key}: <span className="font-medium text-gray-800">{val}</span>
+                          </span>
+                        ))}
+                      </div>
+                    );
+                  })()
+                )}
                 <p className="text-sm text-gray-600">Sold by {
-                  item.seller_name || 
-                  (typeof item.seller === 'string' ? item.seller : item.seller?.name) || 
+                  item.seller_name ||
+                  (typeof item.seller === 'string' ? item.seller : item.seller?.name) ||
                   'Nayagara'
                 }</p>
                 <p className="text-sm text-gray-600">Qty: {item.quantity || 1}</p>
@@ -679,7 +690,7 @@ const Checkout = () => {
       const response = await api.get('/address/user');
       if (response.data.success && response.data.data.length > 0) {
         setUserAddresses(response.data.data);
-        
+
         // Load the first/default address if available
         const defaultAddress = response.data.data.find(addr => addr.is_default) || response.data.data[0];
         if (defaultAddress) {
@@ -692,11 +703,11 @@ const Checkout = () => {
             province: defaultAddress.province_id || '',
             country: defaultAddress.country || 'Sri Lanka'
           };
-          
+
           setBillingAddress(formattedAddress);
           setShippingAddress(formattedAddress);
           setSameAsBilling(true);
-          
+
           // Load districts and cities for the saved address using direct API calls
           if (defaultAddress.province_id) {
             try {
@@ -846,10 +857,10 @@ const Checkout = () => {
   const handleBillingAddressChange = (field, value) => {
     // Reset address selected flag when manually changing fields
     setAddressSelected(false);
-    
+
     setBillingAddress(prev => {
       const newAddress = { ...prev, [field]: value };
-      
+
       // Reset dependent fields when parent changes (only for selects)
       if (field === 'province') {
         newAddress.district = '';
@@ -857,7 +868,7 @@ const Checkout = () => {
       } else if (field === 'district') {
         newAddress.city = '';
       }
-      
+
       return newAddress;
     });
 
@@ -865,14 +876,14 @@ const Checkout = () => {
     if (sameAsBilling) {
       setShippingAddress(prev => {
         const newAddress = { ...prev, [field]: value };
-        
+
         if (field === 'province') {
           newAddress.district = '';
           newAddress.city = '';
         } else if (field === 'district') {
           newAddress.city = '';
         }
-        
+
         return newAddress;
       });
     }
@@ -883,10 +894,10 @@ const Checkout = () => {
   const handleShippingAddressChange = (field, value) => {
     // Reset address selected flag when manually changing fields
     setAddressSelected(false);
-    
+
     setShippingAddress(prev => {
       const newAddress = { ...prev, [field]: value };
-      
+
       // Reset dependent fields when parent changes (only for selects)
       if (field === 'province') {
         newAddress.district = '';
@@ -894,7 +905,7 @@ const Checkout = () => {
       } else if (field === 'district') {
         newAddress.city = '';
       }
-      
+
       return newAddress;
     });
   };
@@ -977,7 +988,7 @@ const Checkout = () => {
       alert('Please log in to save address');
       return;
     }
-    
+
     if (!isAddressValid(currentBilling)) {
       alert('Please fill in all required address fields');
       return;
@@ -1059,10 +1070,10 @@ const Checkout = () => {
 
     try {
       const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
-      
+
       const orderAmount = subtotal + shippingCost - totalDiscount;
-      
-      const itemsDescription = cartItems.map(item => 
+
+      const itemsDescription = cartItems.map(item =>
         `${item.product_title || item.name} (Qty: ${item.quantity})`
       ).join(', ');
 
@@ -1079,20 +1090,20 @@ const Checkout = () => {
         city: billingAddress.city || 'Colombo',
         country: 'Sri Lanka'
       };
-      
+
       // Validate required fields
       if (!paymentData.first_name || !paymentData.email || !orderAmount) {
         throw new Error('Missing required payment information');
       }
 
       // Debug: Log payment data being sent
-      
+
       // Get payment data from backend
       const response = await api.post('/payment/payhere/create', paymentData);
-      
+
       if (response.data.success) {
         const paymentInfo = response.data.data;
-        
+
         // Initialize PayHere payment
         // window.payhere.startPayment({
         //   sandbox: true, // Set to false for production
@@ -1116,56 +1127,56 @@ const Checkout = () => {
 
         // PayHere event handlers
         // window.payhere.onCompleted = async function onCompleted(paymentOrderId) {
-          // console.log("Payment completed. PayHere OrderID:" + paymentOrderId);
-          let paymentOrderId = Math.random().toString(36).substring(2, 15); 
+        // console.log("Payment completed. PayHere OrderID:" + paymentOrderId);
+        let paymentOrderId = Math.random().toString(36).substring(2, 15);
 
-          try {
-            // Save order to database after successful payment
-            const orderData = {
-              order_number: orderId, // Our generated order number
-              cart_items: cartItems,
-              shipping_address: shippingAddress,
-              billing_address: billingAddress,
-              subtotal: subtotal,
-              shipping_cost: shippingCost,
-              tax_amount: 0,
-              discount_amount: totalDiscount,
-              total_amount: orderAmount
-            };
+        try {
+          // Save order to database after successful payment
+          const orderData = {
+            order_number: orderId, // Our generated order number
+            cart_items: cartItems,
+            shipping_address: shippingAddress,
+            billing_address: billingAddress,
+            subtotal: subtotal,
+            shipping_cost: shippingCost,
+            tax_amount: 0,
+            discount_amount: totalDiscount,
+            total_amount: orderAmount
+          };
 
-            
-            // Create order in database
-            const orderResponse = await api.post('/orders/create', orderData);
-            
-            if (orderResponse.data.success) {
-              
-              // Update payment status
-              await api.put('/orders/payment-status', {
-                order_number: orderId,
-                payment_status: 'completed',
-                payment_id: paymentOrderId
-              });
 
-              
-              setProcessingPayment(false);
-              navigate('/order-success', { 
-                state: { 
-                  orderId: orderId,
-                  paymentId: paymentOrderId,
-                  amount: orderAmount,
-                  cartItems: cartItems,
-                  orderDetails: orderResponse.data.data
-                } 
-              });
-            } else {
-              throw new Error('Failed to save order');
-            }
-            
-          } catch (error) {
-            console.error('Error saving order:', error);
+          // Create order in database
+          const orderResponse = await api.post('/orders/create', orderData);
+
+          if (orderResponse.data.success) {
+
+            // Update payment status
+            await api.put('/orders/payment-status', {
+              order_number: orderId,
+              payment_status: 'completed',
+              payment_id: paymentOrderId
+            });
+
+
             setProcessingPayment(false);
-            alert('Payment successful but failed to save order. Please contact support with Order ID: ' + paymentOrderId);
+            navigate('/order-success', {
+              state: {
+                orderId: orderId,
+                paymentId: paymentOrderId,
+                amount: orderAmount,
+                cartItems: cartItems,
+                orderDetails: orderResponse.data.data
+              }
+            });
+          } else {
+            throw new Error('Failed to save order');
           }
+
+        } catch (error) {
+          console.error('Error saving order:', error);
+          setProcessingPayment(false);
+          alert('Payment successful but failed to save order. Please contact support with Order ID: ' + paymentOrderId);
+        }
         // };
 
         // window.payhere.onDismissed = function onDismissed() {
@@ -1187,7 +1198,7 @@ const Checkout = () => {
       console.error('Payment creation error:', error);
       console.error('Error details:', error.response?.data || error.message);
       setProcessingPayment(false);
-      
+
       // Show more specific error message
       const errorMessage = error.response?.data?.message || error.message || 'Failed to initiate payment';
       alert(`Payment Error: ${errorMessage}`);
@@ -1214,7 +1225,7 @@ const Checkout = () => {
             <StepIndicator steps={steps} currentStep={currentStep} />
 
             {currentStep === 1 && (
-              <AddressStep 
+              <AddressStep
                 billingAddress={billingAddress}
                 shippingAddress={shippingAddress}
                 sameAsBilling={sameAsBilling}
@@ -1242,7 +1253,7 @@ const Checkout = () => {
               />
             )}
             {currentStep === 2 && (
-              <PaymentStep 
+              <PaymentStep
                 selectedPayment={selectedPayment}
                 setSelectedPayment={setSelectedPayment}
                 paymentMethods={paymentMethods}
@@ -1250,7 +1261,7 @@ const Checkout = () => {
               />
             )}
             {currentStep === 3 && (
-              <ReviewStep 
+              <ReviewStep
                 cartItems={cartItems}
                 billingAddress={billingAddress}
                 shippingAddress={shippingAddress}
@@ -1270,7 +1281,7 @@ const Checkout = () => {
             <div className="bg-white rounded-xl border border-gray-200 p-6 sticky top-6">
               <h3 className="text-lg font-bold text-gray-900 mb-4">Price Details</h3>
 
-              
+
 
               {/* Price Breakdown */}
               <div className="space-y-3 mb-6">
@@ -1283,7 +1294,7 @@ const Checkout = () => {
                   <span>Rs. {shippingCost.toLocaleString()}</span>
                 </div>
 
-                
+
 
                 {/* Referral Discount */}
                 {referralDiscountAmount > 0 && (
@@ -1314,7 +1325,7 @@ const Checkout = () => {
                             ></div>
                           </div>
                           <p className="text-xs text-orange-600 mt-1">
-                            Rs. {referralDiscount.totalPurchased?.toLocaleString()} / Rs. {referralDiscount.unlockThreshold?.toLocaleString()} 
+                            Rs. {referralDiscount.totalPurchased?.toLocaleString()} / Rs. {referralDiscount.unlockThreshold?.toLocaleString()}
                           </p>
                         </div>
                       </div>

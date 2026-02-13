@@ -1,95 +1,106 @@
-import React, { useState, useEffect } from 'react'; // Added useEffect
-import { Plus, Trash2, X, AlertCircle, Check } from 'lucide-react';
-import api from '../../../api/axios'; // Added api import
+import React, { useState, useEffect } from 'react';
+import { Plus, Trash2, X, AlertCircle, Check, RefreshCw } from 'lucide-react';
+import api from '../../../api/axios';
 
-const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, subCategoryId }) => { // Added subCategoryId
-    // Mode: 'single' or 'batch' (though we can just make the form smart)
-    const [attributeKeys, setAttributeKeys] = useState({
-        primary: 'Size',
-        secondary: 'Color'
-    });
+const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, subCategoryId }) => {
+    // Dynamic Fields State
+    const [availableAttributes, setAvailableAttributes] = useState([]);
+    const [loadingAttributes, setLoadingAttributes] = useState(false);
 
+    // Form State for Batch Generation
+    const [showAddForm, setShowAddForm] = useState(false);
     const [batchForm, setBatchForm] = useState({
-        size: '',
-        colors: [], // Array of selected colors
+        selections: {}, // { "Size": ["S", "M"], "Color": ["Red"] }
         price: '',
         stock_quantity: '',
         sku: ''
     });
 
-    const [showAddForm, setShowAddForm] = useState(false);
-    const [customColor, setCustomColor] = useState('');
-    const [dynamicSizes, setDynamicSizes] = useState(null); // State for dynamic sizes
-
-    // Predefined lists
-    const defaultSizes = ['XS', 'S', 'M', 'L', 'XL', '2XL', '3XL', 'Free Size'];
-    const [sizes, setSizes] = useState(defaultSizes); // Use state for sizes
+    // Custom value input state
+    const [customValues, setCustomValues] = useState({}); // { "Color": "Neon Green" }
 
     // Fetch dynamic category fields
     useEffect(() => {
         if (subCategoryId) {
-            const fetchFields = async () => {
-                try {
-                    const response = await api.get(`/subcategories/${subCategoryId}/fields`);
-                    if (response.data.success && response.data.data.length > 0) {
-                        const fields = response.data.data;
-
-                        // Look for a field that looks like a "Size" or "Primary Variation"
-                        // For now, we take the first field or specifically "Size"
-                        const sizeField = fields.find(f =>
-                            ['size', 'capacity', 'volume', 'dimension', 'weight'].includes(f.field_name.toLowerCase())
-                        ) || fields[0]; // Fallback to first field if strictly size not found
-
-                        // Only override if options exist
-                        if (sizeField && sizeField.field_options && sizeField.field_options.length > 0) {
-                            setSizes(sizeField.field_options);
-                            setAttributeKeys(prev => ({ ...prev, primary: sizeField.field_name }));
-                        } else {
-                            setSizes(defaultSizes);
-                            setAttributeKeys(prev => ({ ...prev, primary: 'Size' }));
-                        }
-                    } else {
-                        setSizes(defaultSizes);
-                        setAttributeKeys(prev => ({ ...prev, primary: 'Size' }));
-                    }
-                } catch (error) {
-                    console.error("Error fetching category fields:", error);
-                }
-            };
             fetchFields();
+        } else {
+            setAvailableAttributes([]);
         }
     }, [subCategoryId]);
 
-    // Common web colors with hex for display
-    const predefinedColors = [
-        { name: 'Red', hex: '#FF0000' },
-        { name: 'Blue', hex: '#0000FF' },
-        { name: 'Green', hex: '#008000' },
-        { name: 'Black', hex: '#000000' },
-        { name: 'White', hex: '#FFFFFF', border: true },
-        { name: 'Yellow', hex: '#FFFF00' },
-        { name: 'Purple', hex: '#800080' },
-        { name: 'Orange', hex: '#FFA500' },
-        { name: 'Pink', hex: '#FFC0CB' },
-        { name: 'Grey', hex: '#808080' },
-        { name: 'Brown', hex: '#A52A2A' },
-        { name: 'Beige', hex: '#F5F5DC' },
-        { name: 'Multicolor', hex: 'linear-gradient(to right, red, blue, green)' }
-    ];
-
-    const toggleColor = (colorName) => {
-        if (batchForm.colors.includes(colorName)) {
-            setBatchForm(prev => ({ ...prev, colors: prev.colors.filter(c => c !== colorName) }));
-        } else {
-            setBatchForm(prev => ({ ...prev, colors: [...prev.colors, colorName] }));
+    const fetchFields = async () => {
+        try {
+            setLoadingAttributes(true);
+            const response = await api.get(`/subcategories/${subCategoryId}/fields`);
+            if (response.data.success) {
+                // Filter only fields that are likely variations (or use all)
+                // For now, we use all fields configured for the subcategory
+                setAvailableAttributes(response.data.data);
+            }
+        } catch (error) {
+            console.error("Error fetching category fields:", error);
+        } finally {
+            setLoadingAttributes(false);
         }
     };
 
-    const handleAddCustomColor = () => {
-        if (customColor && !batchForm.colors.includes(customColor)) {
-            setBatchForm(prev => ({ ...prev, colors: [...prev.colors, customColor] }));
-            setCustomColor('');
+    const handleSelectionChange = (fieldName, value) => {
+        setBatchForm(prev => {
+            const currentSelections = prev.selections[fieldName] || [];
+            let newSelections;
+
+            if (currentSelections.includes(value)) {
+                newSelections = currentSelections.filter(v => v !== value);
+            } else {
+                newSelections = [...currentSelections, value];
+            }
+
+            return {
+                ...prev,
+                selections: {
+                    ...prev.selections,
+                    [fieldName]: newSelections
+                }
+            };
+        });
+    };
+
+    const handleAddCustomValue = (fieldName) => {
+        const value = customValues[fieldName]?.trim();
+        if (value) {
+            handleSelectionChange(fieldName, value);
+            setCustomValues(prev => ({ ...prev, [fieldName]: '' }));
         }
+    };
+
+    // Cartesian product generator
+    const generateCombinations = (attributesObj) => {
+        const keys = Object.keys(attributesObj);
+        if (keys.length === 0) return [];
+
+        const result = [];
+        const helper = (index, current) => {
+            if (index === keys.length) {
+                result.push(current);
+                return;
+            }
+            const key = keys[index];
+            const values = attributesObj[key];
+
+            if (values.length === 0) {
+                // If an attribute has no selected values, treat it as "Any/None" or skip?
+                // If they didn't select any option for an attribute, we just don't include it in combination logic
+                // effectively skipping it.
+                helper(index + 1, current);
+            } else {
+                for (const val of values) {
+                    helper(index + 1, { ...current, [key]: val });
+                }
+            }
+        };
+
+        helper(0, {});
+        return result;
     };
 
     const handleBatchAdd = () => {
@@ -98,58 +109,59 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, su
             return;
         }
 
-        if (!batchForm.size && batchForm.colors.length === 0) {
-            alert("Please select at least a Size or some Colors.");
+        // Filter out empty selections
+        const activeSelections = {};
+        Object.entries(batchForm.selections).forEach(([key, values]) => {
+            if (values && values.length > 0) {
+                activeSelections[key] = values;
+            }
+        });
+
+        if (Object.keys(activeSelections).length === 0) {
+            alert("Please select at least one attribute option.");
             return;
         }
 
-        const newVariants = [];
+        const combinations = generateCombinations(activeSelections);
         const timestamp = Date.now();
+        const newVariants = [];
 
-        // If defined colors, create one variant per color
-        if (batchForm.colors.length > 0) {
-            batchForm.colors.forEach((color, index) => {
-                // Check duplicate
-                const exists = variants.some(v =>
-                    v.attributes?.[attributeKeys.primary] === batchForm.size &&
-                    v.attributes?.[attributeKeys.secondary] === color &&
-                    !v.isDeleted
-                );
+        if (combinations.length === 0) {
+            alert("Could not generate combinations. Please select options.");
+            return;
+        }
 
-                if (!exists) {
-                    newVariants.push({
-                        attributes: {
-                            [attributeKeys.primary]: batchForm.size,
-                            [attributeKeys.secondary]: color
-                        },
-                        price: parseFloat(batchForm.price),
-                        stock_quantity: parseInt(batchForm.stock_quantity),
-                        sku: batchForm.sku ? `${batchForm.sku}-${batchForm.size}-${color}` : '',
-                        tempId: `${timestamp}-${index}`
-                    });
-                }
+        combinations.forEach((combo, index) => {
+            // Check for duplicates
+            const exists = variants.some(v => {
+                if (v.isDeleted) return false;
+                // Compare attributes
+                const vAttrs = v.attributes || {};
+                const keysA = Object.keys(vAttrs);
+                const keysB = Object.keys(combo);
+
+                if (keysA.length !== keysB.length) return false;
+
+                return keysA.every(key => vAttrs[key] === combo[key]);
             });
-        } else {
-            // Just size, no color
-            const exists = variants.some(v =>
-                v.attributes?.[attributeKeys.primary] === batchForm.size &&
-                (!v.attributes?.[attributeKeys.secondary]) &&
-                !v.isDeleted
-            );
 
             if (!exists) {
+                // Generate SKU if base provided
+                let generatedSku = batchForm.sku;
+                if (generatedSku) {
+                    const suffix = Object.values(combo).join('-');
+                    generatedSku = `${generatedSku}-${suffix}`;
+                }
+
                 newVariants.push({
-                    attributes: {
-                        [attributeKeys.primary]: batchForm.size,
-                        [attributeKeys.secondary]: ''
-                    },
+                    attributes: combo,
                     price: parseFloat(batchForm.price),
                     stock_quantity: parseInt(batchForm.stock_quantity),
-                    sku: batchForm.sku ? `${batchForm.sku}-${batchForm.size}` : '',
-                    tempId: `${timestamp}-0`
+                    sku: generatedSku,
+                    tempId: `${timestamp}-${index}`
                 });
             }
-        }
+        });
 
         if (newVariants.length === 0) {
             alert("No new variants created (duplicates might exist).");
@@ -158,25 +170,39 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, su
 
         setVariants([...variants, ...newVariants]);
 
-        // Reset necessary fields but keep price/stock for convenience? 
-        // User might want to add another size with same price.
+        // Reset selections but keep price/stock
         setBatchForm(prev => ({
             ...prev,
-            size: '',
-            colors: [], // Clear colors
-            // Keep price/stock/sku base
+            selections: {},
+            // keep price/stock/sku base
         }));
-        // Don't close form, allows rapid entry
     };
+
+    // Helper to get all unique attribute keys from current variants
+    const getAllVariantKeys = () => {
+        const keys = new Set();
+        variants.forEach(v => {
+            if (v.attributes) {
+                Object.keys(v.attributes).forEach(k => keys.add(k));
+            }
+        });
+        return Array.from(keys);
+    };
+
+    const variantKeys = getAllVariantKeys();
 
     return (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h2 className="text-lg font-semibold text-gray-900">Product Variations</h2>
-                    <p className="text-sm text-gray-500">Create variations by combining Size with multiple Colors.</p>
+                    <p className="text-sm text-gray-500">
+                        {subCategoryId
+                            ? "Create variations based on sub-category attributes."
+                            : "Select a sub-category first to add variations."}
+                    </p>
                 </div>
-                {!showAddForm && (
+                {subCategoryId && !showAddForm && (
                     <button
                         type="button"
                         onClick={() => setShowAddForm(true)}
@@ -191,124 +217,130 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, su
             {showAddForm && (
                 <div className="bg-gray-50 p-6 rounded-xl mb-6 border border-gray-200 shadow-inner">
                     <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-semibold text-gray-800">Add New Variations</h3>
+                        <h3 className="font-semibold text-gray-800">Generate Variants</h3>
                         <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
 
-                    <div className="space-y-6">
-                        {/* Row 1: Size & Price & Stock */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            {/* Size */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">{attributeKeys.primary}</label>
-                                <select
-                                    value={batchForm.size}
-                                    onChange={(e) => setBatchForm(prev => ({ ...prev, size: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                                >
-                                    <option value="">Select {attributeKeys.primary}</option>
-                                    {sizes.map(s => <option key={s} value={s}>{s}</option>)}
-                                </select>
-                            </div>
-
-                            {/* Price */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Price (Rs.) <span className="text-red-500">*</span></label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={batchForm.price}
-                                    onChange={(e) => setBatchForm(prev => ({ ...prev, price: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                                    placeholder="0.00"
-                                />
-                            </div>
-
-                            {/* Stock */}
-                            <div className="space-y-2">
-                                <label className="block text-sm font-medium text-gray-700">Stock Quantity <span className="text-red-500">*</span></label>
-                                <input
-                                    type="number"
-                                    min="0"
-                                    value={batchForm.stock_quantity}
-                                    onChange={(e) => setBatchForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
-                                    placeholder="0"
-                                />
-                            </div>
+                    {loadingAttributes ? (
+                        <div className="flex justify-center py-8">
+                            <RefreshCw className="w-6 h-6 animate-spin text-primary-600" />
                         </div>
+                    ) : availableAttributes.length === 0 ? (
+                        <div className="text-center py-6 text-gray-500">
+                            No variation attributes found for this sub-category.
+                            <br /><span className="text-xs">Contact admin to configure attributes like Size, Color, etc.</span>
+                        </div>
+                    ) : (
+                        <div className="space-y-6">
+                            {/* Attribute Selections */}
+                            <div className="grid grid-cols-1 gap-6">
+                                {availableAttributes.map(field => (
+                                    <div key={field.field_id} className="space-y-2 pb-4 border-b border-gray-200 last:border-0">
+                                        <label className="block text-sm font-medium text-gray-900">{field.field_name}</label>
 
-                        {/* Row 2: Colors Multi-Select */}
-                        <div className="space-y-2">
-                            <label className="block text-sm font-medium text-gray-700">Available {attributeKeys.secondary}s for this {attributeKeys.primary}</label>
-                            <div className="flex flex-wrap gap-2 mb-3">
-                                {predefinedColors.map(c => {
-                                    const isSelected = batchForm.colors.includes(c.name);
-                                    return (
-                                        <button
-                                            key={c.name}
-                                            type="button"
-                                            onClick={() => toggleColor(c.name)}
-                                            className={`
-                                                flex items-center space-x-2 px-3 py-1.5 rounded-full border transition-all
-                                                ${isSelected
-                                                    ? 'border-primary-600 bg-primary-50 text-primary-700 ring-2 ring-primary-100 ring-offset-1'
-                                                    : 'border-gray-200 hover:border-gray-300 bg-white'
-                                                }
-                                            `}
-                                        >
-                                            <span
-                                                className={`w-3 h-3 rounded-full border ${c.border ? 'border-gray-200' : 'border-transparent'}`}
-                                                style={{ background: c.hex }}
-                                            ></span>
-                                            <span className="text-sm font-medium">{c.name}</span>
-                                            {isSelected && <Check className="w-3 h-3 ml-1" />}
-                                        </button>
-                                    );
-                                })}
+                                        <div className="flex flex-wrap gap-2">
+                                            {/* Predefined Options */}
+                                            {field.field_options && field.field_options.map((option, idx) => {
+                                                const isSelected = batchForm.selections[field.field_name]?.includes(option);
+                                                return (
+                                                    <button
+                                                        key={`${field.field_id}-opt-${idx}`}
+                                                        type="button"
+                                                        onClick={() => handleSelectionChange(field.field_name, option)}
+                                                        className={`
+                                                            px-3 py-1.5 text-sm rounded-full border transition-all
+                                                            ${isSelected
+                                                                ? 'bg-primary-50 border-primary-500 text-primary-700 ring-1 ring-primary-500'
+                                                                : 'bg-white border-gray-300 text-gray-700 hover:border-gray-400'
+                                                            }
+                                                        `}
+                                                    >
+                                                        {option}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+
+                                        {/* Custom Value Input */}
+                                        <div className="flex items-center space-x-2 max-w-xs mt-2">
+                                            <input
+                                                type="text"
+                                                value={customValues[field.field_name] || ''}
+                                                onChange={(e) => setCustomValues(prev => ({ ...prev, [field.field_name]: e.target.value }))}
+                                                placeholder={`Add custom ${field.field_name}...`}
+                                                className="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
+                                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomValue(field.field_name))}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleAddCustomValue(field.field_name)}
+                                                className="px-3 py-1.5 text-sm bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                                            >
+                                                Add
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
 
-                            {/* Custom Color Input */}
-                            <div className="flex items-center space-x-2 max-w-xs">
-                                <input
-                                    type="text"
-                                    value={customColor}
-                                    onChange={(e) => setCustomColor(e.target.value)}
-                                    placeholder="Add custom color..."
-                                    className="flex-1 text-sm border-gray-300 rounded-lg"
-                                    onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomColor())}
-                                />
+                            {/* Price & Stock Inputs */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-gray-200">
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Price (Rs.) <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={batchForm.price}
+                                        onChange={(e) => setBatchForm(prev => ({ ...prev, price: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                        placeholder="0.00"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">Stock <span className="text-red-500">*</span></label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={batchForm.stock_quantity}
+                                        onChange={(e) => setBatchForm(prev => ({ ...prev, stock_quantity: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                        placeholder="0"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">SKU Base <span className="text-gray-400 font-normal">(Optional)</span></label>
+                                    <input
+                                        type="text"
+                                        value={batchForm.sku}
+                                        onChange={(e) => setBatchForm(prev => ({ ...prev, sku: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500"
+                                        placeholder="e.g. TSHIRT-001"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Actions */}
+                            <div className="flex justify-end pt-4">
                                 <button
                                     type="button"
-                                    onClick={handleAddCustomColor}
-                                    className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                    onClick={() => setShowAddForm(false)}
+                                    className="px-4 py-2 mr-3 text-sm font-medium text-gray-600 hover:text-gray-800"
                                 >
-                                    Add
+                                    Cancel
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={handleBatchAdd}
+                                    className="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 shadow-sm flex items-center"
+                                >
+                                    <Plus className="w-4 h-4 mr-2" />
+                                    Generate Variants
                                 </button>
                             </div>
                         </div>
-
-                        {/* Footer Actions */}
-                        <div className="flex justify-end pt-4 border-t border-gray-100">
-                            <button
-                                type="button"
-                                onClick={() => setShowAddForm(false)}
-                                className="px-4 py-2 mr-3 text-sm font-medium text-gray-600 hover:text-gray-800"
-                            >
-                                Done
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleBatchAdd}
-                                className="px-6 py-2 bg-primary-600 text-white font-medium rounded-lg hover:bg-primary-700 shadow-sm flex items-center"
-                            >
-                                <Plus className="w-4 h-4 mr-2" />
-                                Add {batchForm.colors.length > 0 ? `${batchForm.colors.length} Variants` : 'Variant'}
-                            </button>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 
@@ -319,36 +351,35 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, su
                         <table className="w-full text-left border-collapse bg-white">
                             <thead className="bg-gray-50">
                                 <tr>
-                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{attributeKeys.primary}</th>
-                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">{attributeKeys.secondary}</th>
+                                    {/* Dynamic Headers */}
+                                    {variantKeys.map(key => (
+                                        <th key={key} className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                            {key}
+                                        </th>
+                                    ))}
                                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (Rs.)</th>
                                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
+                                    <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">SKU</th>
                                     <th className="py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 {variants.map((v, idx) => (
-                                    <tr key={v.variant_id || v.tempId || idx} className="hover:bg-gray-50 transition-colors group">
-                                        <td className="py-3 px-4 text-sm font-medium text-gray-900">{v.attributes?.[attributeKeys.primary] || '-'}</td>
+                                    <tr key={v.variant_id || v.tempId || idx} className="hover:bg-gray-50 transition-colors">
+                                        {/* Dynamic Cells */}
+                                        {variantKeys.map(key => (
+                                            <td key={key} className="py-3 px-4 text-sm text-gray-900">
+                                                {v.attributes?.[key] || '-'}
+                                            </td>
+                                        ))}
                                         <td className="py-3 px-4 text-sm text-gray-700">
-                                            {v.attributes?.[attributeKeys.secondary] ? (
-                                                <div className="flex items-center space-x-2">
-                                                    <span
-                                                        className="w-4 h-4 rounded-full border border-gray-200 shadow-sm"
-                                                        style={{
-                                                            backgroundColor: predefinedColors.find(c => c.name === v.attributes[attributeKeys.secondary])?.hex || v.attributes[attributeKeys.secondary],
-                                                            background: v.attributes[attributeKeys.secondary] === 'Multicolor' ? 'linear-gradient(to right, red, blue, green)' : undefined
-                                                        }}
-                                                    ></span>
-                                                    <span>{v.attributes[attributeKeys.secondary]}</span>
-                                                </div>
-                                            ) : '-'}
-                                        </td>
-                                        <td className="py-3 px-4 text-sm text-gray-700">
-                                            {parseFloat(v.price).toLocaleString()}
+                                            {v.price ? parseFloat(v.price).toLocaleString() : '-'}
                                         </td>
                                         <td className="py-3 px-4 text-sm text-gray-700">
                                             {v.stock_quantity}
+                                        </td>
+                                        <td className="py-3 px-4 text-sm text-gray-500">
+                                            {v.sku || '-'}
                                         </td>
                                         <td className="py-3 px-4 text-right">
                                             <button
@@ -379,7 +410,11 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, su
                         <Plus className="w-6 h-6 text-gray-400" />
                     </div>
                     <h3 className="text-sm font-medium text-gray-900">No variations added</h3>
-                    <p className="mt-1 text-sm text-gray-500">Combine sizes and colors to track inventory.</p>
+                    <p className="mt-1 text-sm text-gray-500">
+                        {subCategoryId
+                            ? "Click 'Add Variants' to generate combinations."
+                            : "Select a Category and Sub-category above to start."}
+                    </p>
                 </div>
             )}
         </div>

@@ -275,10 +275,28 @@ export const ProductView = () => {
       });
     });
 
-    return Object.entries(attributesMap).map(([key, valueInfo]) => ({
+    // Sort attributes based on categoryAttributes order if available
+    const sortedAttributes = Object.entries(attributesMap).map(([key, valueInfo]) => ({
       name: key,
       values: Array.from(valueInfo)
     }));
+
+    if (processedProduct?.categoryAttributes) {
+      sortedAttributes.sort((a, b) => {
+        const indexA = processedProduct.categoryAttributes.findIndex(ca => ca.field_name === a.name);
+        const indexB = processedProduct.categoryAttributes.findIndex(cb => cb.field_name === b.name);
+
+        // Items found in categoryAttributes come first, sorted by index
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+
+        // Fallback to alphabetical
+        return a.name.localeCompare(b.name);
+      });
+    }
+
+    return sortedAttributes;
   }, [processedProduct]);
 
   // Helper to get available values for an attribute based on other selections

@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// Automatically use local backend in development, production URL in production
+const BASE_URL = import.meta.env.DEV ? 'http://localhost:5001/api' : import.meta.env.VITE_API_URL;
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: BASE_URL,
     timeout: 1000 * 3600,
     headers: {
         'Content-Type': 'application/json',
@@ -11,7 +14,7 @@ const api = axios.create({
 
 // Public API instance without authentication
 const publicApi = axios.create({
-    baseURL: import.meta.env.VITE_API_URL,
+    baseURL: BASE_URL,
     timeout: 10000,
     headers: {
         'Content-Type': 'application/json',

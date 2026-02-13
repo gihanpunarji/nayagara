@@ -25,15 +25,15 @@ class Cart {
           (SELECT image_url FROM product_images WHERE product_id = p.product_id AND is_primary = 1 LIMIT 1) as image_url,
           u.first_name as seller_first_name,
           u.last_name as seller_last_name,
-          s.store_name as seller_business_name,
-          sc.variant_id
-          /* pv.attributes as variant_attributes, */
-          /* pv.price as variant_price, */
-          /* pv.image_url as variant_image */
+          p.store_name as seller_business_name,
+          sc.variant_id,
+          pv.attributes as variant_attributes,
+          pv.price as variant_price,
+          pv.image_url as variant_image
         FROM shopping_cart sc
         LEFT JOIN shopping_cart_item sci ON sc.cart_id = sci.shopping_cart_cart_id
         LEFT JOIN products p ON sc.product_id = p.product_id
-        /* LEFT JOIN product_variants pv ON sc.variant_id = pv.variant_id */
+        LEFT JOIN product_variants pv ON sc.variant_id = pv.variant_id
         LEFT JOIN users u ON p.seller_id = u.user_id
         LEFT JOIN store s ON u.user_id = s.user_id
         WHERE sc.user_id = ? AND sci.quantity IS NOT NULL

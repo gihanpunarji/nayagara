@@ -1,4 +1,6 @@
 const { getConnection } = require("../config/database");
+const ProductImage = require("./ProductImage");
+const ProductVariant = require("./ProductVariant");
 
 class Product {
   static async create({
@@ -101,6 +103,12 @@ class Product {
       "SELECT * FROM products WHERE product_id = ?",
       [productId]
     );
+    // Parse pending_updates if it exists
+    if (rows[0] && rows[0].pending_updates) {
+      rows[0].pending_updates = typeof rows[0].pending_updates === 'string'
+        ? JSON.parse(rows[0].pending_updates)
+        : rows[0].pending_updates;
+    }
     return rows[0];
   }
 
@@ -591,6 +599,185 @@ class Product {
           return result.affectedRows;
         }
       }
+      throw error;
+    }
+  }
+  static async submitUpdate(productId, updateData) {
+    const connection = getConnection();
+    const [result] = await connection.execute(
+      "UPDATE products SET pending_updates = ? WHERE product_id = ?",
+      [JSON.stringify(updateData), productId]
+    );
+    return result.affectedRows;
+  }
+
+  // Apply pending updates to main columns, images, and variants
+  static async applyPendingUpdates(productId) {
+    const pool = getConnection();
+
+    // 1. Get the pending updates
+    const [rows] = await pool.execute(
+      "SELECT pending_updates FROM products WHERE product_id = ?",
+      [productId]
+    );
+
+    if (!rows[0] || !rows[0].pending_updates) {
+      return false; // No updates to apply
+    }
+
+    const updates = typeof rows[0].pending_updates === 'string'
+      ? JSON.parse(rows[0].pending_updates)
+      : rows[0].pending_updates;
+
+    // 2. Construct UPDATE query dynamically based on what's in the JSON
+    // Mapping: JSON key -> DB column
+    const fieldMap = {
+      title: 'product_title',
+      description: 'product_description',
+      category: 'category_id',
+      subcategory: 'subcategory_id',
+      price: 'price',
+      market_price: 'market_price',
+      cost: 'cost',
+      weightKg: 'weight_kg',
+      stock: 'stock_quantity',
+      isFeatured: 'is_featured',
+      isPromoted: 'is_promoted',
+      locationCityId: 'location_city_id',
+      metaTitle: 'meta_title',
+      metaDescription: 'meta_description',
+      expiresAt: 'expires_at',
+      shippingCost: 'shipping_cost'
+    };
+
+    let setClauses = [];
+    let values = [];
+
+    // Handle standard fields
+    for (const [jsonKey, dbCol] of Object.entries(fieldMap)) {
+      if (updates[jsonKey] !== undefined) {
+        setClauses.push(`${dbCol} = ?`);
+        values.push(updates[jsonKey]);
+      }
+    }
+
+    // Handle special fields
+    if (updates.productSlug) {
+      setClauses.push('product_slug = ?');
+      values.push(updates.productSlug);
+    }
+
+    if (updates.dynamicFields) {
+      setClauses.push('product_attributes = ?');
+      values.push(Product.formatProductAttributes(updates.dynamicFields));
+    }
+
+    // Start transaction
+    const connection = await pool.getConnection();
+
+    try {
+      await connection.beginTransaction();
+
+      if (setClauses.length > 0) {
+        // Add updated_at
+        setClauses.push('updated_at = ?');
+        values.push(new Date());
+
+        const query = `UPDATE products SET ${setClauses.join(', ')} WHERE product_id = ?`;
+        values.push(productId);
+
+        await connection.execute(query, values);
+      }
+
+      // Commit main product changes first
+      await connection.commit();
+
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+
+    // --- APPLY SUB-RESOURCE UPDATES (Images/Variants) ---
+    // These run in their own transactions/connections as the models manage them.
+    // Ideally we'd pass the transaction connection down, but that requires refactoring all models.
+    // For now, we accept this split.
+
+    try {
+      // 1. Images
+      if (updates.deletedImageIds && updates.deletedImageIds.length > 0) {
+        await ProductImage.deleteMultipleByIds(updates.deletedImageIds);
+      }
+
+      if (updates.newImages && updates.newImages.length > 0) {
+        const setFirstAsPrimary = updates.newImageIsPrimary === 'true' || updates.newImageIsPrimary === true;
+        if (setFirstAsPrimary) {
+          await ProductImage.resetPrimaries(productId);
+        }
+        await ProductImage.createMultiple(productId, updates.newImages, setFirstAsPrimary);
+      }
+
+      if (updates.primaryImageId) {
+        await ProductImage.setPrimary(productId, updates.primaryImageId);
+      }
+
+      // 2. Variants
+      if (updates.deletedVariantIds) {
+        let variantIdsToDelete = [];
+        const raw = updates.deletedVariantIds;
+        if (Array.isArray(raw)) variantIdsToDelete = raw;
+        else if (typeof raw === 'string') variantIdsToDelete = raw.split(',').map(s => s.trim());
+
+        for (const vid of variantIdsToDelete) {
+          if (vid) await ProductVariant.delete(vid);
+        }
+      }
+
+      if (updates.variants && Array.isArray(updates.variants)) {
+        for (const variant of updates.variants) {
+          if (variant.variant_id) {
+            console.log(`[DEBUG] Updating variant ${variant.variant_id} with price: ${variant.price}`);
+            await ProductVariant.update({
+              variantId: variant.variant_id,
+              price: variant.price,
+              stockQuantity: variant.stock_quantity,
+              sku: variant.sku,
+              attributes: variant.attributes,
+              imageUrl: variant.image_url
+            });
+          } else {
+            console.log(`[DEBUG] Creating new variant:`, variant);
+            // Check if variant doesn't have productId, add it
+            await ProductVariant.create({
+              productId: parseInt(productId),
+              price: variant.price,
+              stockQuantity: variant.stock_quantity,
+              sku: variant.sku,
+              attributes: variant.attributes,
+              imageUrl: variant.image_url
+            });
+          }
+        }
+      }
+
+      // Final Step: Clear pending updates
+      const connection2 = await pool.getConnection(); // Use pool to get new connection
+      try {
+        await connection2.execute(
+          "UPDATE products SET pending_updates = NULL WHERE product_id = ?",
+          [productId]
+        );
+      } finally {
+        connection2.release();
+      }
+
+      return true;
+
+    } catch (error) {
+      console.error("Partial failure in applying sub-resources for product " + productId, error);
+      // We don't rollback the main update because it's already committed.
+      // This is a known limitation until full transactional refactor.
       throw error;
     }
   }

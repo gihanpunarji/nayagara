@@ -372,11 +372,32 @@ const ProductVariants = ({ variants = [], setVariants, onRemove, errors = {}, su
                                                 {v.attributes?.[key] || '-'}
                                             </td>
                                         ))}
-                                        <td className="py-3 px-4 text-sm text-gray-700">
-                                            {v.price ? parseFloat(v.price).toLocaleString() : '-'}
+                                        <td className="py-3 px-4">
+                                            <input
+                                                type="number"
+                                                value={v.price}
+                                                onChange={(e) => {
+                                                    const newVariants = [...variants];
+                                                    newVariants[idx] = { ...newVariants[idx], price: e.target.value };
+                                                    setVariants(newVariants);
+                                                }}
+                                                className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
+                                                min="0"
+                                                step="0.01"
+                                            />
                                         </td>
-                                        <td className="py-3 px-4 text-sm text-gray-700">
-                                            {v.stock_quantity}
+                                        <td className="py-3 px-4">
+                                            <input
+                                                type="number"
+                                                value={v.stock_quantity}
+                                                onChange={(e) => {
+                                                    const newVariants = [...variants];
+                                                    newVariants[idx] = { ...newVariants[idx], stock_quantity: e.target.value };
+                                                    setVariants(newVariants);
+                                                }}
+                                                className="w-24 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-primary-500"
+                                                min="0"
+                                            />
                                         </td>
                                         <td className="py-3 px-4 text-sm text-gray-500">
                                             {v.sku || '-'}

@@ -29,6 +29,23 @@ export const setNavigate = (navigateFunction) => {
 
 api.interceptors.request.use(
     (config) => {
+        // Check if it's an admin route
+        if (config.url?.startsWith('/admin')) {
+            const adminSessionRaw = localStorage.getItem('admin_session');
+            if (adminSessionRaw) {
+                try {
+                    const adminSession = JSON.parse(adminSessionRaw);
+                    if (adminSession.accessToken) {
+                        config.headers.Authorization = `Bearer ${adminSession.accessToken}`;
+                        return config;
+                    }
+                } catch (e) {
+                    console.error("Error parsing admin session:", e);
+                }
+            }
+        }
+
+        // Default to standard user token for non-admin routes
         const token = localStorage.getItem('token');
         if (token) {
             config.headers.Authorization = `Bearer ${token}`;

@@ -64,7 +64,8 @@ const ProductList = () => {
           createdAt: product.created_at,
           views: product.view_count || 0,
           orders: product.inquiry_count || 0,
-          attributes: product.product_attributes
+          attributes: product.product_attributes,
+          pending_updates: product.pending_updates
         }));
 
         setProducts(productsData);
@@ -242,17 +243,19 @@ const ProductList = () => {
         {/* Status Badge Overlay */}
         <div className="absolute top-3 left-3 z-10">
           <span className={`inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm backdrop-blur-md ${product.stock === 0 ? 'bg-red-500/90 text-white' :
-            product.status === 'active' ? 'bg-green-500/90 text-white' :
-              product.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
-                product.status === 'suspended' ? 'bg-red-500/90 text-white' :
-                  'bg-gray-500/90 text-white'
+            product.pending_updates ? 'bg-purple-500/90 text-white' :
+              product.status === 'active' ? 'bg-green-500/90 text-white' :
+                product.status === 'pending_approval' ? 'bg-yellow-500/90 text-white' :
+                  product.status === 'suspended' ? 'bg-red-500/90 text-white' :
+                    'bg-gray-500/90 text-white'
             }`}>
-            {getStatusIcon(product.status, product.stock)}
+            {product.pending_updates ? <Clock className="w-4 h-4" /> : getStatusIcon(product.status, product.stock)}
             <span>
               {product.stock === 0 ? 'Out of Stock' :
-                product.status === 'active' ? 'Active' :
-                  product.status === 'pending_approval' ? 'Pending' :
-                    product.status === 'suspended' ? 'Suspended' : 'Inactive'}
+                product.pending_updates ? 'Update Pending' :
+                  product.status === 'active' ? 'Active' :
+                    product.status === 'pending_approval' ? 'Pending' :
+                      product.status === 'suspended' ? 'Suspended' : 'Inactive'}
             </span>
           </span>
         </div>
@@ -399,9 +402,11 @@ const ProductList = () => {
                 </label>
               )}
               <span className={`text-[10px] font-semibold uppercase tracking-wider ${product.status === 'active' ? 'text-green-600' :
-                product.status === 'pending_approval' ? 'text-yellow-600' : 'text-gray-400'
+                product.pending_updates ? 'text-purple-600' :
+                  product.status === 'pending_approval' ? 'text-yellow-600' : 'text-gray-400'
                 }`}>
-                {product.status === 'pending_approval' ? 'Pending' : product.status}
+                {product.pending_updates ? 'Update Pending' :
+                  product.status === 'pending_approval' ? 'Pending' : product.status}
               </span>
             </div>
 

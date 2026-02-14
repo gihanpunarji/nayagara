@@ -554,6 +554,58 @@ const updateProduct = async (req, res) => {
       }
     }
 
+    // PENDING UPDATES LOGIC (NEW)
+    // If product is ACTIVE and has changes, submit as pending instead of applying immediately.
+    // Exception: If seller explicitly sets status to 'inactive', allow immediate update (hiding product).
+    if (existingProduct.product_status === 'active' && hasContentChanged && productStatus !== 'inactive') {
+
+      const updateData = {
+        title,
+        productSlug,
+        description,
+        categoryId: category || existingProduct.category_id,
+        subcategoryId: subcategory || existingProduct.subcategory_id,
+        price: parseFloat(price),
+        market_price: parseFloat(market_price),
+        cost: parseFloat(cost),
+        weightKg: weightKg ? parseFloat(weightKg) : existingProduct.weight_kg,
+        stock: parseInt(stock),
+        isFeatured: existingProduct.is_featured,
+        isPromoted: existingProduct.is_promoted,
+        locationCityId: locationCityId || existingProduct.location_city_id,
+        metaTitle: metaTitle || title,
+        metaDescription: metaDescription || description.substring(0, 160),
+        dynamicFields: dynamicFields || {}, // This might be raw object or formatted string? Controller receives obj usually
+        expiresAt: expiresAt ? new Date(expiresAt) : existingProduct.expires_at,
+        shippingCost: shippingCost ? parseFloat(shippingCost) : 0,
+
+        // Complex data
+        variants: parsedVariants,
+        deletedVariantIds: deletedVariantIds, // pass raw or array
+        deletedImageIds: idsToDelete,
+
+        // New images (uploaded by middleware)
+        newImages: req.files ? req.files.map((file, index) => ({
+          imageUrl: file.path,
+          imageAlt: `${title} - Pending Image ${index + 1}`
+        })) : [],
+
+        // Image flags
+        newImageIsPrimary: req.body.newImageIsPrimary,
+        primaryImageId: req.body.primaryImageId
+      };
+
+      await Product.submitUpdate(parseInt(productId), updateData);
+
+      return res.json({
+        success: true,
+        message: "Update submitted for admin approval. Your product remains visible with current details.",
+        data: {
+          pending: true
+        }
+      });
+    }
+
     // Prepare product attributes (dynamic fields)
     const productAttributes = Product.formatProductAttributes(dynamicFields || {});
 
@@ -1269,6 +1321,17 @@ const updateProductStatus = async (req, res) => {
 
     // If allowed, update status
     await Product.updateStatus(productId, status);
+
+    // If activating, apply any pending updates
+    if (status === 'active') {
+      try {
+        await Product.applyPendingUpdates(productId);
+      } catch (err) {
+        console.error(`Failed to apply pending updates for product ${productId}:`, err);
+        // We don't fail the request because status update succeeded, but we log it.
+        // Ideally we might want to warn the admin.
+      }
+    }
 
     res.json({
       success: true,

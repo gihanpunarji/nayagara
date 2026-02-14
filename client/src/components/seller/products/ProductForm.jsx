@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Save, ArrowLeft, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, Trash2, AlertCircle } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import ImageUploader from './ImageUploader';
 import ProductVariants from './ProductVariants';
@@ -26,6 +26,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
   });
 
   const [deletedImageIds, setDeletedImageIds] = useState([]);
+  const [hasPendingUpdates, setHasPendingUpdates] = useState(false);
 
   // Variants state
   const [variants, setVariants] = useState([]);
@@ -120,8 +121,78 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
   // Update form data when editing
   useEffect(() => {
     if (isEdit && productData) {
+      // Handle pending updates merging
+      let displayData = { ...productData };
+      if (productData.pending_updates) {
+        try {
+          const updates = typeof productData.pending_updates === 'string'
+            ? JSON.parse(productData.pending_updates)
+            : productData.pending_updates;
+
+          setHasPendingUpdates(true);
+
+          // Merge pending fields over existing data
+          displayData = {
+            ...displayData,
+            title: updates.title || displayData.title,
+            description: updates.description || displayData.description,
+            price: updates.price !== undefined ? updates.price : displayData.price,
+            market_price: updates.market_price !== undefined ? updates.market_price : displayData.market_price,
+            cost: updates.cost !== undefined ? updates.cost : displayData.cost,
+            stock: updates.stock !== undefined ? updates.stock : displayData.stock,
+            weightKg: updates.weightKg !== undefined ? updates.weightKg : displayData.weightKg,
+            shippingCost: updates.shippingCost !== undefined ? updates.shippingCost : displayData.shippingCost,
+            category: updates.categoryId || displayData.category,
+            subcategory: updates.subcategoryId || displayData.subcategory,
+            locationCityId: updates.locationCityId || displayData.locationCityId,
+            metaTitle: updates.metaTitle || displayData.metaTitle,
+            metaDescription: updates.metaDescription || displayData.metaDescription,
+            dynamicFields: updates.dynamicFields || displayData.dynamicFields
+          };
+
+          // Restore deleted IDs from pending updates
+          if (updates.deletedImageIds) {
+            const dIds = typeof updates.deletedImageIds === 'string'
+              ? JSON.parse(updates.deletedImageIds)
+              : updates.deletedImageIds;
+            setDeletedImageIds(Array.isArray(dIds) ? dIds : []);
+          }
+
+          if (updates.deletedVariantIds) {
+            const dVIds = typeof updates.deletedVariantIds === 'string'
+              ? JSON.parse(updates.deletedVariantIds)
+              : updates.deletedVariantIds;
+            setDeletedVariantIds(Array.isArray(dVIds) ? dVIds : []);
+          }
+
+          // Note: Images merging is complex, but variants can be directly set if available
+          if (updates.variants) {
+            // Ensure variants are in correct format (attributes object)
+            const pendingVariants = Array.isArray(updates.variants)
+              ? updates.variants
+              : [];
+
+            // Map to ensure attributes are objects (API might return them as objects already, but good to be safe)
+            const formattedVariants = pendingVariants.map(v => ({
+              ...v,
+              attributes: typeof v.attributes === 'string' ? JSON.parse(v.attributes) : v.attributes
+            }));
+
+            // We defer setting variants until after form data is set to avoid conflict? 
+            // improved: setVariants directly here
+
+            // Store pending variants temporarily to set them later or set them now
+            // We'll set them in the main flow below
+            displayData.variants = formattedVariants;
+          }
+
+        } catch (e) {
+          console.warn("Error parsing pending updates:", e);
+        }
+      }
+
       // Map backend images to ImageUploader format
-      const formattedImages = (productData.images || []).map(img => ({
+      const formattedImages = (displayData.images || []).map(img => ({
         id: img.image_id || img.id, // Handle both formats
         url: img.image_url || img.url,
         name: img.image_alt || 'Product Image',
@@ -129,36 +200,36 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
       }));
 
       setFormData({
-        title: productData.title || '',
-        description: productData.description || '',
-        price: productData.price || '',
-        market_price: productData.market_price || '',
-        cost: productData.cost || '',
-        category: productData.category || productData.category_id || '',
-        subcategory: productData.subcategory || productData.subcategory_id || '',
-        stock: productData.stock || '',
+        title: displayData.title || '',
+        description: displayData.description || '',
+        price: displayData.price || '',
+        market_price: displayData.market_price || '',
+        cost: displayData.cost || '',
+        category: displayData.category || displayData.category_id || '',
+        subcategory: displayData.subcategory || displayData.subcategory_id || '',
+        stock: displayData.stock || '',
         images: formattedImages,
-        weightKg: productData.weightKg || productData.weight_kg || '',
-        shippingCost: productData.shippingCost || productData.shipping_cost || '',
-        locationCityId: productData.locationCityId || productData.location_city_id || '',
-        metaTitle: productData.metaTitle || productData.meta_title || '',
-        metaDescription: productData.metaDescription || productData.meta_description || ''
+        weightKg: displayData.weightKg || displayData.weight_kg || '',
+        shippingCost: displayData.shippingCost || displayData.shipping_cost || '',
+        locationCityId: displayData.locationCityId || displayData.location_city_id || '',
+        metaTitle: displayData.metaTitle || displayData.meta_title || '',
+        metaDescription: displayData.metaDescription || displayData.meta_description || ''
       });
-      setDynamicFields(productData.dynamicFields || productData.product_attributes || {});
+      setDynamicFields(displayData.dynamicFields || displayData.product_attributes || {});
 
       // Load category data for editing
-      const categoryId = productData.category || productData.category_id;
+      const categoryId = displayData.category || displayData.category_id;
       if (categoryId) {
         loadSubCategories(categoryId);
       }
-      const subcategoryId = productData.subcategory || productData.subcategory_id;
+      const subcategoryId = displayData.subcategory || displayData.subcategory_id;
       if (subcategoryId) {
         loadCategoryFields(subcategoryId);
       }
 
       // Load Variants
-      if (productData.variants) {
-        setVariants(productData.variants);
+      if (displayData.variants) {
+        setVariants(displayData.variants);
       }
     }
   }, [isEdit, productData]);
@@ -458,6 +529,19 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
         </div>
       </div>
 
+      {hasPendingUpdates && (
+        <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4 flex items-start">
+          <AlertCircle className="w-5 h-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" />
+          <div>
+            <h3 className="text-sm font-medium text-yellow-800">Pending Approval</h3>
+            <p className="text-sm text-yellow-700 mt-1">
+              This product has updates waiting for admin approval. You are viewing the pending version.
+              Any further changes will update the pending request.
+            </p>
+          </div>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Error Message */}
         {errors.submit && (
@@ -700,6 +784,7 @@ const ProductForm = ({ isEdit = false, productData = null, productId = null }) =
           setVariants={setVariants}
           subCategoryId={formData.subcategory}
           errors={errors}
+          onRemove={handleVariantRemove}
         />
         {/* Submit Buttons */}
         <div className="flex items-center justify-between pt-6">

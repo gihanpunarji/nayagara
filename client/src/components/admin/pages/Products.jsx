@@ -36,11 +36,11 @@ const Products = () => {
   const [selectedProducts, setSelectedProducts] = useState([]);
   const [categories, setCategories] = useState(['all']);
   const [viewingProduct, setViewingProduct] = useState(null);
-  
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
-  
+
   // Stats derived from local data to match client-side logic
   const [stats, setStats] = useState({
     total: 0,
@@ -64,19 +64,19 @@ const Products = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await getAdminProducts({ 
-        page: 1, 
+      const response = await getAdminProducts({
+        page: 1,
         limit: 2000, // Fetch large batch to simulate "all" for client-side search
         search: '',
         status: 'all',
         category: 'all',
         sellerId: sellerId
       });
-      
+
       if (response.data && Array.isArray(response.data)) {
         setProducts(response.data);
         setFilteredProducts(response.data);
-        
+
         // Extract unique categories from fetched products
         const uniqueCats = ['all', ...new Set(response.data.map(p => p.category_name).filter(Boolean))];
         setCategories(uniqueCats);
@@ -109,7 +109,7 @@ const Products = () => {
     // Filter by Search Query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      result = result.filter(p => 
+      result = result.filter(p =>
         (p.product_title && p.product_title.toLowerCase().includes(query)) ||
         (p.product_description && p.product_description.toLowerCase().includes(query)) ||
         (p.seller_name && p.seller_name.toLowerCase().includes(query)) ||
@@ -140,7 +140,11 @@ const Products = () => {
       await updateProductStatus(productId, newStatus);
       // Optimistic update locally or refetch
       // Optimistic:
-      setProducts(prev => prev.map(p => p.product_id === productId ? { ...p, product_status: newStatus } : p));
+      setProducts(prev => prev.map(p => p.product_id === productId ? {
+        ...p,
+        product_status: newStatus,
+        pending_updates: newStatus === 'active' ? null : p.pending_updates
+      } : p));
 
       // Also refetch to be safe/sync
       // setRefreshTrigger(prev => prev + 1);
@@ -193,14 +197,14 @@ const Products = () => {
   const ProductRow = ({ product }) => (
     <tr className="hover:bg-gray-50 transition-colors">
       <td className="px-6 py-4">
-        <input 
-            type="checkbox" 
-            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-            checked={selectedProducts.includes(product.product_id)}
-            onChange={(e) => {
-                if (e.target.checked) setSelectedProducts([...selectedProducts, product.product_id]);
-                else setSelectedProducts(selectedProducts.filter(id => id !== product.product_id));
-            }}
+        <input
+          type="checkbox"
+          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+          checked={selectedProducts.includes(product.product_id)}
+          onChange={(e) => {
+            if (e.target.checked) setSelectedProducts([...selectedProducts, product.product_id]);
+            else setSelectedProducts(selectedProducts.filter(id => id !== product.product_id));
+          }}
         />
       </td>
       <td className="px-6 py-4">
@@ -264,6 +268,11 @@ const Products = () => {
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(product.product_status)}`}>
             {product.product_status?.replace('_', ' ').toUpperCase() || 'N/A'}
           </span>
+          {product.product_status === 'active' && product.pending_updates && (
+            <span className="block mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 border border-purple-200">
+              Update Pending
+            </span>
+          )}
         </div>
       </td>
       <td className="px-6 py-4 text-right">
@@ -273,11 +282,19 @@ const Products = () => {
             <button className="text-gray-600 hover:text-green-600"><MoreVertical className="w-4 h-4" /></button>
             <div className="absolute right-0 w-56 bg-white rounded-md shadow-lg border border-gray-200 invisible group-hover:visible z-10 py-1 text-left">
               {product.product_status === 'pending_approval' && (
-                <button 
+                <button
                   onClick={() => handleStatusUpdate(product.product_id, 'active')}
                   className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
                 >
                   <CheckCircle className="w-4 h-4" /><span>Approve</span>
+                </button>
+              )}
+              {product.product_status === 'active' && product.pending_updates && (
+                <button
+                  onClick={() => handleStatusUpdate(product.product_id, 'active')}
+                  className="w-full text-left px-4 py-2 text-sm text-purple-700 hover:bg-purple-50 flex items-center space-x-2"
+                >
+                  <CheckCircle className="w-4 h-4" /><span>Approve Updates</span>
                 </button>
               )}
               {product.product_status === 'active' && (
@@ -288,7 +305,7 @@ const Products = () => {
                   <Ban className="w-4 h-4" /><span>Inactive</span>
                 </button>
               )}
-               {(product.product_status === 'inactive' || product.product_status === 'suspended') && (
+              {(product.product_status === 'inactive' || product.product_status === 'suspended') && (
                 <button
                   onClick={() => handleStatusUpdate(product.product_id, 'active')}
                   className="w-full text-left px-4 py-2 text-sm text-green-700 hover:bg-green-50 flex items-center space-x-2"
@@ -322,40 +339,40 @@ const Products = () => {
             <p className="text-gray-600 mt-1">Manage all products, approvals, and inventory across the platform</p>
           </div>
           <div className="mt-4 sm:mt-0 flex items-center space-x-3">
-             <button onClick={() => setRefreshTrigger(prev => prev + 1)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"><RefreshCw className="w-4 h-4" /><span>Refresh</span></button>
+            <button onClick={() => setRefreshTrigger(prev => prev + 1)} className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center space-x-2"><RefreshCw className="w-4 h-4" /><span>Refresh</span></button>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Total</p><p className="text-xl font-bold text-gray-900">{stats.total}</p></div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Active</p><p className="text-xl font-bold text-green-600">{stats.active}</p></div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Pending</p><p className="text-xl font-bold text-yellow-600">{stats.pending}</p></div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Inactive</p><p className="text-xl font-bold text-red-600">{stats.inactive}</p></div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Featured</p><p className="text-xl font-bold text-purple-600">{stats.featured}</p></div>
-            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Out of Stock</p><p className="text-xl font-bold text-red-500">{stats.out_of_stock}</p></div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Total</p><p className="text-xl font-bold text-gray-900">{stats.total}</p></div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Active</p><p className="text-xl font-bold text-green-600">{stats.active}</p></div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Pending</p><p className="text-xl font-bold text-yellow-600">{stats.pending}</p></div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Inactive</p><p className="text-xl font-bold text-red-600">{stats.inactive}</p></div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Featured</p><p className="text-xl font-bold text-purple-600">{stats.featured}</p></div>
+          <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-200 text-center"><p className="text-sm text-gray-600">Out of Stock</p><p className="text-xl font-bold text-red-500">{stats.out_of_stock}</p></div>
         </div>
 
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
           <div className="flex flex-wrap gap-2 mb-4">
             {filterOptions.map((filter) => {
-                 let count = 0;
-                 if (filter.key === 'all') count = stats.total;
-                 else if (filter.key === 'pending_approval') count = stats.pending;
-                 else count = stats[filter.key] || 0;
-                 
-                 return (
-                  <button key={filter.key} onClick={() => setSelectedFilter(filter.key)} className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
-                    <span>{filter.label}</span><span className={`text-xs px-2 py-0.5 rounded-full ${selectedFilter === filter.key ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-200 text-gray-600'}`}>{count}</span>
-                  </button>
-                 );
+              let count = 0;
+              if (filter.key === 'all') count = stats.total;
+              else if (filter.key === 'pending_approval') count = stats.pending;
+              else count = stats[filter.key] || 0;
+
+              return (
+                <button key={filter.key} onClick={() => setSelectedFilter(filter.key)} className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${selectedFilter === filter.key ? 'bg-green-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>
+                  <span>{filter.label}</span><span className={`text-xs px-2 py-0.5 rounded-full ${selectedFilter === filter.key ? 'bg-white bg-opacity-20 text-white' : 'bg-gray-200 text-gray-600'}`}>{count}</span>
+                </button>
+              );
             })}
           </div>
-          
+
           {sellerId && (
             <div className="mb-4">
               <div className="inline-flex items-center space-x-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-sm border border-green-200">
                 <span className="font-medium">Seller: {sellerName || 'ID: ' + sellerId}</span>
-                <button 
+                <button
                   onClick={() => {
                     const newParams = new URLSearchParams(searchParams);
                     newParams.delete('sellerId');
@@ -372,14 +389,14 @@ const Products = () => {
 
           <div className="flex items-center space-x-4">
             <div className="relative">
-                <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="appearance-none px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white">
+              <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} className="appearance-none px-4 py-3 pr-8 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white">
                 {categories.map(category => <option key={category} value={category}>{category === 'all' ? 'All Categories' : category}</option>)}
-                </select>
-                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
+              </select>
+              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
+                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" /></svg>
+              </div>
             </div>
-            
+
             <div className="relative flex-grow">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input type="text" placeholder="Search products by title, SKU, seller..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500" />
@@ -401,15 +418,15 @@ const Products = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left">
-                         <input 
-                            type="checkbox" 
-                            className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
-                            checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
-                            onChange={(e) => {
-                                if (e.target.checked) setSelectedProducts(filteredProducts.map(p => p.product_id));
-                                else setSelectedProducts([]);
-                            }}
-                         />
+                        <input
+                          type="checkbox"
+                          className="w-4 h-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                          checked={selectedProducts.length === filteredProducts.length && filteredProducts.length > 0}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedProducts(filteredProducts.map(p => p.product_id));
+                            else setSelectedProducts([]);
+                          }}
+                        />
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Product</th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Seller & Category</th>
@@ -448,19 +465,18 @@ const Products = () => {
                     if (endPage - startPage < 4) {
                       startPage = Math.max(1, endPage - 4);
                     }
-                    
+
                     const pageNum = startPage + i;
                     if (pageNum > Math.ceil(filteredProducts.length / itemsPerPage)) return null;
-                    
+
                     return (
                       <button
                         key={pageNum}
                         onClick={() => setCurrentPage(pageNum)}
-                        className={`px-3 py-1 border rounded-md text-sm font-medium ${
-                          currentPage === pageNum
-                            ? 'bg-green-600 text-white border-green-600'
-                            : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
+                        className={`px-3 py-1 border rounded-md text-sm font-medium ${currentPage === pageNum
+                          ? 'bg-green-600 text-white border-green-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                          }`}
                       >
                         {pageNum}
                       </button>
@@ -480,10 +496,10 @@ const Products = () => {
         </div>
       </div>
       {viewingProduct && (
-        <ProductDetailView 
-          productId={viewingProduct.product_id} 
-          initialData={viewingProduct} 
-          onClose={() => setViewingProduct(null)} 
+        <ProductDetailView
+          productId={viewingProduct.product_id}
+          initialData={viewingProduct}
+          onClose={() => setViewingProduct(null)}
         />
       )}
     </AdminLayout>

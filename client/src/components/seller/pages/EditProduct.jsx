@@ -46,7 +46,9 @@ const EditProduct = () => {
               name: img.image_alt || 'Product Image',
               size: 0 // We don't have size info from API
             })),
-            dynamicFields: product.product_attributes || {}
+            dynamicFields: product.product_attributes || {},
+            pending_updates: product.pending_updates,
+            variants: response.data.data.variants || []
           };
 
           setProductData(formattedProduct);

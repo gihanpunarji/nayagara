@@ -39,7 +39,10 @@ const AdminLayout = ({ children }) => {
   //   }
   // }, [navigate]);
 
-  const handleMenuToggle = () => {
+  const handleMenuToggle = (e) => {
+    if (e) {
+      e.stopPropagation();
+    }
     setShowMobileMenu(!showMobileMenu);
   };
 

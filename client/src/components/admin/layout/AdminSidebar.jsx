@@ -29,7 +29,7 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
       try {
         const response = await getAdminDashboardData();
         if (response.success && response.data.badges) {
-            setStats(response.data.badges);
+          setStats(response.data.badges);
         }
       } catch (error) {
         console.error('Failed to fetch sidebar stats', error);
@@ -45,9 +45,9 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
         {
           icon: LayoutDashboard,
           label: 'Dashboard',
-          path: '/admin/dashboard',          
+          path: '/admin/dashboard',
         },
-        
+
       ]
     },
     {
@@ -216,26 +216,23 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
       <Link
         to={item.path}
         onClick={onClick}
-        className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${
-          isActive
+        className={`group flex items-center justify-between px-3 py-2.5 rounded-lg transition-all duration-200 ${isActive
             ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg'
             : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
-        }`}
+          }`}
       >
         <div className="flex items-center space-x-3">
           <item.icon
-            className={`w-5 h-5 ${
-              isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'
-            }`}
+            className={`w-5 h-5 ${isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-700'
+              }`}
           />
           <span className="font-medium">{item.label}</span>
         </div>
         {item.badge && (
-          <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-            isActive
+          <span className={`text-xs px-2 py-1 rounded-full font-medium ${isActive
               ? 'bg-white bg-opacity-20 text-white'
               : 'bg-green-100 text-green-600'
-          }`}>
+            }`}>
             {item.badge}
           </span>
         )}
@@ -255,9 +252,9 @@ const AdminSidebar = ({ showMobileMenu, onMenuToggle }) => {
 
       {/* Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${
-          showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-gray-200 transform transition-transform duration-300 ease-in-out ${showMobileMenu ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+          }`}
+        onClick={(e) => e.stopPropagation()}
       >
         <div className="flex flex-col h-full pt-16">
           {/* Sidebar content */}

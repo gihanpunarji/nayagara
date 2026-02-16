@@ -86,7 +86,7 @@ const AdminHeader = ({ onMenuToggle, showMobileMenu }) => {
         {/* Left side - Mobile menu + Logo */}
         <div className="flex items-center space-x-4">
           <button
-            onClick={onMenuToggle}
+            onClick={(e) => onMenuToggle(e)}
             className="md:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
           >
             {showMobileMenu ? (

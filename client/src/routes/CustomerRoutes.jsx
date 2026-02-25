@@ -122,6 +122,14 @@ const CustomerRoutes = () => {
         }
       />
       <Route
+        path="/about"
+        element={
+          <PageWrapper>
+            <AboutUs />
+          </PageWrapper>
+        }
+      />
+      <Route
         path="/about-us"
         element={
           <PageWrapper>
@@ -129,6 +137,7 @@ const CustomerRoutes = () => {
           </PageWrapper>
         }
       />
+
       <Route
         path="/our-business"
         element={

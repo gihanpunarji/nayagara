@@ -70,7 +70,8 @@ const Footer = () => {
               <span className="absolute -bottom-2 left-0 w-12 h-1 bg-primary-500 rounded-full"></span>
             </h4>
             <ul className="space-y-3">
-              <FooterLink href="/about" text="About Us" />
+              <FooterLink href="/about-us" text="About Us" />
+
               <FooterLink href="/contact-admin" text="Contact Admin" />
               <FooterLink href="/careers" text="Careers" />
             </ul>
@@ -123,10 +124,16 @@ const Footer = () => {
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <a href="/privacy-policy" className="text-gray-500 hover:text-primary-600 transition-colors">Privacy Policy</a>
             <a href="/terms-conditions" className="text-gray-500 hover:text-primary-600 transition-colors">Terms & Conditions</a>
-            <div className="flex items-center space-x-2 text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+            <a
+              href="https://zipzipy.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200 hover:text-primary-600 hover:border-primary-200 transition-all shadow-sm hover:shadow-md cursor-pointer"
+            >
               <Globe className="w-3 h-3" />
               <span className="text-xs">Developed by ZipZipy PVT LTD</span>
-            </div>
+            </a>
+
           </div>
         </div>
       </div>

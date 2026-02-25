@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, User, Check, MapPin } from 'lucide-react';
+import { Eye, EyeOff, Mail, Phone, Lock, ArrowLeft, User, Check, MapPin, Store } from 'lucide-react';
+
 import { useAuth } from "../../../context/AuthContext";
 
 
@@ -310,11 +311,10 @@ function CustomerRegistration() {
               <button
                 type="button"
                 onClick={() => setAcceptTerms(!acceptTerms)}
-                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                  acceptTerms
+                className={`flex-shrink-0 w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${acceptTerms
                     ? 'bg-primary-500 border-primary-500 text-white'
                     : 'border-gray-300 hover:border-primary-500'
-                }`}
+                  }`}
               >
                 {acceptTerms && <Check className="w-3 h-3" />}
               </button>
@@ -362,6 +362,21 @@ function CustomerRegistration() {
               </Link>
             </p>
           </div>
+
+          <div className="mt-8 pt-6 border-t border-gray-100">
+            <div className="text-center">
+              <p className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wider">Are you a seller?</p>
+              <a
+                href="https://sellers.nayagara.lk/seller/login"
+                className="group relative flex items-center justify-center w-full px-4 py-3 bg-white border-2 border-primary-500 text-primary-600 font-bold rounded-xl hover:bg-primary-600 hover:text-white hover:border-primary-600 transition-all duration-300 shadow-sm hover:shadow-green-md overflow-hidden"
+              >
+                <div className="absolute inset-0 w-3 bg-primary-500 transition-all duration-300 transform -translate-x-full group-hover:translate-x-0 opacity-10"></div>
+                <Store className="w-5 h-5 mr-2 group-hover:scale-110 transition-transform" />
+                <span>Go to Seller Login</span>
+              </a>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

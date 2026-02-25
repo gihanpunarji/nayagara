@@ -25,11 +25,20 @@ const PORT = process.env.PORT || 5001;
 // Allowed origins list
 const allowedOrigins = [
   "http://localhost:5173",
+  "http://localhost:5174",
+  "http://localhost:5175",
+  "http://127.0.0.1:5173",
+  "http://127.0.0.1:5174",
+  "http://127.0.0.1:5175",
   "https://nayagara.lk",
   "https://www.nayagara.lk",
   "https://sellers.nayagara.lk",
   "http://sellers.localhost:5173",
+  "http://sellers.localhost:5174",
+  "http://sellers.localhost:5175",
 ];
+
+
 
 // Dynamic CORS configuration to fix caching issues
 app.use(

@@ -26,6 +26,8 @@ import SystemPrivacy from "../components/customer/pages/SystemPrivacy.jsx";
 import TermsConditions from "../components/customer/pages/TermsConditions.jsx";
 import PostAd from "../components/customer/pages/PostAd.jsx";
 import OrderSuccess from "../components/customer/pages/OrderSuccess.jsx";
+import HowToSell from "../components/customer/pages/HowToSell.jsx";
+
 
 // Auth & Protection
 import AuthRoute from "../components/shared/auth/AuthRoute.jsx";
@@ -120,6 +122,14 @@ const CustomerRoutes = () => {
         }
       />
       <Route
+        path="/about"
+        element={
+          <PageWrapper>
+            <AboutUs />
+          </PageWrapper>
+        }
+      />
+      <Route
         path="/about-us"
         element={
           <PageWrapper>
@@ -127,6 +137,7 @@ const CustomerRoutes = () => {
           </PageWrapper>
         }
       />
+
       <Route
         path="/our-business"
         element={
@@ -221,6 +232,15 @@ const CustomerRoutes = () => {
           </PageWrapper>
         }
       />
+      <Route
+        path="/how-to-sell"
+        element={
+          <PageWrapper>
+            <HowToSell />
+          </PageWrapper>
+        }
+      />
+
       <Route
         path="/refund-policy"
         element={

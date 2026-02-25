@@ -31,6 +31,9 @@ function SellerRegistration() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState("");
+  const [storeName, setStoreName] = useState("");
+  const [storeDescription, setStoreDescription] = useState("");
+
 
   const [provinces, setProvinces] = useState([]);
 
@@ -130,7 +133,7 @@ function SellerRegistration() {
       setLoading(true);
       setError("");
       const res = await api.post("/auth/send-otp", { mobile, email });
-      
+
       // Only proceed to step 4 if OTP was sent successfully
       if (res.data.success) {
         setStep(4);
@@ -205,7 +208,10 @@ function SellerRegistration() {
         province,
         country,
         postalCode,
+        storeName,
+        storeDescription
       });
+
       if (res.data.success) {
         setSuccess(
           "Registration successful! Please verify your mobile number."
@@ -238,13 +244,12 @@ function SellerRegistration() {
           <div key={stepItem.number} className="flex items-center">
             <div className="flex flex-col items-center">
               <div
-                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${
-                  isCompleted
+                className={`w-12 h-12 rounded-full flex items-center justify-center border-2 transition-all duration-300 ${isCompleted
                     ? "bg-primary-500 border-primary-500 text-white"
                     : isCurrent
-                    ? "bg-white border-primary-500 text-primary-500"
-                    : "bg-gray-100 border-gray-300 text-gray-400"
-                }`}
+                      ? "bg-white border-primary-500 text-primary-500"
+                      : "bg-gray-100 border-gray-300 text-gray-400"
+                  }`}
               >
                 {isCompleted ? (
                   <Check className="w-6 h-6" />
@@ -253,18 +258,16 @@ function SellerRegistration() {
                 )}
               </div>
               <span
-                className={`mt-2 text-sm font-medium ${
-                  isCurrent ? "text-primary-600" : "text-gray-500"
-                }`}
+                className={`mt-2 text-sm font-medium ${isCurrent ? "text-primary-600" : "text-gray-500"
+                  }`}
               >
                 {stepItem.title}
               </span>
             </div>
             {index < steps.length - 1 && (
               <div
-                className={`w-16 h-0.5 mx-4 transition-all duration-300 ${
-                  isCompleted ? "bg-primary-500" : "bg-gray-300"
-                }`}
+                className={`w-16 h-0.5 mx-4 transition-all duration-300 ${isCompleted ? "bg-primary-500" : "bg-gray-300"
+                  }`}
               />
             )}
           </div>
@@ -330,7 +333,7 @@ function SellerRegistration() {
               className="w-10 h-10 object-contain"
             />
           </div>
-          
+
           <p className="text-lg text-gray-600">
             Register as a seller and start your journey!
           </p>
@@ -406,6 +409,34 @@ function SellerRegistration() {
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
                   />
                 </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Store Name <span className="text-error">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter your shop name"
+                    value={storeName}
+                    onChange={(e) => setStoreName(e.target.value)}
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                  />
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Store Description
+                  </label>
+                  <textarea
+                    placeholder="Tell us about your shop"
+                    value={storeDescription}
+                    onChange={(e) => setStoreDescription(e.target.value)}
+                    rows="3"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent transition-all duration-200 bg-white"
+                  ></textarea>
+                </div>
+
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Password <span className="text-error">*</span>
@@ -601,7 +632,7 @@ function SellerRegistration() {
                       >
                         <option value="+94">🇱🇰</option>
                       </select>
-                      
+
                     </div>
                     <input
                       type="tel"
@@ -613,7 +644,7 @@ function SellerRegistration() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4 pt-4">
                   <Button
                     variant="secondary"

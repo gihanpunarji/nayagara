@@ -33,14 +33,18 @@ const NewArrivals = () => {
 
   useEffect(() => {
     if (products.length > 0) {
-      // Don't duplicate products - just show them once
-      setDisplayProducts(products);
+      // Duplicate products to create an infinite scroll effect
+      // We append sets to ensure there's enough runway to loop seamlessly
+      setDisplayProducts([...products, ...products, ...products]);
     }
   }, [products]);
 
-  const scroll = (scrollOffset) => {
+  const scroll = (scrollOffset, isSmooth = true) => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: scrollOffset, behavior: 'smooth' });
+      scrollContainerRef.current.scrollBy({
+        left: scrollOffset,
+        behavior: isSmooth ? 'smooth' : 'auto'
+      });
     }
   };
 
@@ -51,16 +55,18 @@ const NewArrivals = () => {
     let scrollInterval;
 
     const startScrolling = () => {
-      scrollInterval = setInterval(() => {
-        const maxScroll = scrollContainer.scrollWidth - scrollContainer.clientWidth;
+      // Divide by 3 because we have 3 identical sets of products in the container
+      const singleSetWidth = scrollContainer.scrollWidth / 3;
 
-        // If we've reached the end, loop back to start
-        if (scrollContainer.scrollLeft >= maxScroll - 10) {
-          scrollContainer.scrollTo({ left: 0, behavior: 'smooth' });
+      scrollInterval = setInterval(() => {
+        // If we've scrolled past the first set, seamlessly jump back
+        // This creates the infinite illusion
+        if (scrollContainer.scrollLeft >= singleSetWidth * 2) {
+          scrollContainer.scrollLeft = singleSetWidth;
         } else {
-          scroll(1);
+          scrollContainer.scrollLeft += 1; // 1px increment for smoothness
         }
-      }, 30);
+      }, 20); // 20ms interval (faster than original 30ms but slower than previous 2px iteration)
     };
 
     const stopScrolling = () => {
@@ -99,12 +105,12 @@ const NewArrivals = () => {
         </div>
       </div>
 
-      <div 
-        className="relative h-48 sm:h-64" 
+      <div
+        className="relative h-48 sm:h-64"
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
       >
-        <div 
+        <div
           className="absolute top-0 left-0 w-full h-full overflow-x-auto scrollbar-hide"
           ref={scrollContainerRef}
         >
@@ -116,9 +122,9 @@ const NewArrivals = () => {
                 className="bg-white rounded-xl p-2 sm:p-4 text-gray-800 hover:shadow-lg transition-all duration-300 cursor-pointer flex-shrink-0 w-40 sm:w-56"
               >
                 <div className="relative aspect-square w-full">
-                  <img 
+                  <img
                     src={product.images[0]?.image_url}
-                    alt={product.product_title} 
+                    alt={product.product_title}
                     className="w-full h-full object-contain rounded-lg"
                   />
                 </div>
@@ -131,14 +137,14 @@ const NewArrivals = () => {
           </div>
         </div>
         <div className="absolute top-1/2 -translate-y-1/2 left-0 flex items-center">
-            <button onClick={() => scroll(-300)} className="bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
-                <ChevronLeft className="w-6 h-6 text-gray-800" />
-            </button>
+          <button onClick={() => scroll(-300)} className="bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
+            <ChevronLeft className="w-6 h-6 text-gray-800" />
+          </button>
         </div>
         <div className="absolute top-1/2 -translate-y-1/2 right-0 flex items-center">
-            <button onClick={() => scroll(300)} className="bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
-                <ChevronRight className="w-6 h-6 text-gray-800" />
-            </button>
+          <button onClick={() => scroll(300)} className="bg-white bg-opacity-50 hover:bg-opacity-75 rounded-full p-2">
+            <ChevronRight className="w-6 h-6 text-gray-800" />
+          </button>
         </div>
       </div>
     </div>
